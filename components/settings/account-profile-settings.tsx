@@ -1,0 +1,204 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import type { LearnerProfile } from "@/lib/domain/types";
+import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from "@/lib/auth/browser";
+
+const focusOptions = [
+  { value: "speaking", label: "Speaking" },
+  { value: "listening", label: "Listening" },
+  { value: "writing", label: "Writing" },
+  { value: "review", label: "Review" },
+] as const;
+
+export function AccountProfileSettings() {
+  const [profile, setProfile] = useState<LearnerProfile>();
+  const [state, setState] = useState<"loading" | "signed-out" | "no-profile" | "ready">("loading");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string>();
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const accessToken = await getBrowserAccessToken();
+        if (!accessToken && getBrowserSupabase()) {
+          if (!cancelled) setState("signed-out");
+          return;
+        }
+        const response = await fetch("/api/profile", { headers: await getBrowserAuthHeaders() });
+        const payload = await response.json();
+        if (cancelled) return;
+        if (response.status === 409) return setState("no-profile");
+        if (!response.ok) {
+          setError(payload.error);
+          setState("ready");
+          return;
+        }
+        setProfile(payload.profile);
+        setState("ready");
+      } catch {
+        if (!cancelled) {
+          setError("Your settings could not load.");
+          setState("ready");
+        }
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function save() {
+    if (!profile) return;
+    setSaving(true);
+    setMessage(undefined);
+    setError(undefined);
+    const response = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: await getBrowserAuthHeaders({ json: true }),
+      body: JSON.stringify({
+        displayName: profile.displayName,
+        dailyMinutes: profile.dailyMinutes,
+        preferredMode: profile.preferredMode,
+        focusPreferences: profile.focusPreferences ?? [],
+        speakingConfidence: profile.speakingConfidence ?? "medium",
+      }),
+    });
+    const payload = await response.json();
+    setSaving(false);
+    if (!response.ok) return setError(payload.error ?? "Your settings could not be saved.");
+    setProfile(payload.profile);
+    setMessage("Saved. Your next session uses these straight away.");
+  }
+
+  if (state === "loading") return <div className="card animate-pulse">Loading your learning setup…</div>;
+
+  if (state === "signed-out") {
+    return (
+      <div className="card">
+        <p className="eyebrow">Learning setup</p>
+        <h2 className="mt-2 text-2xl font-black">Sign in to change your plan</h2>
+        <p className="mt-3 text-ink/75">Account settings cover your name, daily time, session feel, and focus areas.</p>
+        <Link className="button-primary mt-6" href="/auth/sign-in?redirectTo=/settings">Sign in</Link>
+      </div>
+    );
+  }
+
+  if (state === "no-profile") {
+    return (
+      <div className="card">
+        <p className="eyebrow">Learning setup</p>
+        <h2 className="mt-2 text-2xl font-black">Finish onboarding first</h2>
+        <p className="mt-3 text-ink/75">Two minutes of setup builds your first personalised session.</p>
+        <Link className="button-primary mt-6" href="/onboarding">Start onboarding</Link>
+      </div>
+    );
+  }
+
+  if (!profile) return error ? <p className="status-error">{error}</p> : null;
+
+  return (
+    <div className="card">
+      <p className="eyebrow">Learning setup</p>
+      <h2 className="mt-2 text-2xl font-black">Your plan, live-editable</h2>
+
+      <div className="mt-6 grid gap-5 sm:grid-cols-2">
+        <label className="block font-bold">
+          Name
+          <input
+            className="field"
+            value={profile.displayName}
+            maxLength={60}
+            onChange={(event) => setProfile({ ...profile, displayName: event.target.value })}
+          />
+        </label>
+
+        <label className="block font-bold">
+          Daily minutes
+          <input
+            className="field"
+            type="number"
+            min={2}
+            max={60}
+            value={profile.dailyMinutes}
+            onChange={(event) =>
+              setProfile({ ...profile, dailyMinutes: Math.min(60, Math.max(2, Number(event.target.value) || 2)) })
+            }
+          />
+        </label>
+
+        <label className="block font-bold">
+          Session feel
+          <select
+            className="field"
+            value={profile.preferredMode}
+            onChange={(event) => setProfile({ ...profile, preferredMode: event.target.value as "normal" | "short" })}
+          >
+            <option value="normal">A normal mixed session</option>
+            <option value="short">A quick save-my-streak session</option>
+          </select>
+        </label>
+
+        <label className="block font-bold">
+          Speaking confidence
+          <select
+            className="field"
+            value={profile.speakingConfidence ?? "medium"}
+            onChange={(event) =>
+              setProfile({ ...profile, speakingConfidence: event.target.value as "low" | "medium" | "high" })
+            }
+          >
+            <option value="low">Nervous — ease me in</option>
+            <option value="medium">Okay — normal pace</option>
+            <option value="high">Confident — push me</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset className="mt-5">
+        <legend className="font-bold">Extra focus</legend>
+        <p className="mt-1 text-sm text-ink/60">Sessions stay mixed; these areas simply come earlier and more often.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {focusOptions.map((option) => {
+            const selected = profile.focusPreferences?.includes(option.value) ?? false;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={selected}
+                className={
+                  selected
+                    ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
+                    : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                }
+                onClick={() =>
+                  setProfile({
+                    ...profile,
+                    focusPreferences: selected
+                      ? (profile.focusPreferences ?? []).filter((item) => item !== option.value)
+                      : [...(profile.focusPreferences ?? []), option.value],
+                  })
+                }
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      {error && <p className="status-error mt-5" role="alert">{error}</p>}
+      {message && <p className="status-success mt-5" role="status">{message}</p>}
+
+      <button className="button-primary mt-6" disabled={saving || !profile.displayName.trim()} onClick={save}>
+        {saving ? "Saving…" : "Save changes"}
+      </button>
+    </div>
+  );
+}

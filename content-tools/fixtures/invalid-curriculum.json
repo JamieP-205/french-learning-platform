@@ -1,0 +1,77 @@
+{
+  "publicRootMissionIds": ["fixture-lesson"],
+  "runtimeGatedConceptIdsByActivity": {
+    "fixture-exercise": ["fixture-concept"]
+  },
+  "missions": [
+    {
+      "id": "fixture-lesson",
+      "activities": [
+        {
+          "id": "fixture-exercise",
+          "type": "typing",
+          "prompt": "Type: Le xylophone.",
+          "promptFrenchSegments": [],
+          "targetText": "Le xylophone.",
+          "acceptedAnswers": [{ "value": "Le xylophone." }]
+        }
+      ]
+    }
+  ],
+  "curriculum": [
+    {
+      "missionId": "fixture-lesson",
+      "concepts": [
+        {
+          "id": "fixture-concept",
+          "prerequisiteConceptIds": ["fixture-missing-prerequisite"],
+          "teachingStep": {
+            "form": "Le xylophone.",
+            "metalinguisticRule": "A singular masculine noun commonly takes le.",
+            "positiveExamples": ["Le train."],
+            "contrastExamples": ["La gare."],
+            "function": "Name a masculine object.",
+            "inputSegment": {
+              "text": "Le xylophone.",
+              "inlineGlosses": []
+            }
+          },
+          "vocabulary": [
+            {
+              "form": "le",
+              "lemma": "le",
+              "pos": "DET:ART",
+              "cefrLevel": "A1",
+              "meaning": "the"
+            },
+            {
+              "form": "xylophone",
+              "lemma": "xylophone",
+              "pos": "NOM",
+              "cefrLevel": "A1",
+              "meaning": "xylophone"
+            }
+          ]
+        }
+      ],
+      "activities": [
+        {
+          "activityId": "fixture-exercise",
+          "requiredConceptIds": ["fixture-concept", "fixture-undefined-concept"],
+          "scoredSegments": [
+            {
+              "source": "target",
+              "text": "Le xylophone.",
+              "inlineGlosses": []
+            },
+            {
+              "source": "accepted-answer",
+              "text": "Le xylophone.",
+              "inlineGlosses": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
