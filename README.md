@@ -10,6 +10,11 @@ privately. It contains the application, curriculum tooling, migrations and test
 suite needed to inspect the engineering. It does not contain deployment
 credentials, learner records or unfinished private environment notes.
 
+The snapshot is published for portfolio and technical-review purposes. No
+permission to copy, redistribute or create derivative works is granted; see
+[LICENSE](LICENSE). Third-party curriculum data remains under the licences
+listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ## What works now
 
 - A no-account route that keeps preferences and progress in the browser
@@ -79,6 +84,18 @@ Playwright suite and audits the dependency tree.
 Browser tests use a separate development learner per test. That matters because
 the first version shared one demo learner across parallel workers and could
 resume another test's session.
+
+Production responses set CSP, clickjacking, MIME-sniffing, referrer,
+permissions and transport-security headers. The Playwright release gate checks
+the expected policy so a hosting change cannot silently remove it.
+
+## AI-assisted development
+
+I use AI tooling as implementation and review support, particularly around the
+source-bounded tutor, the Supabase boundary, security headers and the release
+checks. Generated French is never accepted as course content. I review and
+simplify code before keeping it, and the deterministic curriculum, unit,
+browser, build and dependency checks are the evidence for what is released.
 
 ## Current limits
 
