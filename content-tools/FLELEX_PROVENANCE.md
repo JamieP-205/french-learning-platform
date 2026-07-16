@@ -12,7 +12,9 @@
 `FleLex_TT_Beacco.csv` is the deterministic comma-separated conversion used by
 the verification scripts. Each tab was replaced by a comma; the source contains
 no commas or quotes, so quoting or other semantic rewriting was unnecessary. Its
-SHA-256 is `C0A3F8C53183D365EC5BEF9AE6AA6AB95DED533D283B379A2E177E4C028A97C8`.
+canonical LF SHA-256 is `610F4668AF7F8E897CC0A8C9E17A83357ED823A25A1599CB81EF02CC8EF1C6B3`.
+The verifier normalises line endings before this check so Git's Windows and
+Linux checkout policies cannot change the result.
 
 The source archive is unchanged. The CSV is a format-only adaptation and remains
 under the same CC BY-NC-SA 4.0 terms. See `THIRD_PARTY_NOTICES.md`.

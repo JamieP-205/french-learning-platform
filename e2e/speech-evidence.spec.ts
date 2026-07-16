@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { localLearningStorageKey } from "../lib/local-learning/progress";
 
 test("an unverified speech self-check creates no local learning evidence", async ({ page }) => {

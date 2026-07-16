@@ -228,8 +228,8 @@ export function skillForLocalActivity(activity: {
 }): LocalSkillKey {
   if (activity.type === "fill_blank" || activity.type === "typing") return "grammar";
   if (activity.type === "sentence_builder") return "sentence_building";
-  if (activity.type === "dictation_placeholder") return "listening";
-  if (activity.type === "speak_repeat_placeholder") return "speaking";
+  if (activity.type === "dictation") return "listening";
+  if (activity.type === "speak_repeat") return "speaking";
   if (/casual|formal|register|spoken/i.test(activity.prompt)) return "register";
   return "meaning";
 }

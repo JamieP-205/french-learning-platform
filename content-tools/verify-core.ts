@@ -6,7 +6,7 @@ import { gunzipSync } from "node:zlib";
 export const COVERAGE_PERCENT = 95;
 export const COVERAGE_THRESHOLD = COVERAGE_PERCENT / 100;
 export const FLELEX_SOURCE_SHA256 = "E0CBDB672FA4F83155ACEC4C8F01F179B30BE08CB3D2D6CF0D9F25042B01E3D4";
-export const FLELEX_CSV_SHA256 = "C0A3F8C53183D365EC5BEF9AE6AA6AB95DED533D283B379A2E177E4C028A97C8";
+export const FLELEX_CSV_SHA256 = "610F4668AF7F8E897CC0A8C9E17A83357ED823A25A1599CB81EF02CC8EF1C6B3";
 
 type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 
@@ -125,6 +125,12 @@ const expectedHeader = [
   "level",
 ];
 
+export function canonicalTextSha256(value: Uint8Array | string) {
+  const text = typeof value === "string" ? value : Buffer.from(value).toString("utf8");
+  const canonicalBytes = Buffer.from(text.replace(/\r\n?/g, "\n"), "utf8");
+  return createHash("sha256").update(canonicalBytes).digest("hex").toUpperCase();
+}
+
 const normalise = (value: string) =>
   value.normalize("NFC").toLocaleLowerCase("fr").replaceAll("’", "'").trim();
 
@@ -150,7 +156,7 @@ export function loadFleLex(root = process.cwd()): FleLex {
   }
   const path = resolve(root, "content-tools", "FleLex_TT_Beacco.csv");
   const bytes = readFileSync(path);
-  const digest = createHash("sha256").update(bytes).digest("hex").toUpperCase();
+  const digest = canonicalTextSha256(bytes);
   if (digest !== FLELEX_CSV_SHA256) {
     throw new Error(`FLELex CSV integrity failure: expected SHA-256 ${FLELEX_CSV_SHA256}, received ${digest}`);
   }

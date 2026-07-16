@@ -3,8 +3,8 @@ export const activityTypes = [
   "fill_blank",
   "typing",
   "sentence_builder",
-  "dictation_placeholder",
-  "speak_repeat_placeholder",
+  "dictation",
+  "speak_repeat",
 ] as const;
 
 export type ActivityType = (typeof activityTypes)[number];
@@ -161,7 +161,7 @@ export type SentenceBuilderActivity = BaseActivity & {
 };
 
 export type InputActivity = BaseActivity & {
-  type: "fill_blank" | "typing" | "dictation_placeholder" | "speak_repeat_placeholder";
+  type: "fill_blank" | "typing" | "dictation" | "speak_repeat";
   placeholder?: string;
   targetText?: string;
 };

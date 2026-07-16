@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("public tutor gives source-bound help without account chat", async ({ page }) => {
   await page.goto("/tutor");

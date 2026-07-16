@@ -1,4 +1,4 @@
-﻿import { INTRO_MISSION } from "@/lib/content/seed";
+import { INTRO_MISSION } from "@/lib/content/seed";
 import type { Mission } from "@/lib/domain/types";
 
 const PRACTICAL_A1_SOURCE = {
@@ -187,7 +187,7 @@ export const CAFE_MISSION: Mission = {
     },
     {
       id: "act-cafe-dictation-price-v1",
-      type: "dictation_placeholder",
+      type: "dictation",
       prompt: "Dictation self-check: type the price question.",
       promptFrenchSegments: [],
       helperText: "Play the audio, then type what you hear.",
@@ -202,7 +202,7 @@ export const CAFE_MISSION: Mission = {
     },
     {
       id: "act-cafe-speak-bill-v1",
-      type: "speak_repeat_placeholder",
+      type: "speak_repeat",
       prompt: "Speaking self-check: L'addition, s'il vous plaît.",
       promptFrenchSegments: ["L'addition, s'il vous plaît."],
       helperText: "Listen to the phrase where audio is supported, then say it out loud once. There is no recording or pronunciation score.",
@@ -377,7 +377,7 @@ export const TRAVEL_MISSION: Mission = {
     },
     {
       id: "act-travel-dictation-repeat-v1",
-      type: "dictation_placeholder",
+      type: "dictation",
       prompt: "Dictation self-check: type the repeat-help phrase.",
       promptFrenchSegments: [],
       helperText: "Play the audio, then type what you hear.",
@@ -411,7 +411,7 @@ export const TRAVEL_MISSION: Mission = {
     },
     {
       id: "act-travel-speak-lost-v1",
-      type: "speak_repeat_placeholder",
+      type: "speak_repeat",
       prompt: "Speaking self-check: Je suis perdu.",
       promptFrenchSegments: ["Je suis perdu."],
       helperText: "Listen to the phrase where audio is supported, then say it out loud once. There is no recording or pronunciation score.",

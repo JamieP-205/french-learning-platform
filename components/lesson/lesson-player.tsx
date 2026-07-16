@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -263,21 +263,21 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
               <p className="font-black">
                 {result.isCorrect
                   ? "Correct"
-                  : displayActivity.type === "speak_repeat_placeholder" ? "Practice saved" : "Here’s the answer"}
+                  : displayActivity.type === "speak_repeat" ? "Practice saved" : "Here’s the answer"}
               </p>
               {result.isCorrect && <p className="mt-2">{result.feedback}</p>}
-              {!result.isCorrect && displayActivity.type !== "speak_repeat_placeholder" && (
+              {!result.isCorrect && displayActivity.type !== "speak_repeat" && (
                 <p lang="fr" className="mt-3 text-lg font-black">{result.correctAnswer}</p>
               )}
-              {!result.isCorrect && activityRule && displayActivity.type !== "speak_repeat_placeholder" && (
+              {!result.isCorrect && activityRule && displayActivity.type !== "speak_repeat" && (
                 <p className="mt-3 text-sm leading-6 text-ink/75">{activityRule}</p>
               )}
-              {!result.isCorrect && displayActivity.type !== "speak_repeat_placeholder" && !tutor && (
+              {!result.isCorrect && displayActivity.type !== "speak_repeat" && !tutor && (
                 <button className="mt-4 text-sm font-bold text-coral underline disabled:opacity-60" disabled={explaining} onClick={explain}>
                   {explaining ? "Getting the explanation…" : "More explanation"}
                 </button>
               )}
-              {!result.isCorrect && resultEvidenceKind === "self-report" && displayActivity.type === "speak_repeat_placeholder" && (
+              {!result.isCorrect && resultEvidenceKind === "self-report" && displayActivity.type === "speak_repeat" && (
                 <p className="mt-2 text-sm text-ink/75">This self-check does not affect your progress.</p>
               )}
             </div>

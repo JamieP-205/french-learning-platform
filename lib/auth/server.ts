@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
 import { DEMO_USER_ID, hasSupabaseAuthConfiguration } from "@/lib/data";
+import { E2E_LEARNER_COOKIE, resolveDevelopmentLearnerId } from "@/lib/auth/development-user";
 
 export const isDevelopmentDemoMode = () => !hasSupabaseAuthConfiguration && process.env.NODE_ENV !== "production";
 
@@ -14,7 +15,11 @@ function getBearerToken(authorization: string | null) {
 }
 
 export async function getCurrentUserId(): Promise<string | null> {
-  if (!hasSupabaseAuthConfiguration) return isDevelopmentDemoMode() ? DEMO_USER_ID : null;
+  if (!hasSupabaseAuthConfiguration) {
+    if (!isDevelopmentDemoMode()) return null;
+    const cookieStore = await cookies();
+    return resolveDevelopmentLearnerId(cookieStore.get(E2E_LEARNER_COOKIE)?.value, DEMO_USER_ID);
+  }
 
   const cookieStore = await cookies();
   const headerStore = await headers();

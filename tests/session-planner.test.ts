@@ -10,15 +10,15 @@ describe("Today session planning", () => {
   it("places due review first and includes output in a normal session", () => {
     const plan = buildSessionPlan({ profile, mission: INTRO_MISSION, dueReviews: [dueReview], mistakes: [], now: new Date("2026-06-20T12:00:00Z") });
     expect(plan.activities[0]?.kind).toBe("review");
-    expect(plan.activities.some((entry) => ["typing", "fill_blank", "sentence_builder", "speak_repeat_placeholder"].includes(entry.activity.type))).toBe(true);
+    expect(plan.activities.some((entry) => ["typing", "fill_blank", "sentence_builder", "speak_repeat"].includes(entry.activity.type))).toBe(true);
     expect(new Set(plan.activities.map((entry) => entry.activity.type))).toEqual(
       new Set([
         "multiple_choice",
         "fill_blank",
         "typing",
         "sentence_builder",
-        "dictation_placeholder",
-        "speak_repeat_placeholder",
+        "dictation",
+        "speak_repeat",
       ]),
     );
   });
@@ -44,7 +44,7 @@ describe("Today session planning", () => {
     };
     const plan = buildSessionPlan({ profile, mission: INTRO_MISSION, dueReviews: [], mistakes: [], stats, now: new Date("2026-06-20T12:00:00Z") });
     const firstMission = plan.activities.find((entry) => entry.kind === "mission");
-    expect(firstMission?.activity.type).toBe("dictation_placeholder");
+    expect(firstMission?.activity.type).toBe("dictation");
     expect(plan.weakFocus).toMatch(/listening/i);
   });
 

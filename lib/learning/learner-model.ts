@@ -34,9 +34,9 @@ export function skillForActivityType(type: ActivityDefinition["type"]): SkillKey
       return "grammar";
     case "typing":
       return "writing";
-    case "dictation_placeholder":
+    case "dictation":
       return "listening";
-    case "speak_repeat_placeholder":
+    case "speak_repeat":
       return "speaking";
   }
 }

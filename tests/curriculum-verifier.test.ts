@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { loadFleLex, verifyCurriculumData, type VerificationData } from "../content-tools/verify-core";
+import {
+  canonicalTextSha256,
+  loadFleLex,
+  verifyCurriculumData,
+  type VerificationData,
+} from "../content-tools/verify-core";
 
 const dataWithUnknownFrenchChoice = (declareRuntimeSegments: boolean): VerificationData => ({
   publicRootMissionIds: ["synthetic-root"],
@@ -142,5 +147,12 @@ describe("curriculum verifier adversarial coverage", () => {
       token: "je suis",
       detail: 'Choice "unknown" is labelled English but its text is FLELex-certified French: "Je suis zorglup".',
     });
+  });
+});
+
+describe("curriculum source integrity", () => {
+  it("uses the same CSV digest for LF and CRLF checkouts", () => {
+    const rows = "word,tag,freq_A1,level\ncafé,NOM,1,A1\n";
+    expect(canonicalTextSha256(rows)).toBe(canonicalTextSha256(rows.replaceAll("\n", "\r\n")));
   });
 });

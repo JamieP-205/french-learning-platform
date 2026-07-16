@@ -1,4 +1,4 @@
-﻿import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("development learner completes the mission with guarded tutor feedback", async ({ page }) => {
   await page.goto("/onboarding");

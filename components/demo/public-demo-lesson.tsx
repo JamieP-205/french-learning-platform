@@ -101,7 +101,7 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
       return;
     }
 
-    const isSpeechCheck = currentActivity.type === "speak_repeat_placeholder";
+    const isSpeechCheck = currentActivity.type === "speak_repeat";
     const isAnswerReveal = metadata?.evidenceKind === "self-report" && !isSpeechCheck;
     const verifiedSpeech = isSpeechCheck && metadata?.evidenceKind === "controlled" && metadata.correct === true;
     const evidenceKind: AttemptEvidenceKind = isAnswerReveal
@@ -264,16 +264,16 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
                   <p className="font-black">
                     {result.isCorrect
                       ? "Correct"
-                      : currentActivity.type === "speak_repeat_placeholder" ? "Practice saved" : "Here’s the answer"}
+                      : currentActivity.type === "speak_repeat" ? "Practice saved" : "Here’s the answer"}
                   </p>
                   {result.isCorrect && <p className="mt-2">{result.feedback}</p>}
-                  {!result.isCorrect && currentActivity.type !== "speak_repeat_placeholder" && (
+                  {!result.isCorrect && currentActivity.type !== "speak_repeat" && (
                     <p lang="fr" className="mt-3 text-lg font-black">{result.correctAnswer}</p>
                   )}
-                  {!result.isCorrect && activityRule && currentActivity.type !== "speak_repeat_placeholder" && (
+                  {!result.isCorrect && activityRule && currentActivity.type !== "speak_repeat" && (
                     <p className="mt-3 text-sm leading-6 text-ink/75">{activityRule}</p>
                   )}
-                  {!result.isCorrect && currentActivity.type === "speak_repeat_placeholder" && (
+                  {!result.isCorrect && currentActivity.type === "speak_repeat" && (
                     <p className="mt-2 text-sm text-ink/75">This self-check does not affect your progress.</p>
                   )}
                 </div>

@@ -5,8 +5,8 @@ const instructions: Record<ActivityType, string> = {
   fill_blank: "Type the missing French word, then check your answer.",
   typing: "Type the full answer in French, then check it.",
   sentence_builder: "Tap the French words in the order they belong.",
-  dictation_placeholder: "Play the phrase, then type exactly what you hear.",
-  speak_repeat_placeholder: "Listen to the model, say the phrase aloud, then complete the self-check.",
+  dictation: "Play the phrase, then type exactly what you hear.",
+  speak_repeat: "Listen to the model, say the phrase aloud, then complete the self-check.",
 };
 
 export function ActivityTaskGuide({ type }: { type: ActivityType }) {

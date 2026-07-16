@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { getLearningRepository } from "@/lib/data";
 import type { AttemptEvidenceKind, LearnerProfile, SessionPlanV1 } from "@/lib/domain/types";
 import { validateActivityAnswer } from "@/lib/learning/answer-validation";
@@ -167,7 +167,7 @@ export async function submitActivity({
   if (!session || session.completedAt) throw new Error("This learning session is unavailable.");
   const planned = session.plan.activities[session.currentIndex];
   if (!planned || planned.activity.id !== activityId) throw new Error("That activity is not the current session step.");
-  const isSpeechCheck = planned.activity.type === "speak_repeat_placeholder";
+  const isSpeechCheck = planned.activity.type === "speak_repeat";
   const isAnswerReveal = evidenceKind === "self-report";
   const effectiveEvidenceKind = isAnswerReveal
     ? "self-report"
@@ -207,7 +207,7 @@ export async function submitActivity({
         isCorrect: effectiveCorrect,
         isNearMiss: false,
         feedback: effectiveCorrect ? planned.activity.feedbackCorrect : "Speaking self-check saved without mastery credit.",
-        correctAnswer: planned.activity.type === "speak_repeat_placeholder"
+        correctAnswer: planned.activity.type === "speak_repeat"
           ? planned.activity.targetText ?? planned.activity.prompt
           : planned.activity.prompt,
         mistakeType: undefined,
