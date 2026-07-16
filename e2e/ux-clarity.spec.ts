@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("the first lesson makes learn, answer and feedback stages explicit", async ({ page }) => {
   await page.goto("/demo");

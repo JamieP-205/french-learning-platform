@@ -34,7 +34,7 @@ describe("bundled French audio assets", () => {
       ...SHADOWING_PHRASES.map((phrase) => phrase.french),
       ...SCORED_MISSIONS.flatMap((mission) =>
         mission.activities.flatMap((activity) =>
-          (activity.type === "dictation_placeholder" || activity.type === "speak_repeat_placeholder") &&
+          (activity.type === "dictation" || activity.type === "speak_repeat") &&
           activity.targetText
             ? [activity.targetText]
             : [],

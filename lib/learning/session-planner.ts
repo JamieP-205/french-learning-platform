@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   ActivityDefinition,
   LearnerProfile,
   MistakePattern,
@@ -30,7 +30,7 @@ export function selectSessionMode(profile: LearnerProfile, requestedMode?: "norm
 const activityForReview = (mission: Mission, review: ReviewItem) =>
   mission.activities.find((activity) => activity.id === review.activityId) ?? mission.activities[0];
 
-const outputTypes = new Set(["typing", "fill_blank", "sentence_builder", "speak_repeat_placeholder"]);
+const outputTypes = new Set(["typing", "fill_blank", "sentence_builder", "speak_repeat"]);
 
 export function buildSessionPlan({
   profile,
@@ -88,12 +88,12 @@ export function buildSessionPlan({
     push(missionActivities.find((activity) => activity.type === "fill_blank"), "mission", "A short gap-fill turns recognition into recall.");
     push(missionActivities.find((activity) => activity.type === "typing"), "mission", "Typed recall checks that you can produce the sentence, not only recognise it.");
     push(missionActivities.find((activity) => activity.type === "sentence_builder"), "mission", "Reordering the phrase strengthens the sentence pattern.");
-    push(missionActivities.find((activity) => activity.type === "dictation_placeholder"), "mission", "A text-ready dictation step connects sound, spelling, and meaning.");
-    push(missionActivities.find((activity) => activity.type === "speak_repeat_placeholder"), "mission", "A confidence-first spoken repetition completes the mixed-skill session.");
+    push(missionActivities.find((activity) => activity.type === "dictation"), "mission", "A text-ready dictation step connects sound, spelling, and meaning.");
+    push(missionActivities.find((activity) => activity.type === "speak_repeat"), "mission", "A confidence-first spoken repetition completes the mixed-skill session.");
     push(missionActivities.find((activity) => activity.id === "act-register-v1"), "mission", "A register check keeps relaxed spoken French in the right context.");
   } else if (mode === "two_minute") {
     push(missionActivities.find((activity) => activity.type === "fill_blank"), "mission", "One useful recall keeps the session real, even when time is short.");
-    push(missionActivities.find((activity) => activity.type === "speak_repeat_placeholder"), "mission", "Finish with one sentence you can say today.");
+    push(missionActivities.find((activity) => activity.type === "speak_repeat"), "mission", "Finish with one sentence you can say today.");
   } else {
     push(missionActivities.find((activity) => activity.type === "fill_blank"), "mission", "A familiar recall step makes this a low-pressure return.");
     push(missionActivities.find((activity) => activity.type === "typing"), "mission", "A short written sentence restores confidence.");

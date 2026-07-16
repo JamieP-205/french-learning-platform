@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("friends page exposes friend code and safe social controls", async ({ page }) => {
   await page.goto("/friends");

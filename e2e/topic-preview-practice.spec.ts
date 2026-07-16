@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("practice preview self-checks feed the local adaptive path", async ({ page }) => {
   await page.goto("/learn/cafe-food");

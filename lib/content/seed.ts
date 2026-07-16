@@ -1,4 +1,4 @@
-﻿import type { Mission } from "@/lib/domain/types";
+import type { Mission } from "@/lib/domain/types";
 
 export const INTRO_MISSION: Mission = {
   id: "mission-introduce-yourself-v1",
@@ -171,7 +171,7 @@ export const INTRO_MISSION: Mission = {
     },
     {
       id: "act-dictation-v1",
-      type: "dictation_placeholder",
+      type: "dictation",
       prompt: "Dictation practice: type the phrase you hear.",
       promptFrenchSegments: [],
       helperText: "Play the audio, then type what you hear.",
@@ -186,7 +186,7 @@ export const INTRO_MISSION: Mission = {
     },
     {
       id: "act-speak-repeat-v1",
-      type: "speak_repeat_placeholder",
+      type: "speak_repeat",
       prompt: "Say this out loud: Aujourd'hui, j'étudie le français.",
       promptFrenchSegments: ["Aujourd'hui, j'étudie le français."],
       helperText: "This is a speaking self-check. No recording, transcription, or pronunciation score is used.",

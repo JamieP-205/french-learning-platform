@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("no-account learner preferences personalize the public path", async ({ page }) => {
   await page.goto("/settings");

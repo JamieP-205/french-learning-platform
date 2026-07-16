@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("roleplay gives deterministic register feedback", async ({ page }) => {
   await page.goto("/roleplay");

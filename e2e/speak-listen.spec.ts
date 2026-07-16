@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { localLearningStorageKey } from "../lib/local-learning/progress";
 
 test("listening uses bundled audio first and reports when both playback paths fail", async ({ page }) => {

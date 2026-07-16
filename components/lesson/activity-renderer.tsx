@@ -120,7 +120,7 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
     );
   }
 
-  if (activity.type === "speak_repeat_placeholder") {
+  if (activity.type === "speak_repeat") {
     return (
       <div className="mt-8 rounded-2xl bg-cream p-5 sm:p-6">
         <SpeakCheck
@@ -139,7 +139,7 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
 
   return (
     <div className="mt-8">
-      {activity.type === "dictation_placeholder" && activity.targetText && (
+      {activity.type === "dictation" && activity.targetText && (
         <div className="rounded-2xl bg-cream p-4 sm:p-5" id={audioHelpId}>
           <p className="font-bold">Listen, then type what you hear.</p>
           <div className="mt-4 flex flex-wrap items-start gap-4">
@@ -185,7 +185,7 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
         onKeyDown={(event) => {
           if (event.key === "Enter" && answer.trim()) onSubmit(answer);
         }}
-        aria-describedby={activity.type === "dictation_placeholder" ? audioHelpId : undefined}
+        aria-describedby={activity.type === "dictation" ? audioHelpId : undefined}
         autoComplete="off"
       />
       <button

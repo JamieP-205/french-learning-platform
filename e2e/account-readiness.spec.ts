@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("account sync fails closed while production email delivery is unverified", async ({ page }) => {
   await page.goto("/status");

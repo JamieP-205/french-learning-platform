@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getMissionBySlug, getPublicScoredMissionSlugs, getScoredMissionSlugs } from "../lib/content/scored-missions";
 import { validateActivityAnswer } from "../lib/learning/answer-validation";
 import { buildSessionPlan } from "../lib/learning/session-planner";
@@ -37,8 +37,8 @@ describe("scored beginner missions", () => {
       expect(activityTypes.has("fill_blank")).toBe(true);
       expect(activityTypes.has("typing")).toBe(true);
       expect(activityTypes.has("sentence_builder")).toBe(true);
-      expect(activityTypes.has("dictation_placeholder")).toBe(true);
-      expect(activityTypes.has("speak_repeat_placeholder")).toBe(true);
+      expect(activityTypes.has("dictation")).toBe(true);
+      expect(activityTypes.has("speak_repeat")).toBe(true);
 
       for (const activity of mission?.activities ?? []) {
         expect(activity.acceptedAnswers.length).toBeGreaterThan(0);
