@@ -18,7 +18,7 @@ listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 ## What works now
 
 - A no-account route that keeps preferences and progress in the browser
-- A source-backed A1 curriculum with explicit concept prerequisites
+- A source-backed A1 starter curriculum with explicit concept prerequisites
 - Just-in-time teaching before every scored prompt
 - Deterministic answer checks, near-miss feedback and mistake-driven review
 - Bundled French audio with honest browser fallbacks
@@ -27,8 +27,8 @@ listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Streaks, a learning garden and private friend-code challenges
 - Deterministic roleplay with register feedback
 - Optional account persistence behind Supabase
-- An optional OpenAI tutor that only receives a bounded, source-backed context
-  pack after the deterministic checker has run
+- A deterministic source-bound tutor fallback, with optional OpenAI explanations
+  disabled by default until the configured model and prompt pass safety evals
 
 ## The part I care about most
 

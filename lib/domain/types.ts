@@ -127,8 +127,8 @@ export type ContentItem = {
   cefrLevel: "A1";
   grammarTags: string[];
   sourceIds: string[];
-  verificationStatus: "source_validated";
-  publicationStatus: "published";
+  verificationStatus: "source_validated" | "needs_review";
+  publicationStatus: "published" | "draft";
   reviewerNotes?: string;
 };
 
@@ -168,6 +168,48 @@ export type InputActivity = BaseActivity & {
 
 export type ActivityDefinition = ChoiceActivity | SentenceBuilderActivity | InputActivity;
 
+export type LearnerActivityBase = Omit<
+  BaseActivity,
+  "type" | "acceptedAnswers" | "nearMisses" | "feedbackCorrect" | "feedbackIncorrect"
+>;
+
+export type LearnerChoiceActivity = LearnerActivityBase & {
+  type: "multiple_choice";
+  choices: ChoiceActivity["choices"];
+};
+
+export type LearnerSentenceBuilderActivity = LearnerActivityBase & {
+  type: "sentence_builder";
+  tokens: string[];
+};
+
+export type LearnerTextInputActivity = LearnerActivityBase & {
+  type: "fill_blank" | "typing";
+  placeholder?: string;
+};
+
+export type LearnerDictationActivity = LearnerActivityBase & {
+  type: "dictation";
+  placeholder?: string;
+  /** Bundled media path; the written target stays server-side until feedback. */
+  audioSource: string;
+};
+
+export type LearnerSpeakRepeatActivity = LearnerActivityBase & {
+  type: "speak_repeat";
+  placeholder?: string;
+  /** Speaking practice intentionally shows the phrase the learner repeats. */
+  targetText: string;
+  audioSource?: string;
+};
+
+export type LearnerActivityDefinition =
+  | LearnerChoiceActivity
+  | LearnerSentenceBuilderActivity
+  | LearnerTextInputActivity
+  | LearnerDictationActivity
+  | LearnerSpeakRepeatActivity;
+
 export type Mission = {
   id: string;
   slug: string;
@@ -190,6 +232,9 @@ export type LearnerProfile = {
   interests: string[];
   dailyMinutes: number;
   preferredMode: "normal" | "short";
+  // Calendar-based habits and resumable sessions follow the learner's local day.
+  // Older profiles without this field safely use UTC.
+  timeZone?: string;
   // Which practice types the learner wants emphasised. The planner still covers
   // weak skills; this only tilts the mix.
   focusPreferences?: string[];
@@ -218,6 +263,8 @@ export type ReviewItem = {
   successCount: number;
   failureCount: number;
   priority: number;
+  // Present on account-backed records that participate in atomic transitions.
+  transitionRevision?: number;
 };
 
 export type MistakePattern = {
@@ -231,6 +278,8 @@ export type MistakePattern = {
   separateProductionSuccesses: number;
   resolved: boolean;
   lastSeenAt: string;
+  // Present on account-backed records that participate in atomic transitions.
+  transitionRevision?: number;
 };
 
 export type ValidationResultV1 = {
@@ -263,6 +312,14 @@ export type SessionPlanV1 = {
   completionReward: string;
 };
 
+export type LearnerPlannedActivity = Omit<PlannedActivity, "activity"> & {
+  activity: LearnerActivityDefinition;
+};
+
+export type LearnerSessionPlanV1 = Omit<SessionPlanV1, "activities"> & {
+  activities: LearnerPlannedActivity[];
+};
+
 export type SessionRecord = {
   id: string;
   userId: string;
@@ -272,8 +329,14 @@ export type SessionRecord = {
   currentIndex: number;
 };
 
+export type LearnerSessionRecord = Omit<SessionRecord, "plan"> & {
+  plan: LearnerSessionPlanV1;
+};
+
 export type ActivityAttempt = {
   id: string;
+  // Optional while records written before request idempotency remain readable.
+  requestId?: string;
   userId: string;
   sessionId: string;
   activityId: string;
@@ -329,10 +392,17 @@ export type ProgressSnapshot = {
     earned: boolean;
     detail: string;
   }[];
-  skills: { label: string; score: number }[];
+  skills: {
+    label: string;
+    score: number | null;
+    practiceAttempts: number;
+    measuredAttempts: number;
+  }[];
 };
 
 export type TutorContextPackV1 = {
+  attemptId: string;
+  sessionId: string;
   task: "explain_mistake" | "safe_standard";
   learner: { level: string; goal: string; weakRuleIds: string[] };
   activity: { id: string; prompt: string; type: ActivityType };
@@ -354,16 +424,26 @@ export type TutorFeedbackV1 = {
 export type SocialProfile = {
   userId: string;
   displayName: string;
-  friendCode?: string;
   currentLevel: CefrLevel;
   completedSessions: number;
   currentStreak: number;
 };
 
-export type FriendRequest = {
+export type PendingIncomingProfile = Pick<SocialProfile, "userId" | "displayName">;
+export type PendingOutgoingProfile = Pick<SocialProfile, "displayName">;
+export type BlockedSocialProfile = Pick<SocialProfile, "userId" | "displayName">;
+
+export type IncomingFriendRequest = {
   id: string;
-  from: SocialProfile;
-  to: SocialProfile;
+  from: PendingIncomingProfile;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+  respondedAt?: string;
+};
+
+export type OutgoingFriendRequest = {
+  id: string;
+  to: PendingOutgoingProfile;
   status: "pending" | "accepted" | "declined";
   createdAt: string;
   respondedAt?: string;
@@ -383,6 +463,9 @@ export type CoopChallenge = {
   targetSessions: number;
   yourStartingSessions: number;
   friendStartingSessions: number;
+  yourProgress: number;
+  friendProgress: number;
+  combinedProgress: number;
   status: "active" | "completed";
   createdAt: string;
   completedAt?: string;
@@ -392,8 +475,9 @@ export type SocialSnapshot = {
   profile: SocialProfile;
   friendCode: string;
   friends: FriendConnection[];
-  incomingRequests: FriendRequest[];
-  outgoingRequests: FriendRequest[];
+  incomingRequests: IncomingFriendRequest[];
+  outgoingRequests: OutgoingFriendRequest[];
   blockedUserIds: string[];
+  blockedUsers: BlockedSocialProfile[];
   activeChallenge?: CoopChallenge;
 };

@@ -3,6 +3,7 @@ import {
   emptyLocalLearningProgress,
   localLearningAchievements,
   localDailyPlan,
+  localLearningDaysSince,
   localLearningNextAction,
   localLearningPath,
   localLevelRoadmap,
@@ -10,6 +11,7 @@ import {
   localSkillReadiness,
   localTopicPreviewSummary,
   recordLocalSkillAttempt,
+  recordLocalActiveDate,
   recordLocalTopicPreviewCheck,
   skillForLocalActivity,
   updateLocalLearnerPreferences,
@@ -21,7 +23,7 @@ describe("public local learning progress", () => {
     const nextAction = localLearningNextAction(emptyLocalLearningProgress);
     const path = localLearningPath(emptyLocalLearningProgress);
 
-    expect(nextAction).toMatchObject({ label: "Start local session", tone: "start" });
+    expect(nextAction).toMatchObject({ label: "Start lesson", tone: "start" });
     expect(path[0]).toMatchObject({ current: true, complete: false });
   });
 
@@ -44,7 +46,7 @@ describe("public local learning progress", () => {
       .filter((achievement) => achievement.earned)
       .map((achievement) => achievement.id);
 
-    expect(nextAction).toMatchObject({ label: "Repair weak point", tone: "repair" });
+    expect(nextAction).toMatchObject({ label: "Review weak point", tone: "repair" });
     expect(earnedAchievementIds).toEqual(["first-session", "mistake-captured", "repair-loop", "steady-recall"]);
 
     vi.useRealTimers();
@@ -63,6 +65,18 @@ describe("public local learning progress", () => {
     expect(localLearningNextAction(progress)).toMatchObject({ label: "Restart gently", tone: "comeback" });
 
     vi.useRealTimers();
+  });
+
+  it("uses the browser's calendar day for local-only progress", () => {
+    const beforeMidnightUtc = "2026-07-18T23:30:00.000Z";
+    const afterMidnightUtc = new Date("2026-07-19T00:30:00.000Z");
+
+    expect(localLearningDaysSince(beforeMidnightUtc, afterMidnightUtc, "Europe/London")).toBe(0);
+    expect(localLearningDaysSince(beforeMidnightUtc, afterMidnightUtc, "UTC")).toBe(1);
+    expect(
+      recordLocalActiveDate(emptyLocalLearningProgress, new Date(beforeMidnightUtc), "Europe/London")
+        .activeDates[0],
+    ).toBe("2026-07-19");
   });
 
   it("tracks preview self-check confidence without turning it into scored content", () => {
@@ -116,7 +130,7 @@ describe("public local learning progress", () => {
       headline: "B1 · work · 12 min",
     });
     expect(localLearningNextAction(progress)).toMatchObject({
-      title: "Calibrate your B1 French safely.",
+      title: "Use the A1 introduction as a foundation check.",
     });
   });
 
@@ -137,6 +151,7 @@ describe("public local learning progress", () => {
     const b1Progress = updateLocalLearnerPreferences(grammarAttempt, { currentLevel: "B1" });
     expect(localLevelRoadmap(b1Progress).find((step) => step.level === "B1")).toMatchObject({
       status: "calibrate",
+      description: expect.stringMatching(/available A1 check cannot confirm this level/i),
     });
   });
 
@@ -174,7 +189,7 @@ describe("public local learning progress", () => {
     expect(plan[0]).toMatchObject({
       id: "repair-lesson",
       href: "/demo",
-      label: "Start repair",
+      label: "Start review",
     });
     expect(plan[1]).toMatchObject({
       id: "goal-stretch",
@@ -197,7 +212,41 @@ describe("public local learning progress", () => {
     const totalMinutes = plan.reduce((total, step) => total + step.estimatedMinutes, 0);
 
     expect(totalMinutes).toBeLessThanOrEqual(5);
+    expect(plan[0]).toMatchObject({ href: "/demo?mode=short", estimatedMinutes: 2 });
     expect(plan[1]).toMatchObject({ href: "/learn/cafe-food" });
-    expect(plan[2].title).toMatch(/one clean win/i);
+    expect(plan[2].title).toMatch(/one clear win/i);
+  });
+
+  it("keeps a repaired weak point in the learner's achievement history", () => {
+    const repaired: LocalLearningProgress = {
+      ...emptyLocalLearningProgress,
+      sessionsCompleted: 2,
+      mistakesCaptured: 1,
+      repairsCompleted: 1,
+    };
+    const earned = localLearningAchievements(repaired)
+      .filter((achievement) => achievement.earned)
+      .map((achievement) => achievement.id);
+
+    expect(earned).toContain("mistake-captured");
+    expect(earned).toContain("repair-loop");
+    expect(localLearningPath(repaired).find((step) => step.id === "repair")).toMatchObject({ complete: true });
+  });
+
+  it("does not pad a two-minute local plan with actions that cannot fit", () => {
+    const progress = updateLocalLearnerPreferences(emptyLocalLearningProgress, {
+      dailyMinutes: 2,
+      sessionEnergy: "normal",
+    });
+
+    const plan = localDailyPlan(progress);
+
+    expect(plan).toHaveLength(1);
+    expect(plan[0]).toMatchObject({
+      href: "/demo?mode=short",
+      estimatedMinutes: 2,
+      description: expect.stringMatching(/phrase meaning and a basic sentence pattern/i),
+    });
+    expect(localLearningNextAction(progress).href).toBe("/demo?mode=short");
   });
 });

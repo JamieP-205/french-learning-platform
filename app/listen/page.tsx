@@ -124,10 +124,9 @@ export default function ListenPage() {
     <AppShell>
       <main className="py-10">
         <p className="eyebrow">Listen</p>
-        <h1 className="mt-2 text-4xl font-black">Train your ear before real French trains it for you.</h1>
+        <h1 className="mt-2 text-4xl font-black">Build confidence understanding spoken French.</h1>
         <p className="mt-4 max-w-3xl text-ink/75">
-          Dictation connects sound to spelling. Start slow, replay as often as you like, and only reveal the text
-          when your ears have had a fair shot.
+          Start slowly, replay as often as you need, and reveal the text after you have tried to identify the phrase.
         </p>
 
         <section className="card mt-7">
@@ -135,6 +134,7 @@ export default function ListenPage() {
             <ActivityTeachingGate
               concepts={LISTENING_CONCEPTS}
               actionLabel="Start listening check"
+              headingLevel={2}
               onComplete={() => setTeachingComplete(true)}
             />
           ) : <>
@@ -161,12 +161,18 @@ export default function ListenPage() {
               <button className="button-secondary" onClick={() => { setAnswer(""); setRevealed(true); setResult("revealed"); }}>Reveal text without credit</button>
           </div>
 
-          {revealed && <p className="mt-4 rounded-2xl bg-cream p-4 font-bold">{phrase.french} <span className="font-normal text-ink/60">— {phrase.english}</span></p>}
+          {revealed && (
+            <p className="mt-4 rounded-2xl bg-cream p-4 font-bold">
+              <span lang="fr">{phrase.french}</span>{" "}
+              <span className="font-normal text-ink/60">— {phrase.english}</span>
+            </p>
+          )}
 
           {result !== "revealed" && <label className="mt-5 block font-bold">
             Your answer
             <input
               className="field text-lg"
+              lang="fr"
               value={answer}
               onChange={(event) => setAnswer(event.target.value)}
               onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) check(); }}

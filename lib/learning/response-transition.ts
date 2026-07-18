@@ -13,6 +13,10 @@ const productiveActivityTypes = new Set<ActivityDefinition["type"]>([
   "sentence_builder",
 ]);
 
+export function isProductiveActivityType(activityType: ActivityDefinition["type"]) {
+  return productiveActivityTypes.has(activityType);
+}
+
 export function inferEvidenceKind(activityType: ActivityDefinition["type"]): AttemptEvidenceKind {
   if (activityType === "multiple_choice") return "recognition";
   if (activityType === "typing") return "free-production";
@@ -30,19 +34,40 @@ export function isQualifyingProductiveSuccess({
   correct: boolean;
   evidenceKind: AttemptEvidenceKind;
 }) {
-  return completed && correct && evidenceKind !== "self-report" && productiveActivityTypes.has(activity.type);
+  return completed && correct && evidenceKind !== "self-report" && isProductiveActivityType(activity.type);
 }
 
 export function isQualifyingSessionEvidence({
   completed,
-  correct,
   evidenceKind,
 }: {
   completed: boolean;
-  correct: boolean;
   evidenceKind: AttemptEvidenceKind;
 }) {
-  return completed && correct && evidenceKind !== "self-report";
+  return completed && evidenceKind !== "self-report";
+}
+
+export function requiredCheckedActivities(totalActivities: number) {
+  return Math.max(1, Math.ceil(Math.max(0, totalActivities) * 0.6));
+}
+
+export function hasSessionCompletionCredit({
+  attempts,
+  totalActivities,
+}: {
+  attempts: Array<{ activityId: string; completed?: boolean; evidenceKind?: AttemptEvidenceKind }>;
+  totalActivities: number;
+}) {
+  const checkedActivityIds = new Set(
+    attempts
+      .filter((attempt) => isQualifyingSessionEvidence({
+        completed: attempt.completed ?? true,
+        evidenceKind: attempt.evidenceKind ?? "controlled",
+      }))
+      .map((attempt) => attempt.activityId),
+  );
+
+  return checkedActivityIds.size >= requiredCheckedActivities(totalActivities);
 }
 
 export type ResponseTransitionInput = {
@@ -73,7 +98,10 @@ export type ResponseTransition = {
  * state. Repositories only load current state and persist the returned updates.
  */
 export function transitionResponseState(input: ResponseTransitionInput): ResponseTransition {
-  if (!input.completed || input.evidenceKind === "self-report") {
+  // An incomplete first miss is still valid diagnostic evidence: it should
+  // schedule a repair without advancing the session. Answer reveals are the
+  // exception because they are explicitly self-reported, not retrieved.
+  if (input.evidenceKind === "self-report") {
     return { recordMistakeEvent: false };
   }
 
@@ -111,6 +139,10 @@ export function transitionResponseState(input: ResponseTransitionInput): Respons
         );
 
     return { mistakePattern, reviewItem, recordMistakeEvent: true };
+  }
+
+  if (!input.completed) {
+    return { recordMistakeEvent: false };
   }
 
   const qualifiesForRepair = isQualifyingProductiveSuccess({

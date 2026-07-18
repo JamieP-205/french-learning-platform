@@ -47,9 +47,9 @@ Every struggle, glitch, annoyance, or confusing moment found by walking the full
 | # | Issue | Impact | Status |
 | --- | --- | --- | --- |
 | 21 | Review items are a read-only list — you can't actually practise from the review page; the button just starts Today's session. | Core loop gap | fixed — Review starts a focused due-items-only session |
-| 22 | Progress skill scores derive from activity-id keywords, not real per-skill scoring. | Progress can mislead | partly fixed — the planner now uses real per-skill stats; the progress display switches over in phase D |
+| 22 | Progress skill scores derive from activity-id keywords, not real per-skill scoring. | Progress can mislead | fixed — scores now use checked evidence by activity skill, separate recognition from productive work, and explain what the figures mean |
 | 23 | Settings page is explanatory text only — none of the promised controls (session energy, notifications, strictness) are real controls. | Broken promise | fixed — live controls for name, daily minutes, session feel, focus areas, speaking confidence |
-| 24 | Tutor page exists but free-question tutor is thin outside lesson context. | Feature feels stubby | planned (phase F — rules-driven explanation library) |
+| 24 | Tutor page exists but free-question tutor is thin outside lesson context. | Feature feels stubby | fixed — the tutor page now includes a reviewed question library, while lesson help remains bound to the answer and source material actually in context |
 
 ## Speech / audio
 
@@ -69,13 +69,13 @@ Every struggle, glitch, annoyance, or confusing moment found by walking the full
 
 | # | Issue | Impact | Status |
 | --- | --- | --- | --- |
-| 28 | Only one full mission; scored missions exist but are shallow (few activity types each). | Thin product | planned (phase F) |
+| 28 | Only one full mission; scored missions exist but are shallow (few activity types each). | Thin product | fixed in code, publication gated — Introductions is the public scored mission; cafe and travel now have complete multi-stage definitions but remain unavailable until content review and database publication checks pass. Three further topic guides add unscored practice without overstating course coverage. |
 | 29 | No Real French register section despite seed data carrying register labels. | Spec gap | fixed — roleplay page compares formal, neutral, casual, and too-blunt choices in cafe/travel scenarios |
 | 31 | No deterministic roleplay despite the brief asking for natural, real-life practice. | Learners cannot rehearse judgement before a real exchange. | fixed — `/roleplay` adds source-bound cafe and travel roleplay with explicit register feedback |
 
-## To keep auditing
+## Regression checks
 
-- Mobile 390px pass across all pages (phase G)
-- Reduced-motion and contrast pass (phase G)
-- Empty states: brand-new account with zero attempts on progress/review pages (phase B)
-- Error copy consistency (phase G)
+- Mobile 390px navigation and core-flow pass
+- Reduced-motion, focus visibility, and contrast pass
+- Brand-new learner empty states on Progress and Review
+- Error, retry, and offline copy consistency

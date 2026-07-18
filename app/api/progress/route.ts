@@ -15,7 +15,7 @@ export async function GET() {
       {
         error:
           error instanceof Error && /supabase/i.test(error.message)
-            ? "Learning storage is not configured correctly yet. Check the production Supabase environment variables."
+            ? "Your learning data is temporarily unavailable. Please try again."
             : "Unable to load progress.",
       },
       { status: 500 },

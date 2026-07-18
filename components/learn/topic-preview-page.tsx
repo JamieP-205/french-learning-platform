@@ -31,12 +31,12 @@ export function TopicPreviewPage({ topic }: { topic: TopicPreview }) {
           <p className="mt-3 text-sm text-ink/65">{topic.sourceNote}</p>
           {hasScoredMission && (
             <div className="mt-6">
-              <ScoredMissionStartButton missionSlug={topic.slug} label="Start scored mission" />
+              <ScoredMissionStartButton missionSlug={topic.slug} label="Start full lesson" />
             </div>
           )}
           {!hasScoredMission && topic.status === "practice_preview" && (
             <div className="mt-6 rounded-2xl bg-cream p-4 text-sm font-bold text-ink/70">
-              Preview these phrases now and mark what should come back. The scored lesson unlocks only after review clears the accepted answers and feedback.
+              Practise these phrases now and choose what should return in Review. The full lesson will become available after its answers and feedback have been reviewed.
             </div>
           )}
         </section>
@@ -47,13 +47,13 @@ export function TopicPreviewPage({ topic }: { topic: TopicPreview }) {
             <div className="mt-5 space-y-4">
               {topic.phrases.map((phrase) => (
                 <article key={phrase.french} className="rounded-2xl bg-cream p-4">
-                  <p className="text-xl font-black">{phrase.french}</p>
+                  <p className="text-xl font-black" lang="fr">{phrase.french}</p>
                   <p className="mt-1 font-bold text-ink/75">{phrase.english}</p>
                   <p className="mt-3 text-sm text-ink/70">{phrase.note}</p>
                   <p className="mt-2 text-xs font-black uppercase tracking-wide text-coral">{phrase.register}</p>
                   {phrase.commonTrap && (
                     <p className="mt-3 rounded-xl bg-white p-3 text-sm text-ink/70">
-                      Avoid as a default: <span className="font-black">{phrase.commonTrap}</span>
+                      Avoid as a default: <span className="font-black" lang="fr">{phrase.commonTrap}</span>
                     </p>
                   )}
                 </article>
@@ -85,7 +85,7 @@ export function TopicPreviewPage({ topic }: { topic: TopicPreview }) {
                 {topic.selfChecks.map((check) => (
                   <details key={check.prompt} className="rounded-2xl bg-cream p-4">
                     <summary className="cursor-pointer font-black">{check.prompt}</summary>
-                    <p className="mt-3 text-lg font-black">{check.answer}</p>
+                    <p className="mt-3 text-lg font-black" lang="fr">{check.answer}</p>
                     <p className="mt-1 text-sm text-ink/70">{check.reason}</p>
                   </details>
                 ))}
@@ -95,7 +95,7 @@ export function TopicPreviewPage({ topic }: { topic: TopicPreview }) {
         </section>
 
         <section className="card mt-6">
-          <p className="eyebrow">Coming next</p>
+          <p className="eyebrow">What this prepares you for</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {topic.comingNext.map((item) => (
               <div key={item} className="rounded-2xl bg-cream p-4 font-bold">{item}</div>
@@ -106,7 +106,7 @@ export function TopicPreviewPage({ topic }: { topic: TopicPreview }) {
             {hasScoredMission && (
               <ScoredMissionStartButton
                 missionSlug={topic.slug}
-                label="Start scored mission"
+                label="Start full lesson"
                 className="button-primary"
               />
             )}

@@ -20,6 +20,34 @@ describe("streak advancement", () => {
     ).toMatchObject({ currentStreak: 3, streakFreezes: 0, usedFreeze: false });
   });
 
+  it("does not inflate a London streak when UTC crosses midnight first", () => {
+    expect(
+      advanceStreak(
+        {
+          currentStreak: 3,
+          streakFreezes: 0,
+          lastCompletedAt: "2026-07-18T23:30:00.000Z",
+          timeZone: "Europe/London",
+        },
+        new Date("2026-07-19T00:30:00.000Z"),
+      ),
+    ).toMatchObject({ currentStreak: 3, streakFreezes: 0, usedFreeze: false });
+  });
+
+  it("advances on the next New York day across the spring DST change", () => {
+    expect(
+      advanceStreak(
+        {
+          currentStreak: 3,
+          streakFreezes: 0,
+          lastCompletedAt: "2026-03-08T04:30:00.000Z",
+          timeZone: "America/New_York",
+        },
+        new Date("2026-03-08T07:30:00.000Z"),
+      ),
+    ).toMatchObject({ currentStreak: 4, streakFreezes: 0, usedFreeze: false });
+  });
+
   it("earns a freeze every seven-day run up to the cap", () => {
     expect(
       advanceStreak(

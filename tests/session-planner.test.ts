@@ -28,6 +28,73 @@ describe("Today session planning", () => {
     expect(plan.activities.length).toBeLessThanOrEqual(3);
   });
 
+  it("uses local calendar days for comeback mode across DST", () => {
+    const plan = buildSessionPlan({
+      profile: {
+        ...profile,
+        timeZone: "America/New_York",
+        lastCompletedAt: "2026-03-07T04:30:00.000Z",
+      },
+      mission: INTRO_MISSION,
+      dueReviews: [],
+      mistakes: [],
+      now: new Date("2026-03-09T04:30:00.000Z"),
+    });
+
+    expect(plan.mode).toBe("comeback");
+  });
+
+  it("keeps a two-minute session to two useful activities", () => {
+    const shortProfile = { ...profile, preferredMode: "short" as const };
+    const mistake: MistakePattern = {
+      id: "short-mistake",
+      userId: shortProfile.userId,
+      ruleId: "rule-age-avoir-v1",
+      mistakeType: "grammar",
+      correctedAnswer: "J'ai 20 ans.",
+      explanation: "French uses avoir for age.",
+      repeatCount: 2,
+      separateProductionSuccesses: 0,
+      resolved: false,
+      lastSeenAt: "2026-06-19T00:00:00Z",
+    };
+
+    const plan = buildSessionPlan({
+      profile: shortProfile,
+      mission: INTRO_MISSION,
+      dueReviews: [dueReview],
+      mistakes: [mistake],
+      now: new Date("2026-06-20T12:00:00Z"),
+    });
+
+    expect(plan.mode).toBe("two_minute");
+    expect(plan.estimatedMinutes).toBe(2);
+    expect(plan.activities).toHaveLength(2);
+    expect(plan.activities[0]?.kind).toBe("review");
+    expect(plan.activities.some((entry) => ["typing", "fill_blank", "sentence_builder", "speak_repeat"].includes(entry.activity.type))).toBe(true);
+  });
+
+  it("honours the learner's saved preference unless they explicitly choose a mode", () => {
+    const shortByPreference = buildSessionPlan({
+      profile: { ...profile, preferredMode: "short" },
+      mission: INTRO_MISSION,
+      dueReviews: [],
+      mistakes: [],
+      now: new Date("2026-06-20T12:00:00Z"),
+    });
+    const explicitlyNormal = buildSessionPlan({
+      profile: { ...profile, preferredMode: "short" },
+      mission: INTRO_MISSION,
+      dueReviews: [],
+      mistakes: [],
+      requestedMode: "normal",
+      now: new Date("2026-06-20T12:00:00Z"),
+    });
+
+    expect(shortByPreference.mode).toBe("two_minute");
+    expect(explicitlyNormal.mode).toBe("normal");
+  });
+
   it("moves the weakest evidenced skill to the front of mission work", () => {
     const stats = {
       totalAttempts: 6,

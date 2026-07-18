@@ -83,8 +83,8 @@ export function LocalLearningPreferences() {
 
   return (
     <section className="card">
-      <p className="eyebrow">No-account learner setup</p>
-      <h2 className="mt-2 text-2xl font-black">Personalise the public path.</h2>
+      <p className="eyebrow">Learning on this device</p>
+      <h2 className="mt-2 text-2xl font-black">Personalise your learning plan.</h2>
       <p className="mt-3 text-ink/75">
         These settings stay in this browser. They help Today and Progress explain the next useful step without saving an account profile.
       </p>
@@ -153,12 +153,12 @@ export function LocalLearningPreferences() {
         </div>
 
         <button className="button-primary w-full" type="submit">
-          Save local setup
+          Save settings
         </button>
 
         {saved && (
           <p className="status-success" role="status">
-            Saved. Today and Progress will now use this local setup.
+            Saved. Today and Progress now use these settings.
           </p>
         )}
       </form>

@@ -6,11 +6,18 @@ test("development learner completes the mission with guarded tutor feedback", as
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: "travel", exact: true }).click();
   await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByLabel("Current French level")).toHaveValue("A1");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "music", exact: true }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByLabel("Daily time").selectOption("8");
+  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByLabel(/13 or older/i).check();
   await page.getByLabel(/privacy notice/i).check();
   await page.getByRole("button", { name: "Build my first session" }).click();
-  await expect(page).toHaveURL(/\/today$/);
-  await expect(page.getByRole("dialog", { name: /quick app tour/i })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/today\?tour=1$/);
+  await expect(page.getByRole("dialog", { name: /quick app tour/i })).toBeVisible();
+  await page.getByRole("button", { name: "Skip tour" }).click();
 
   await page.getByRole("button", { name: /start 10-minute session/i }).click();
   await expect(page).toHaveURL(/\/lesson\//);
@@ -25,11 +32,19 @@ test("development learner completes the mission with guarded tutor feedback", as
   await expect(page.getByRole("button", { name: /my name is jamie/i })).toBeVisible();
   const firstPrompt = page.getByRole("heading", { name: /what does.*je m'appelle jamie.*mean/i });
   await expect(firstPrompt.locator('[lang="fr"]')).toHaveText("Je m'appelle Jamie");
-  await page.route("**/api/activity/submit", (route) => route.abort("failed"), { times: 1 });
+  let interruptedRequestId: string | undefined;
+  await page.route("**/api/activity/submit", (route) => {
+    interruptedRequestId = route.request().postDataJSON().requestId;
+    return route.abort("failed");
+  }, { times: 1 });
   await page.getByRole("button", { name: /my name is jamie/i }).click();
   await expect(page.getByRole("alert").filter({ hasText: /couldn’t save that answer/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /my name is jamie/i })).toBeEnabled();
+  const retryResponse = page.waitForResponse(
+    (response) => response.url().endsWith("/api/activity/submit") && response.request().method() === "POST",
+  );
   await page.getByRole("button", { name: /my name is jamie/i }).click();
+  expect((await retryResponse).request().postDataJSON().requestId).toBe(interruptedRequestId);
   await expect(page.getByText("Correct", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Continue" }).click();
 
@@ -50,6 +65,10 @@ test("development learner completes the mission with guarded tutor feedback", as
   await expect(page.getByText("Tutor note").or(page.getByRole("button", { name: "More explanation" }))).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Show me the answer" })).toBeVisible();
+  const progressAfterMiss = await page.evaluate(async () => (await fetch("/api/progress")).json());
+  expect(progressAfterMiss.progress.attemptsCount).toBe(progressBeforeEscape.progress.attemptsCount + 1);
+  expect(progressBeforeEscape.progress.nextReviewAt).toBeUndefined();
+  expect(progressAfterMiss.progress.nextReviewAt).toEqual(expect.any(String));
 
   const escapeResponsePromise = page.waitForResponse(
     (response) => response.url().endsWith("/api/activity/submit") && response.request().method() === "POST",
@@ -72,19 +91,18 @@ test("development learner completes the mission with guarded tutor feedback", as
     attemptsCount: progressAfterEscape.progress.attemptsCount,
     phrasesLearned: progressAfterEscape.progress.phrasesLearned,
     reviewsDue: progressAfterEscape.progress.reviewsDue,
-    nextReviewAt: progressAfterEscape.progress.nextReviewAt,
     mistakesFixed: progressAfterEscape.progress.mistakesFixed,
     sessionsCompleted: progressAfterEscape.progress.sessionsCompleted,
     currentStreak: progressAfterEscape.progress.currentStreak,
   }).toEqual({
-    attemptsCount: progressBeforeEscape.progress.attemptsCount,
-    phrasesLearned: progressBeforeEscape.progress.phrasesLearned,
-    reviewsDue: progressBeforeEscape.progress.reviewsDue,
-    nextReviewAt: progressBeforeEscape.progress.nextReviewAt,
-    mistakesFixed: progressBeforeEscape.progress.mistakesFixed,
-    sessionsCompleted: progressBeforeEscape.progress.sessionsCompleted,
-    currentStreak: progressBeforeEscape.progress.currentStreak,
+    attemptsCount: progressAfterMiss.progress.attemptsCount,
+    phrasesLearned: progressAfterMiss.progress.phrasesLearned,
+    reviewsDue: progressAfterMiss.progress.reviewsDue,
+    mistakesFixed: progressAfterMiss.progress.mistakesFixed,
+    sessionsCompleted: progressAfterMiss.progress.sessionsCompleted,
+    currentStreak: progressAfterMiss.progress.currentStreak,
   });
+  expect(progressAfterEscape.progress.nextReviewAt).toBe(progressAfterMiss.progress.nextReviewAt);
   await page.getByRole("button", { name: "Continue" }).click();
 
   await expect(page.getByRole("heading", { name: "Je viens de Belfast.", exact: true })).toBeVisible();
@@ -110,7 +128,7 @@ test("development learner completes the mission with guarded tutor feedback", as
   await expect(page.getByRole("button", { name: "See your progress" })).toBeVisible();
   await page.getByRole("button", { name: "See your progress" }).click();
   await expect(page).toHaveURL(/\/progress\?complete=1$/);
-  await expect(page.getByRole("heading", { name: /your learning evidence/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your progress.", exact: true })).toBeVisible();
 
   await page.goto("/review");
   await expect(page.getByRole("heading", { name: "Nothing due right now" })).toBeVisible();

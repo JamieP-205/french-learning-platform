@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
 import { DEMO_USER_ID, hasSupabaseAuthConfiguration } from "@/lib/data";
 import { E2E_LEARNER_COOKIE, resolveDevelopmentLearnerId } from "@/lib/auth/development-user";
+import { isServerAccountSyncReady } from "@/lib/auth/readiness";
 
 export const isDevelopmentDemoMode = () => !hasSupabaseAuthConfiguration && process.env.NODE_ENV !== "production";
 
@@ -14,12 +15,51 @@ function getBearerToken(authorization: string | null) {
   return token;
 }
 
-export async function getCurrentUserId(): Promise<string | null> {
+export type CurrentUserAuthContext = {
+  userId: string;
+  recentlyAuthenticated: boolean;
+};
+
+const RECENT_AUTHENTICATION_WINDOW_MS = 15 * 60 * 1000;
+const RECENT_AUTHENTICATION_METHODS = new Set(["password"]);
+
+export function hasRecentAuthenticationMethod(claims: unknown, now = Date.now()) {
+  if (!claims || typeof claims !== "object" || !("amr" in claims) || !Array.isArray(claims.amr)) {
+    return false;
+  }
+  const authenticationTimes = claims.amr.flatMap((entry) => {
+    if (
+      !entry ||
+      typeof entry !== "object" ||
+      !("method" in entry) ||
+      typeof entry.method !== "string" ||
+      !RECENT_AUTHENTICATION_METHODS.has(entry.method) ||
+      !("timestamp" in entry)
+    ) {
+      return [];
+    }
+    const timestamp = Number(entry.timestamp) * 1000;
+    return Number.isFinite(timestamp) ? [timestamp] : [];
+  });
+  const latestAuthentication = Math.max(...authenticationTimes, Number.NEGATIVE_INFINITY);
+  const age = now - latestAuthentication;
+  return age >= -60_000 && age <= RECENT_AUTHENTICATION_WINDOW_MS;
+}
+
+async function resolveCurrentUserAuthContext(requireAccountSyncReady: boolean): Promise<CurrentUserAuthContext | null> {
   if (!hasSupabaseAuthConfiguration) {
     if (!isDevelopmentDemoMode()) return null;
     const cookieStore = await cookies();
-    return resolveDevelopmentLearnerId(cookieStore.get(E2E_LEARNER_COOKIE)?.value, DEMO_USER_ID);
+    return {
+      userId: resolveDevelopmentLearnerId(cookieStore.get(E2E_LEARNER_COOKIE)?.value, DEMO_USER_ID),
+      recentlyAuthenticated: true,
+    };
   }
+
+  // Supabase configuration alone does not open account learning. Privacy
+  // export and deletion opt out below so existing learners keep those rights
+  // while signup or account learning is paused.
+  if (requireAccountSyncReady && !isServerAccountSyncReady()) return null;
 
   const cookieStore = await cookies();
   const headerStore = await headers();
@@ -44,11 +84,40 @@ export async function getCurrentUserId(): Promise<string | null> {
 
   if (bearerToken) {
     const { data } = await supabase.auth.getUser(bearerToken);
-    if (data.user?.id) return data.user.id;
+    if (data.user?.id && data.user.email_confirmed_at) {
+      const claims = await supabase.auth.getClaims(bearerToken);
+      return {
+        userId: data.user.id,
+        recentlyAuthenticated: claims.data?.claims.sub === data.user.id &&
+          hasRecentAuthenticationMethod(claims.data.claims),
+      };
+    }
   }
 
   const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  if (!data.user?.email_confirmed_at) return null;
+  const claims = await supabase.auth.getClaims();
+  return {
+    userId: data.user.id,
+    recentlyAuthenticated: claims.data?.claims.sub === data.user.id &&
+      hasRecentAuthenticationMethod(claims.data.claims),
+  };
+}
+
+export function getCurrentUserAuthContext(): Promise<CurrentUserAuthContext | null> {
+  return resolveCurrentUserAuthContext(true);
+}
+
+/**
+ * Existing learners retain access to export and deletion even while new
+ * account learning is paused by the launch gate.
+ */
+export function getCurrentPrivacyUserAuthContext(): Promise<CurrentUserAuthContext | null> {
+  return resolveCurrentUserAuthContext(false);
+}
+
+export async function getCurrentUserId(): Promise<string | null> {
+  return (await getCurrentUserAuthContext())?.userId ?? null;
 }
 
 export async function requireCurrentUserId() {

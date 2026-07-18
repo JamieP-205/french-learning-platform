@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { isAccountSyncReady } from "@/lib/auth/readiness";
+import { isServerAccountSyncReady } from "@/lib/auth/readiness";
 import { getSeedMission } from "@/lib/content/seed";
 
 const firstLessonSteps = [
@@ -19,10 +19,10 @@ const firstLessonSteps = [
 
 export default function LandingPage() {
   const firstLessonMinutes = getSeedMission().estimatedMinutes;
-  const accountSyncReady = isAccountSyncReady();
+  const accountSyncReady = isServerAccountSyncReady();
 
   return (
-    <main className="page-shell flex min-h-screen flex-col">
+    <main id="main-content" className="page-shell flex min-h-screen flex-col">
       <header className="flex min-h-20 items-center justify-between gap-4 border-b border-ink/10 py-4">
         <Link href="/" className="text-lg font-black tracking-tight text-ink" aria-label="French for Life home">
           French for Life
@@ -31,7 +31,7 @@ export default function LandingPage() {
           href={accountSyncReady ? "/auth/sign-in" : "/status"}
           className="inline-flex min-h-12 items-center rounded-xl px-3 font-semibold text-ink/70 underline decoration-ink/25 underline-offset-4 hover:text-ink"
         >
-          {accountSyncReady ? "Sign in" : "Account sync status"}
+          {accountSyncReady ? "Sign in" : "Account availability"}
         </Link>
       </header>
 

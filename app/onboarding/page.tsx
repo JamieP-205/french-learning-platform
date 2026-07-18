@@ -5,12 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from "@/lib/auth/browser";
 import { ActivityRenderer } from "@/components/lesson/activity-renderer";
-import { ActivityTeachingGate } from "@/components/lesson/activity-teaching-gate";
 import { validateActivityAnswer } from "@/lib/learning/answer-validation";
-import { selfCorrectionPrompt } from "@/lib/learning/feedback-sequence";
 import { getConceptDefinitionsForActivity } from "@/lib/content/curriculum";
 import { INTRO_MISSION } from "@/lib/content/seed";
 import type { CefrLevel } from "@/lib/domain/types";
+import { detectRuntimeTimeZone } from "@/lib/time/calendar-day";
 
 const goalOptions = ["travel", "work", "relationships", "exams", "culture", "hobby"];
 const interestOptions = [
@@ -35,7 +34,7 @@ const cefrLevels = [
 const placementActivityIds = ["act-name-meaning-v1", "act-age-fill-v1", "act-age-typing-v1"];
 
 type Step = "name" | "goals" | "level" | "interests" | "rhythm" | "consent";
-const steps: Step[] = ["name", "goals", "consent"];
+const steps: Step[] = ["name", "goals", "level", "interests", "rhythm", "consent"];
 
 const stepTitles: Record<Step, string> = {
   name: "Let's start with you",
@@ -62,16 +61,15 @@ export default function OnboardingPage() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [acceptedRequiredPolicies, setAcceptedRequiredPolicies] = useState(false);
   const [error, setError] = useState<string>();
+  const [authError, setAuthError] = useState<string>();
+  const [authCheckAttempt, setAuthCheckAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [needsSignIn, setNeedsSignIn] = useState<boolean>();
   const [checkOpen, setCheckOpen] = useState(false);
   const [checkIndex, setCheckIndex] = useState(0);
   const [checkCorrect, setCheckCorrect] = useState(0);
-  const [checkFeedback, setCheckFeedback] = useState<string>();
   const [checkDone, setCheckDone] = useState(false);
-  const [checkMissCount, setCheckMissCount] = useState(0);
   const [checkResolution, setCheckResolution] = useState<{ correct: boolean; message: string }>();
-  const [placementTeachingComplete, setPlacementTeachingComplete] = useState(false);
 
   const step = steps[stepIndex];
   const placementActivities = useMemo(
@@ -80,30 +78,33 @@ export default function OnboardingPage() {
       .filter((activity) => activity !== undefined),
     [],
   );
-  const placementTeachingConcepts = useMemo(
-    () => placementActivities.flatMap((activity) => getConceptDefinitionsForActivity(activity.id)),
-    [placementActivities],
-  );
-
   // Ask for the account before any questions, so nobody fills in the whole
   // flow and only then finds out sign-in is required.
   useEffect(() => {
     let cancelled = false;
 
     async function checkAuth() {
-      if (!getBrowserSupabase()) {
-        if (!cancelled) setNeedsSignIn(false);
-        return;
+      setAuthError(undefined);
+      try {
+        if (!getBrowserSupabase()) {
+          if (!cancelled) setNeedsSignIn(false);
+          return;
+        }
+        const token = await getBrowserAccessToken();
+        if (!cancelled) setNeedsSignIn(!token);
+      } catch {
+        if (!cancelled) {
+          setNeedsSignIn(undefined);
+          setAuthError("We couldn't confirm your sign-in. Check your connection and try again.");
+        }
       }
-      const token = await getBrowserAccessToken();
-      if (!cancelled) setNeedsSignIn(!token);
     }
 
     void checkAuth();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authCheckAttempt]);
 
   function toggle(value: string, values: string[], setValues: (next: string[]) => void, max = 12) {
     if (values.includes(value)) return setValues(values.filter((item) => item !== value));
@@ -122,19 +123,13 @@ export default function OnboardingPage() {
     const activity = placementActivities[checkIndex];
     if (!activity) return;
     const result = validateActivityAnswer(activity, answer);
-    if (!result.isCorrect && checkMissCount === 0) {
-      setCheckMissCount(1);
-      setCheckFeedback(selfCorrectionPrompt(activity, result));
-      return;
-    }
     const rule = getConceptDefinitionsForActivity(activity.id).at(-1)?.teachingStep.metalinguisticRule;
     setCheckResolution({
       correct: result.isCorrect,
       message: result.isCorrect
-        ? "Correct."
-        : `Correct answer: ${result.correctAnswer} Rule: ${rule ?? result.feedback}`,
+        ? "That foundation looks secure."
+        : `Not this time. The answer is ${result.correctAnswer}. ${rule ?? result.feedback}`,
     });
-    setCheckFeedback(undefined);
   }
 
   function revealCheckAnswer() {
@@ -144,9 +139,8 @@ export default function OnboardingPage() {
     const rule = getConceptDefinitionsForActivity(activity.id).at(-1)?.teachingStep.metalinguisticRule;
     setCheckResolution({
       correct: false,
-      message: `Correct answer: ${result.correctAnswer} Rule: ${rule ?? result.feedback} Shown without placement credit.`,
+      message: `The answer is ${result.correctAnswer}. ${rule ?? result.feedback} Shown without placement credit.`,
     });
-    setCheckFeedback(undefined);
   }
 
   function continueCheck() {
@@ -154,11 +148,8 @@ export default function OnboardingPage() {
     const correct = checkCorrect + (checkResolution.correct ? 1 : 0);
     setCheckCorrect(correct);
     setCheckResolution(undefined);
-    setCheckFeedback(undefined);
-    setCheckMissCount(0);
     if (checkIndex + 1 >= placementActivities.length) {
       setCheckDone(true);
-      setCurrentLevel(correct === placementActivities.length ? "A2" : "A1");
     } else {
       setCheckIndex(checkIndex + 1);
     }
@@ -183,39 +174,56 @@ export default function OnboardingPage() {
   async function submit() {
     setSaving(true);
     setError(undefined);
+    try {
+      const response = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: await getBrowserAuthHeaders({ json: true }),
+        body: JSON.stringify({
+          displayName: displayName.trim(),
+          currentLevel,
+          learningGoals: selectedGoals,
+          interests: selectedInterests,
+          dailyMinutes,
+          preferredMode,
+          timeZone: detectRuntimeTimeZone(),
+          focusPreferences,
+          speakingConfidence,
+          ageConfirmed,
+          acceptedRequiredPolicies,
+        }),
+      });
 
-    const response = await fetch("/api/onboarding/complete", {
-      method: "POST",
-      headers: await getBrowserAuthHeaders({ json: true }),
-      body: JSON.stringify({
-        displayName: displayName.trim(),
-        currentLevel,
-        learningGoals: selectedGoals,
-        interests: selectedInterests,
-        dailyMinutes,
-        preferredMode,
-        focusPreferences,
-        speakingConfidence,
-        ageConfirmed,
-        policyVersion: "2026-07-v2",
-        acceptedRequiredPolicies,
-      }),
-    });
+      const payload = await response.json();
+      if (!response.ok) {
+        if (response.status === 401) setNeedsSignIn(true);
+        setError(payload.error ?? "We could not save your learning plan.");
+        return;
+      }
 
-    const payload = await response.json();
-    setSaving(false);
-
-    if (!response.ok) {
-      if (response.status === 401) setNeedsSignIn(true);
-      return setError(payload.error ?? "We could not save your learning plan.");
+      router.push("/today?tour=1");
+    } catch {
+      setError("We could not save your learning plan. Check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
+  }
 
-    router.push("/today");
+  if (authError) {
+    return (
+      <main id="main-content" className="page-shell py-10">
+        <section className="card mx-auto max-w-2xl">
+          <p className="status-error" role="alert">{authError}</p>
+          <button className="button-primary mt-5" type="button" onClick={() => setAuthCheckAttempt((attempt) => attempt + 1)}>
+            Try sign-in check again
+          </button>
+        </section>
+      </main>
+    );
   }
 
   if (needsSignIn === undefined) {
     return (
-      <main className="page-shell py-10">
+      <main id="main-content" className="page-shell py-10">
         <div className="card mx-auto max-w-2xl animate-pulse">Getting your setup ready…</div>
       </main>
     );
@@ -223,7 +231,7 @@ export default function OnboardingPage() {
 
   if (needsSignIn) {
     return (
-      <main className="page-shell py-10">
+      <main id="main-content" className="page-shell py-10">
         <section className="card mx-auto max-w-2xl">
           <p className="eyebrow">Before we start</p>
           <h1 className="mt-2 text-3xl font-black">Create your free account first.</h1>
@@ -245,7 +253,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="page-shell py-10">
+    <main id="main-content" className="page-shell py-10">
       <section className="mx-auto max-w-2xl">
         <div className="flex items-center justify-between">
           <p className="eyebrow">Step {stepIndex + 1} of {steps.length}</p>
@@ -280,7 +288,9 @@ export default function OnboardingPage() {
           {step === "goals" && (
             <fieldset>
               <legend className="font-bold">Why are you learning French?</legend>
-              <p className="mt-1 text-sm text-ink/75">Pick everything that applies. It shapes which examples you see.</p>
+              <p className="mt-1 text-sm text-ink/75">
+                Pick everything that applies. We use your goals to choose relevant practice recommendations.
+              </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {goalOptions.map((goal) => (
                   <button
@@ -325,47 +335,46 @@ export default function OnboardingPage() {
                 </button>
               )}
 
-              {checkOpen && !checkDone && !placementTeachingComplete && (
-                <div className="rounded-2xl bg-cream p-5">
-                  <ActivityTeachingGate
-                    concepts={placementTeachingConcepts}
-                    actionLabel="Start placement check"
-                    onComplete={() => setPlacementTeachingComplete(true)}
-                  />
-                </div>
-              )}
-
-              {checkOpen && !checkDone && placementTeachingComplete && placementActivities[checkIndex] && (
+              {checkOpen && !checkDone && placementActivities[checkIndex] && (
                 <div className="rounded-2xl bg-cream p-5">
                   <p className="eyebrow">Quick check · {checkIndex + 1} of {placementActivities.length}</p>
+                  <p className="mt-2 text-sm text-ink/70">
+                    This checks a few A1 foundations without teaching the answer first. It is not a full CEFR placement test.
+                  </p>
                   <p className="mt-2 font-black">{placementActivities[checkIndex].prompt}</p>
-                  {checkFeedback && <p className="mt-2 text-sm text-ink/70" aria-live="polite">{checkFeedback}</p>}
                   {checkResolution ? (
                     <div className="mt-4" aria-live="polite">
                       <p className={checkResolution.correct ? "status-success" : "status-error"}>{checkResolution.message}</p>
                       <button className="button-primary mt-4" type="button" onClick={continueCheck}>Continue placement check</button>
                     </div>
-                  ) : checkFeedback ? (
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <button className="button-primary" type="button" onClick={() => setCheckFeedback(undefined)}>Try again</button>
-                      <button className="button-secondary" type="button" onClick={revealCheckAnswer}>Show me the answer</button>
-                    </div>
                   ) : (
-                    <ActivityRenderer activity={placementActivities[checkIndex]} disabled={false} onSubmit={submitCheckAnswer} />
+                    <>
+                      <ActivityRenderer activity={placementActivities[checkIndex]} disabled={false} onSubmit={submitCheckAnswer} />
+                      <button className="button-secondary mt-4" type="button" onClick={revealCheckAnswer}>
+                        Show answer without placement credit
+                      </button>
+                    </>
                   )}
                 </div>
               )}
 
               {checkDone && (
-                <p className="status-success" aria-live="polite">
-                  {checkCorrect === placementActivities.length
-                    ? "Nice — those basics look solid, so A2 is a comfortable start. You can still pick a different level."
-                    : "Thanks — starting at A1 means the app verifies your foundations quickly, then speeds up."}
-                </p>
+                <div className="status-success" aria-live="polite">
+                  <p>
+                    {checkCorrect === placementActivities.length
+                      ? `Those A1 basics look solid. This short check cannot distinguish A2 from higher levels, so your selection remains ${currentLevel}.`
+                      : `Some A1 basics need another look. Your selection remains ${currentLevel}; choose A1 only if that better reflects your wider experience.`}
+                  </p>
+                  {checkCorrect < placementActivities.length && currentLevel !== "A1" && (
+                    <button className="mt-3 font-black underline underline-offset-4" type="button" onClick={() => setCurrentLevel("A1")}>
+                      Use A1 for my plan
+                    </button>
+                  )}
+                </div>
               )}
 
               <p className="text-sm text-ink/75">
-                Everyone starts with a short verified calibration so the app learns what to trust before recommending harder work.
+                The check is optional and covers only A1 foundations. It never changes your selected level automatically.
               </p>
             </>
           )}
@@ -373,7 +382,9 @@ export default function OnboardingPage() {
           {step === "interests" && (
             <fieldset>
               <legend className="font-bold">What do you enjoy?</legend>
-              <p className="mt-1 text-sm text-ink/75">Practice prompts and examples lean toward what you actually like.</p>
+              <p className="mt-1 text-sm text-ink/75">
+                Choose a few interests so topic recommendations can feel more relevant. Reviewed lesson wording stays consistent for every learner.
+              </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {interestOptions.map((interest) => (
                   <button
@@ -394,6 +405,7 @@ export default function OnboardingPage() {
               <div className="mt-4 flex gap-2">
                 <input
                   className="field mt-0 flex-1"
+                  aria-label="Custom interest"
                   value={customInterest}
                   placeholder="Add your own…"
                   maxLength={30}
@@ -435,7 +447,7 @@ export default function OnboardingPage() {
                     onChange={(event) => setPreferredMode(event.target.value as "normal" | "short")}
                   >
                     <option value="normal">A normal mixed session</option>
-                    <option value="short">A quick save-my-streak session</option>
+                    <option value="short">A quick two-minute session</option>
                   </select>
                 </label>
               </div>
@@ -503,20 +515,28 @@ export default function OnboardingPage() {
                 <span className="font-bold">I confirm I am 13 or older.</span>
               </label>
 
-              <label className="flex items-start gap-3 rounded-2xl bg-cream p-4 text-sm text-ink/75">
+              <div className="flex items-start gap-3 rounded-2xl bg-cream p-4 text-sm text-ink/75">
                 <input
+                  id="required-policies"
                   className="mt-1 size-4 accent-coral"
                   type="checkbox"
                   checked={acceptedRequiredPolicies}
+                  aria-describedby="required-policies-links"
                   onChange={(event) => setAcceptedRequiredPolicies(event.target.checked)}
                 />
-                <span>
-                  I accept the{" "}
-                  <Link className="font-black text-coral underline" href="/privacy">privacy notice</Link>,{" "}
-                  <Link className="font-black text-coral underline" href="/terms">terms</Link>, and AI-tutor notices.
-                  Marketing is always opt-in.
-                </span>
-              </label>
+                <div>
+                  <label className="font-bold" htmlFor="required-policies">
+                    I accept the required privacy notice, terms, and AI-tutor notices.
+                  </label>
+                  <p id="required-policies-links" className="mt-1">
+                    Read the{" "}
+                    <Link className="font-black text-coral underline" href="/privacy">privacy notice</Link>
+                    {" "}and{" "}
+                    <Link className="font-black text-coral underline" href="/terms">terms</Link>.
+                    Marketing is always opt-in.
+                  </p>
+                </div>
+              </div>
             </>
           )}
 

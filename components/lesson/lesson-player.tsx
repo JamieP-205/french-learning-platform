@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ActivityDefinition, AttemptEvidenceKind, ProgressSnapshot, SessionRecord, TutorFeedbackV1, ValidationResultV1 } from "@/lib/domain/types";
+import type {
+  AttemptEvidenceKind,
+  LearnerActivityDefinition,
+  LearnerSessionRecord,
+  ProgressSnapshot,
+  TutorFeedbackV1,
+  ValidationResultV1,
+} from "@/lib/domain/types";
 import { ActivityRenderer } from "@/components/lesson/activity-renderer";
 import { ActivityTaskGuide } from "@/components/lesson/activity-task-guide";
 import { ActivityTeachingGate } from "@/components/lesson/activity-teaching-gate";
@@ -11,26 +18,42 @@ import { LessonStageProgress } from "@/components/lesson/lesson-stage-progress";
 import { PromptLanguageText } from "@/components/lesson/prompt-language-text";
 import { getBrowserAuthHeaders } from "@/lib/auth/browser";
 import { getConceptDefinitionsForActivity } from "@/lib/content/curriculum";
-import { validateActivityAnswer } from "@/lib/learning/answer-validation";
-import { inferEvidenceKind } from "@/lib/learning/response-transition";
+import type { SessionStats } from "@/lib/learning/session-stats";
+
+type RestartRequest = {
+  restartSessionId: string;
+  mode: "normal" | "short";
+  missionSlug?: string;
+};
+
+type PendingSubmission = {
+  requestId: string;
+  activityId: string;
+  submittedAnswer: string;
+  latencyMs: number;
+  evidenceKind?: "self-report";
+};
 
 export function LessonPlayer({ sessionId }: { sessionId: string }) {
   const router = useRouter();
-  const [session, setSession] = useState<SessionRecord>();
+  const [session, setSession] = useState<LearnerSessionRecord>();
   const [result, setResult] = useState<ValidationResultV1>();
   const [firstMiss, setFirstMiss] = useState<ValidationResultV1>();
   const [firstMissAnswer, setFirstMissAnswer] = useState("");
-  const [missCount, setMissCount] = useState(0);
   const [taughtConceptIds, setTaughtConceptIds] = useState<string[]>([]);
   const [resultEvidenceKind, setResultEvidenceKind] = useState<AttemptEvidenceKind>();
-  const [answeredActivity, setAnsweredActivity] = useState<ActivityDefinition>();
+  const [answeredActivity, setAnsweredActivity] = useState<LearnerActivityDefinition>();
   const [tutor, setTutor] = useState<TutorFeedbackV1>();
   const [explaining, setExplaining] = useState(false);
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
-  const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0, fastestMs: Number.POSITIVE_INFINITY });
+  const [sessionStats, setSessionStats] = useState<SessionStats>({ correct: 0, total: 0 });
   const [completedProgress, setCompletedProgress] = useState<ProgressSnapshot>();
+  const [restartRequest, setRestartRequest] = useState<RestartRequest>();
+  const [restarting, setRestarting] = useState(false);
   const startedAt = useRef<number | null>(null);
+  const pendingSubmission = useRef<PendingSubmission | null>(null);
+  const restartRequestId = useRef<string | undefined>(undefined);
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const stepRef = useRef<HTMLElement | null>(null);
 
@@ -44,8 +67,27 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
         const payload = await response.json();
 
         if (cancelled) return;
-        if (!response.ok) setError(payload.error);
-        else setSession(payload.session);
+        if (!response.ok) {
+          setError(payload.error);
+          return;
+        }
+
+        const loadedSession = payload.session as LearnerSessionRecord;
+        setSession(loadedSession);
+        setSessionStats((payload.sessionStats as SessionStats | undefined) ?? { correct: 0, total: 0 });
+        setRestartRequest(payload.restartRequest as RestartRequest | undefined);
+
+        if (loadedSession.completedAt) {
+          try {
+            const progressResponse = await fetch("/api/progress", { headers: await getBrowserAuthHeaders() });
+            const progressPayload = await progressResponse.json();
+            if (!cancelled && progressResponse.ok) {
+              setCompletedProgress(progressPayload.progress as ProgressSnapshot);
+            }
+          } catch {
+            // The saved session summary remains available if the broader progress request fails.
+          }
+        }
       } catch {
         if (!cancelled) setError("This session could not load.");
       }
@@ -65,7 +107,10 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     [displayActivity],
   );
   const untaughtConcepts = currentConcepts.filter((concept) => !taughtConceptIds.includes(concept.id));
-  const needsTeaching = currentConcepts.length === 0 || untaughtConcepts.length > 0;
+  // Reviews are retrieval checks. Replaying the teaching card here would show
+  // the target before the learner has a chance to recall it.
+  const needsTeaching = planned?.kind !== "review" &&
+    (currentConcepts.length === 0 || untaughtConcepts.length > 0);
 
   const activityRule = displayActivity
     ? currentConcepts.at(-1)?.teachingStep.metalinguisticRule
@@ -81,17 +126,25 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
 
   async function submit(answer: string, metadata?: { completed: boolean; correct: boolean; evidenceKind: AttemptEvidenceKind }) {
     if (!planned) return;
-    const preview = validateActivityAnswer(planned.activity, answer);
-    const isFirstWrongAttempt = !metadata && !preview.isCorrect && missCount === 0;
-    const submissionMetadata = metadata ?? (isFirstWrongAttempt
-      ? {
-          completed: false,
-          correct: false,
-          evidenceKind: inferEvidenceKind(planned.activity.type),
-        }
-      : undefined);
+    const submissionEvidence = planned.activity.type === "speak_repeat" || metadata?.evidenceKind === "self-report"
+      ? { evidenceKind: "self-report" as const }
+      : undefined;
     const answerStartedAt = startedAt.current ?? Date.now();
-    const latencyMs = Date.now() - answerStartedAt;
+    const candidate: PendingSubmission = {
+      requestId: crypto.randomUUID(),
+      activityId: planned.activity.id,
+      submittedAnswer: answer,
+      latencyMs: Date.now() - answerStartedAt,
+      ...submissionEvidence,
+    };
+    const pending = pendingSubmission.current;
+    const request = pending &&
+      pending.activityId === candidate.activityId &&
+      pending.submittedAnswer === candidate.submittedAnswer &&
+      pending.evidenceKind === candidate.evidenceKind
+      ? pending
+      : candidate;
+    pendingSubmission.current = request;
     setSubmitting(true);
     setError(undefined);
     setTutor(undefined);
@@ -101,11 +154,12 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
         method: "POST",
         headers: await getBrowserAuthHeaders({ json: true }),
         body: JSON.stringify({
+          requestId: request.requestId,
           sessionId,
-          activityId: planned.activity.id,
-          submittedAnswer: answer,
-          latencyMs,
-          ...submissionMetadata,
+          activityId: request.activityId,
+          submittedAnswer: request.submittedAnswer,
+          latencyMs: request.latencyMs,
+          ...(request.evidenceKind ? { evidenceKind: request.evidenceKind } : {}),
         }),
       });
       submission = { response, payload: await response.json() };
@@ -117,14 +171,21 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     }
     const { response, payload } = submission;
     if (!response.ok) return setError(payload.error ?? "Your answer could not be saved.");
-    const nextSession = payload.session as SessionRecord;
+    if (pendingSubmission.current?.requestId === request.requestId) pendingSubmission.current = null;
+    const nextSession = payload.session as LearnerSessionRecord;
     const nextResult = payload.attempt.result as ValidationResultV1;
     const attemptEvidenceKind = payload.attempt.evidenceKind as AttemptEvidenceKind | undefined;
     const attemptCompleted = payload.attempt.completed ?? true;
+    if (attemptEvidenceKind !== "self-report") {
+      setSessionStats((stats) => ({
+        correct: stats.correct + (nextResult.isCorrect ? 1 : 0),
+        total: stats.total + 1,
+        fastestMs: Math.min(stats.fastestMs ?? Number.POSITIVE_INFINITY, request.latencyMs),
+      }));
+    }
     if (!attemptCompleted && !nextResult.isCorrect) {
       setFirstMiss(nextResult);
       setFirstMissAnswer(answer);
-      setMissCount(1);
       return;
     }
     setAnsweredActivity(planned.activity);
@@ -132,13 +193,6 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     setResult(nextResult);
     setResultEvidenceKind(attemptEvidenceKind);
     setSession(nextSession);
-    if (attemptCompleted && attemptEvidenceKind !== "self-report") {
-      setSessionStats((stats) => ({
-        correct: stats.correct + (nextResult.isCorrect ? 1 : 0),
-        total: stats.total + 1,
-        fastestMs: Math.min(stats.fastestMs, latencyMs),
-      }));
-    }
     if (nextSession.completedAt) {
       try {
         const progressResponse = await fetch("/api/progress", { headers: await getBrowserAuthHeaders() });
@@ -156,6 +210,7 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
   async function explain() {
     if (!displayActivity || !result || explaining) return;
     setExplaining(true);
+    setError(undefined);
     try {
       const response = await fetch("/api/tutor/message", {
         method: "POST",
@@ -163,12 +218,13 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
         body: JSON.stringify({
           sessionId,
           activityId: displayActivity.id,
-          submittedAnswer: result.normalizedAnswer,
         }),
       });
       const payload = await response.json();
       if (!response.ok) setError(payload.error);
       else setTutor(payload.feedback);
+    } catch {
+      setError("Tutor help is temporarily unavailable. The built-in lesson feedback is still available.");
     } finally {
       setExplaining(false);
     }
@@ -178,7 +234,6 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     setResult(undefined);
     setFirstMiss(undefined);
     setFirstMissAnswer("");
-    setMissCount(0);
     setResultEvidenceKind(undefined);
     setTutor(undefined);
     setAnsweredActivity(undefined);
@@ -190,9 +245,116 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     }
   }
 
+  async function restartSession() {
+    if (!session || !restartRequest || restarting) return;
+    setRestarting(true);
+    setError(undefined);
+    restartRequestId.current ??= crypto.randomUUID();
+
+    try {
+      const response = await fetch("/api/session/start", {
+        method: "POST",
+        headers: await getBrowserAuthHeaders({ json: true }),
+        body: JSON.stringify({
+          ...restartRequest,
+          requestId: restartRequestId.current,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(payload.error ?? "A new practice session could not start.");
+        return;
+      }
+      router.push(`/lesson/${payload.session.id}`);
+    } catch {
+      setError("A new practice session could not start. Please try again.");
+    } finally {
+      setRestarting(false);
+    }
+  }
+
   if (error && !session) return <main className="page-shell py-10"><p className="status-error" role="alert">{error}</p></main>;
-  if (!session || !displayActivity || (!planned && !result)) {
+  if (!session) {
     return <main className="page-shell py-10"><div className="card animate-pulse">Loading your focused session…</div></main>;
+  }
+
+  const completionAccuracy = sessionStats.total > 0
+    ? Math.round((sessionStats.correct / sessionStats.total) * 100)
+    : undefined;
+  const fastestAnswer = sessionStats.fastestMs !== undefined
+    ? `${Math.max(1, Math.round(sessionStats.fastestMs / 1000))}s`
+    : undefined;
+
+  if (session.completedAt && !result) {
+    return (
+      <main className="page-shell py-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="flex items-center justify-between gap-4 text-sm font-bold">
+            <span>{session.plan.missionTitle ?? "Completed lesson"}</span>
+            <Link className="min-h-11 content-center text-ink/75 underline underline-offset-4 hover:text-coral" href="/today">
+              Back to today
+            </Link>
+          </div>
+
+          <section className="card mt-7 bg-moss/10">
+            <p className="eyebrow text-moss">Already complete</p>
+            <h1 className="mt-2 text-3xl font-black">This lesson is finished and saved.</h1>
+            <p className="mt-3 text-ink/75">
+              You completed {session.plan.activities.length} focused step{session.plan.activities.length === 1 ? "" : "s"}.
+              Start it again for a fresh attempt, or continue to your progress.
+            </p>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-white/70 p-3">
+                <p className="text-xs font-black uppercase text-ink/70">Answers checked</p>
+                <p className="mt-1 text-xl font-black">
+                  {sessionStats.total > 0 ? `${sessionStats.correct}/${sessionStats.total}` : "None"}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/70 p-3">
+                <p className="text-xs font-black uppercase text-ink/70">Accuracy</p>
+                <p className="mt-1 text-xl font-black">
+                  {completionAccuracy === undefined ? "Not measured" : `${completionAccuracy}%`}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/70 p-3">
+                <p className="text-xs font-black uppercase text-ink/70">Fastest answer</p>
+                <p className="mt-1 text-xl font-black">{fastestAnswer ?? "Not measured"}</p>
+              </div>
+            </div>
+
+            {completedProgress && (
+              <p className="mt-4 text-sm font-bold text-ink/75">
+                Current streak: {completedProgress.currentStreak} day{completedProgress.currentStreak === 1 ? "" : "s"}.
+              </p>
+            )}
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              {restartRequest ? (
+                <button className="button-primary" type="button" disabled={restarting} onClick={() => void restartSession()}>
+                  {restarting ? "Starting…" : "Practise this lesson again"}
+                </button>
+              ) : (
+                <Link className="button-primary" href="/today">Choose your next lesson</Link>
+              )}
+              <Link className="button-secondary" href="/progress?complete=1">See your progress</Link>
+            </div>
+            {error && <p className="status-error mt-5" role="alert">{error}</p>}
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (!displayActivity || (!planned && !result)) {
+    return (
+      <main className="page-shell py-10">
+        <div className="card">
+          <p className="status-error" role="alert">This session has no next step to show.</p>
+          <Link className="button-secondary mt-5" href="/today">Back to today</Link>
+        </div>
+      </main>
+    );
   }
 
   const displayEntry = result
@@ -200,11 +362,6 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     : planned!;
   const step = Math.min(session.currentIndex + (result ? 0 : 1), session.plan.activities.length);
   const lessonStage = needsTeaching && !result ? "learn" : result ? "feedback" : "answer";
-  const completionAccuracy = sessionStats.total > 0 ? Math.round((sessionStats.correct / sessionStats.total) * 100) : 0;
-  const fastestAnswer = Number.isFinite(sessionStats.fastestMs)
-    ? `${Math.max(1, Math.round(sessionStats.fastestMs / 1000))}s`
-    : "Saved";
-
   return (
     <main className="page-shell py-8">
       <div className="mx-auto max-w-2xl">
@@ -301,18 +458,20 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl bg-white/70 p-3">
-                  <p className="text-xs font-black uppercase text-ink/70">This session</p>
+                  <p className="text-xs font-black uppercase text-ink/70">Answers checked</p>
                   <p className="mt-1 text-xl font-black">
                     {sessionStats.correct}/{sessionStats.total}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-white/70 p-3">
                   <p className="text-xs font-black uppercase text-ink/70">Accuracy</p>
-                  <p className="mt-1 text-xl font-black">{completionAccuracy}%</p>
+                  <p className="mt-1 text-xl font-black">
+                    {completionAccuracy === undefined ? "Not measured" : `${completionAccuracy}%`}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-white/70 p-3">
                   <p className="text-xs font-black uppercase text-ink/70">Fastest answer</p>
-                  <p className="mt-1 text-xl font-black">{fastestAnswer}</p>
+                  <p className="mt-1 text-xl font-black">{fastestAnswer ?? "Not measured"}</p>
                 </div>
               </div>
               {completedProgress && (

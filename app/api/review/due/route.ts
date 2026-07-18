@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getLearningRepository } from "@/lib/data";
 import { getCurrentUserId } from "@/lib/auth/server";
+import { getResumableSession } from "@/lib/learning/service";
+import { presentReviewForLearner } from "@/lib/learning/presentation";
 
 export async function GET() {
   try {
@@ -9,14 +11,23 @@ export async function GET() {
       return NextResponse.json({ error: "Sign in to load reviews." }, { status: 401 });
     }
 
-    const reviews = await getLearningRepository().getDueReviews(userId);
-    return NextResponse.json({ reviews: reviews.filter((review) => new Date(review.dueAt) <= new Date()) });
+    const now = new Date();
+    const [reviews, activeReview] = await Promise.all([
+      getLearningRepository().getDueReviews(userId),
+      getResumableSession(userId, { intent: "focused_review" }, now),
+    ]);
+    return NextResponse.json({
+      reviews: reviews
+        .filter((review) => new Date(review.dueAt) <= now)
+        .map(presentReviewForLearner),
+      activeSessionId: activeReview?.id,
+    });
   } catch (error) {
     return NextResponse.json(
       {
         error:
           error instanceof Error && /supabase/i.test(error.message)
-            ? "Learning storage is not configured correctly yet. Check the production Supabase environment variables."
+            ? "Your learning data is temporarily unavailable. Please try again."
             : "Unable to load reviews.",
       },
       { status: 500 },

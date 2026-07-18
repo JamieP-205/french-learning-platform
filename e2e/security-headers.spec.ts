@@ -14,6 +14,8 @@ test("production responses include the documented security headers", async ({ pa
   const policy = headers["content-security-policy"];
   expect(policy).toContain("default-src 'self'");
   expect(policy).toContain("frame-ancestors 'none'");
-  expect(policy).toContain("connect-src 'self' https://*.supabase.co https://api.openai.com");
+  expect(policy).toContain("connect-src 'self'");
+  expect(policy).not.toContain("https://*.supabase.co");
+  expect(policy).not.toContain("https://api.openai.com");
 });
 

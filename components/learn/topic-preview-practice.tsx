@@ -1,16 +1,40 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
 import { ActivityTeachingGate } from "@/components/lesson/activity-teaching-gate";
 import { getConceptDefinitionsForActivity } from "@/lib/content/curriculum";
 import type { TopicSelfCheck } from "@/lib/content/topic-previews";
 import {
+  emptyLocalLearningProgress,
   loadLocalLearningProgress,
+  localLearningStorageKey,
+  localProgressUpdatedEvent,
   localTopicPreviewSummary,
   recordLocalTopicPreviewCheck,
   saveLocalLearningProgress,
 } from "@/lib/local-learning/progress";
 import { normalizeFrenchAnswer } from "@/lib/learning/answer-validation";
+
+function subscribeToLocalProgress(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(localProgressUpdatedEvent, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(localProgressUpdatedEvent, onStoreChange);
+  };
+}
+
+function getLocalProgressSnapshot() {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(localLearningStorageKey) ?? "";
+}
+
+function getServerProgressSnapshot() {
+  return "";
+}
 
 export function TopicPreviewPractice({
   topicSlug,
@@ -21,7 +45,15 @@ export function TopicPreviewPractice({
   selfChecks: TopicSelfCheck[];
   onScoredStateChange?: (active: boolean) => void;
 }) {
-  const [progress, setProgress] = useState(() => loadLocalLearningProgress());
+  const progressSnapshot = useSyncExternalStore(
+    subscribeToLocalProgress,
+    getLocalProgressSnapshot,
+    getServerProgressSnapshot,
+  );
+  const progress = useMemo(
+    () => (progressSnapshot ? loadLocalLearningProgress() : emptyLocalLearningProgress),
+    [progressSnapshot],
+  );
   const [activeIndex, setActiveIndex] = useState(0);
   const [taughtCheckKey, setTaughtCheckKey] = useState<string>();
   const [missCount, setMissCount] = useState(0);
@@ -55,7 +87,6 @@ export function TopicPreviewPractice({
       prompt: activeCheck.prompt,
       confident,
     });
-    setProgress(nextProgress);
     saveLocalLearningProgress(nextProgress);
   }
 
@@ -73,8 +104,8 @@ export function TopicPreviewPractice({
     setChecked({
       correct,
       message: correct
-        ? "Correct. Saved as confident preview recall."
-        : "Not quite. Saved for local review so it comes back instead of disappearing.",
+        ? "Correct. Saved for future practice."
+        : "Not quite. Saved to Review so it comes back later.",
     });
   }
 
@@ -92,16 +123,16 @@ export function TopicPreviewPractice({
   function revealWithoutCredit() {
     setFirstMiss(false);
     setRevealed(true);
-    setChecked({ correct: false, selfReport: true, message: "Answer shown as self-report only. No confidence or review evidence was recorded." });
+    setChecked({ correct: false, selfReport: true, message: "Here is the answer. Showing it does not mark the item correct or add it to Review." });
     onScoredStateChange?.(false);
   }
 
   return (
     <section className="card">
       <p className="eyebrow">Preview practice</p>
-      <h2 className="mt-2 text-2xl font-black">Type it, check it, or reveal it gently.</h2>
+      <h2 className="mt-2 text-2xl font-black">Try the phrase from memory.</h2>
       <p className="mt-3 text-sm text-ink/70">
-        This is deterministic confidence practice for source-backed preview content. It feeds local review, but it is still not scored as a finished mission.
+        A missed answer can be saved to Review. Preview practice does not count as a completed lesson.
       </p>
 
       <div className="mt-5 rounded-2xl bg-cream p-5">
@@ -110,13 +141,14 @@ export function TopicPreviewPractice({
             <ActivityTeachingGate
               concepts={teachingConcepts}
               actionLabel="Start preview check"
+              headingLevel={3}
               onComplete={() => {
                 setTaughtCheckKey(checkKey);
                 onScoredStateChange?.(true);
               }}
             />
           ) : (
-            <p className="status-error">This preview check is unavailable until its teaching concept is published.</p>
+            <p className="status-error">This practice item is not available yet. Choose another one.</p>
           )
         ) : <>
         <p className="text-xs font-black uppercase tracking-wide text-coral">
@@ -129,6 +161,7 @@ export function TopicPreviewPractice({
             Your answer
             <input
               className="field"
+              lang="fr"
               value={typedAnswer}
               onChange={(event) => {
                 setTypedAnswer(event.target.value);
@@ -158,21 +191,21 @@ export function TopicPreviewPractice({
 
         {checked && (
           <div className={checked.correct ? "status-success mt-5" : "status-error mt-5"} aria-live="polite">
-            <p className="font-black">{checked.selfReport ? "Answer shown without credit." : checked.correct ? "That works." : "Good one to repair."}</p>
+            <p className="font-black">{checked.selfReport ? "Answer shown." : checked.correct ? "That works." : "Added to Review."}</p>
             <p className="mt-2">{checked.message}</p>
           </div>
         )}
 
         {revealed ? (
           <div className="mt-5 rounded-2xl bg-white p-4" aria-live="polite">
-            <p className="text-lg font-black" data-testid="preview-practice-answer">
+            <p className="text-lg font-black" data-testid="preview-practice-answer" lang="fr">
               {activeCheck.answer}
             </p>
             <p className="mt-2 text-sm text-ink/70">{activeCheck.reason}</p>
           </div>
         ) : !firstMiss ? (
           <button className="button-secondary mt-5" onClick={revealWithoutCredit}>
-            Show answer without credit
+            Show answer
           </button>
         ) : null}
 

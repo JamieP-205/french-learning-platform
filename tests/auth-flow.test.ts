@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import SignInPage from "../app/auth/sign-in/page";
+import { SignInForm } from "../app/auth/sign-in/sign-in-form";
 import { friendlyAuthError, requiresEmailConfirmation } from "../lib/auth/messages";
 import { buildConfirmationRedirectUrl, getSafeAuthDestination } from "../lib/auth/redirects";
 import { requestSignupConfirmation } from "../lib/auth/resend-confirmation";
@@ -36,7 +36,11 @@ describe("confirmation-email recovery", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "test-anon-key");
     vi.stubEnv("NEXT_PUBLIC_ACCOUNT_SYNC_READY", "true");
 
-    const html = renderToStaticMarkup(createElement(SignInPage));
+    const html = renderToStaticMarkup(createElement(SignInForm, {
+      accountSyncReady: true,
+      privacySignInReady: true,
+      reauthRequested: false,
+    }));
 
     expect(html).toContain("Resend confirmation email");
     expect(html).toContain("Sign in");
@@ -49,12 +53,33 @@ describe("confirmation-email recovery", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "test-anon-key");
     vi.stubEnv("NEXT_PUBLIC_ACCOUNT_SYNC_READY", "false");
 
-    const html = renderToStaticMarkup(createElement(SignInPage));
+    const html = renderToStaticMarkup(createElement(SignInForm, {
+      accountSyncReady: false,
+      privacySignInReady: false,
+      reauthRequested: false,
+    }));
 
-    expect(html).toContain("Account sync is not open yet");
+    expect(html).toContain("Accounts are temporarily unavailable while email confirmation is being tested");
     expect(html).toContain("Continue without an account");
     expect(html).not.toContain("Resend confirmation email");
     expect(html).not.toContain("<form");
+  });
+
+  it("allows existing learners to sign in for privacy actions while signup is paused", () => {
+    const html = renderToStaticMarkup(createElement(SignInForm, {
+      accountSyncReady: false,
+      privacySignInReady: true,
+      reauthRequested: true,
+    }));
+
+    expect(html).toContain("Confirm it’s you");
+    expect(html).toContain("<form");
+    expect(html).toContain("Sign in");
+    expect(html).not.toContain("Create account");
+    expect(html).not.toContain("I need an account");
+    expect(html).not.toContain("Resend confirmation email");
+    expect(html).not.toContain('minLength="8"');
+    expect(html).not.toContain('minlength="8"');
   });
 
   it("sends the Supabase signup-resend request and reports a privacy-safe success", async () => {

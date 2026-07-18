@@ -24,6 +24,14 @@ describe("scored beginner missions", () => {
     expect(getScoredMissionSlugs()).toContain("cafe-food");
     expect(getScoredMissionSlugs()).toContain("travel-basics");
     expect(getPublicScoredMissionSlugs()).toEqual(["introduce-yourself"]);
+
+    for (const slug of ["cafe-food", "travel-basics"]) {
+      const mission = getMissionBySlug(slug);
+      expect(mission?.contentItems.every((item) =>
+        item.verificationStatus === "needs_review" &&
+        item.publicationStatus === "draft",
+      )).toBe(true);
+    }
   });
 
   it("gives cafe and travel mixed scored activities", () => {
@@ -45,6 +53,10 @@ describe("scored beginner missions", () => {
         expect(activity.contentItemIds.length).toBeGreaterThan(0);
         expect(activity.feedbackCorrect.length).toBeGreaterThan(5);
         expect(activity.feedbackIncorrect.length).toBeGreaterThan(5);
+        if (activity.type === "fill_blank") {
+          expect(activity.acceptedAnswers.map((answer) => answer.value))
+            .not.toContain(activity.placeholder);
+        }
       }
     }
   });

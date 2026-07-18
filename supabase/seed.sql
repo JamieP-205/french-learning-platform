@@ -1,6 +1,7 @@
 -- French for Life: reviewed starter mission seed.
--- Run after 202606200001_initial_learning_platform.sql. This only publishes the
--- source-backed A1 vertical slice; generated or unreviewed material belongs in draft.
+-- Run only after every file in supabase/migrations has been applied in filename
+-- order. This publishes the source-backed A1 starter mission; generated or
+-- unreviewed material belongs in draft.
 
 insert into public.content_sources (id, title, reference, licence_notes, trust_level)
 values (

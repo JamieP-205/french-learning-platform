@@ -1,5 +1,53 @@
 import { expect, test } from "./fixtures";
 
+test("saved device progress loads without hydration or duplicate-key errors", async ({ page }) => {
+  const browserErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem("bonjour:public-demo-progress-v1", JSON.stringify({
+      sessionsCompleted: 1,
+      attemptsCount: 2,
+      correctCount: 1,
+      mistakesCaptured: 1,
+      repairsCompleted: 0,
+      mistakePrompts: ["Write: I am 20 years old."],
+      weakActivityIds: ["act-age-typing-v1", "act-age-typing-v1"],
+      topicPreviewStats: {},
+      skillSignals: {},
+      activeDates: [],
+      preferences: {
+        displayName: "Jamie",
+        currentLevel: "A1",
+        primaryGoal: "travel",
+        dailyMinutes: 8,
+        sessionEnergy: "normal",
+      },
+    }));
+  });
+
+  await page.goto("/demo");
+
+  await expect(page.getByRole("heading", { name: "Introduce yourself", exact: true })).toBeVisible();
+  await expect(page.getByText(/moved a question you found difficult nearer the start/i)).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "0 of 7 questions complete" })).toBeVisible();
+  expect(browserErrors.filter((error) => /hydration|same key|unique "key"/i.test(error))).toEqual([]);
+});
+
+test("multiple-choice repair shows the answer text, not its internal key", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByRole("button", { name: "Try this question" }).click();
+  await page.getByRole("button", { name: "I am from Jamie." }).click();
+  await page.getByRole("button", { name: "I like Jamie." }).click();
+
+  const feedback = page.getByText("Here’s the answer", { exact: true }).locator("..");
+  await expect(feedback.getByText("My name is Jamie.", { exact: true })).toBeVisible();
+  await expect(feedback.getByText("a", { exact: true })).toHaveCount(0);
+});
+
 test("guest completes a clear just-in-time lesson without an account", async ({ page }) => {
   await page.goto("/demo");
 
@@ -35,7 +83,15 @@ test("guest completes a clear just-in-time lesson without an account", async ({ 
   await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Show me the answer" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.localStorage.getItem("bonjour:public-demo-progress-v1")))
-    .toBe(progressBeforeFirstMiss);
+    .not.toBe(progressBeforeFirstMiss);
+  const progressAfterFirstMiss = await page.evaluate(() =>
+    JSON.parse(window.localStorage.getItem("bonjour:public-demo-progress-v1") ?? "{}") as {
+      weakActivityIds?: string[];
+      mistakesCaptured?: number;
+    },
+  );
+  expect(progressAfterFirstMiss.weakActivityIds).toContain("act-age-typing-v1");
+  expect(progressAfterFirstMiss.mistakesCaptured).toBeGreaterThan(0);
 
   await page.getByRole("button", { name: "Check answer" }).click();
   await expect(page.getByText("Here’s the answer", { exact: true })).toBeVisible();
@@ -75,18 +131,39 @@ test("guest completes a clear just-in-time lesson without an account", async ({ 
   await expect(page.getByText(/moved a question you found difficult nearer the start/i)).toBeVisible();
 
   await page.goto("/progress");
-  await expect(page.getByText("Public local progress")).toBeVisible();
-  await expect(page.getByText(/adaptive loop unlocked/i)).toBeVisible();
-  await expect(page.getByText(/start with the thing that tripped you up/i)).toBeVisible();
+  await expect(page.getByText("Progress on this device")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The app adapts from what you actually do." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Start with what tripped you up." })).toBeVisible();
 
   await page.goto("/review");
-  await expect(page.getByText("Public local review")).toBeVisible();
-  await expect(page.getByRole("heading", { name: /review target ready/i })).toBeVisible();
+  await expect(page.getByText("Review on this device")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /item ready to review/i })).toBeVisible();
   await expect(page.getByText(/sign in to load reviews/i)).toHaveCount(0);
   await expect(page.getByText(/authentication is required/i)).toHaveCount(0);
 
   await page.goto("/today");
-  await expect(page.getByText("Public learner mode")).toBeVisible();
+  await expect(page.getByText("Learning on this device")).toBeVisible();
   await expect(page.getByText(/sign in to start/i)).toHaveCount(0);
   await expect(page.getByText(/authentication is required/i)).toHaveCount(0);
+});
+
+test("the short public lesson is an honest two-step session", async ({ page }) => {
+  await page.goto("/demo?mode=short");
+
+  await expect(page.getByText("About 2 minutes · 2 steps", { exact: true })).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "0 of 2 questions complete" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Try this question" }).click();
+  await page.getByRole("button", { name: /my name is jamie/i }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  await page.getByRole("button", { name: "Try this question" }).click();
+  await page.getByLabel("Your answer").fill("ai");
+  await page.getByRole("button", { name: "Check answer" }).click();
+  await page.getByRole("button", { name: "Finish lesson" }).click();
+
+  await expect(page.getByRole("heading", { name: "Lesson finished" })).toBeVisible();
+
+  await page.goto("/demo");
+  await expect(page.getByText("About 10 minutes · 7 steps", { exact: true })).toBeVisible();
 });

@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const supabaseOrigin = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+      : undefined;
+  } catch {
+    return undefined;
+  }
+})();
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -13,7 +22,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co https://api.openai.com",
+  `connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
   "media-src 'self' data: blob:",
   "worker-src 'self' blob:",
   "frame-src 'none'",
