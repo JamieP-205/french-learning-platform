@@ -6,12 +6,9 @@ import { submitActivity } from "../lib/learning/service";
 
 describe("speech self-report evidence", () => {
   it.each([
-    { label: "an explicit self-report", reportedCorrect: true, evidenceKind: "self-report" },
-    { label: "a failed recognition result", reportedCorrect: false, evidenceKind: "controlled" },
-  ] as const)("records $label without correctness, review, mastery progress, or streak credit", async ({
-    reportedCorrect,
-    evidenceKind,
-  }) => {
+    { label: "an explicit self-report", evidenceKind: "self-report" },
+    { label: "a client-assisted recognition result", evidenceKind: "controlled" },
+  ] as const)("records $label without correctness, review, mastery progress, or streak credit", async ({ evidenceKind }) => {
     const repository = getLearningRepository();
     const userId = `speech-self-report-${crypto.randomUUID()}`;
     const profile: LearnerProfile = {
@@ -48,8 +45,6 @@ describe("speech self-report evidence", () => {
       activityId: activity.id,
       submittedAnswer: "completed",
       latencyMs: 1_000,
-      completed: true,
-      correct: reportedCorrect,
       evidenceKind,
     });
 
@@ -63,10 +58,16 @@ describe("speech self-report evidence", () => {
     expect(await repository.getOpenMistakes(userId)).toEqual([]);
     expect(await repository.getDueReviews(userId)).toEqual([]);
     expect(await repository.getProfile(userId)).toMatchObject({ completedSessions: 0, currentStreak: 0 });
-    expect(await repository.getProgress(userId)).toMatchObject({
+    const progress = await repository.getProgress(userId);
+    expect(progress).toMatchObject({
       sessionsCompleted: 0,
       attemptsCount: 0,
       phrasesLearned: 0,
+    });
+    expect(progress.skills.find((skill) => skill.label === "Speaking")).toMatchObject({
+      score: null,
+      practiceAttempts: 1,
+      measuredAttempts: 0,
     });
   });
 });

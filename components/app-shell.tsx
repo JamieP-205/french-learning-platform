@@ -29,28 +29,62 @@ const mobileMoreLinks = [
 
 function AuthAction() {
   const router = useRouter();
-  const [signedIn, setSignedIn] = useState<boolean>();
+  const [authState, setAuthState] = useState<"loading" | "signed-in" | "signed-out" | "error">("loading");
+  const [authCheckAttempt, setAuthCheckAttempt] = useState(0);
   const supabaseConfigured = Boolean(getBrowserSupabase());
 
   useEffect(() => {
     const supabase = getBrowserSupabase();
     if (!supabase) return;
+    const auth = supabase.auth;
     let cancelled = false;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled) setSignedIn(Boolean(data.session));
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSignedIn(Boolean(session));
+
+    async function checkSession() {
+      setAuthState("loading");
+      try {
+        const { data, error } = await auth.getSession();
+        if (error) throw error;
+        if (!cancelled) setAuthState(data.session ? "signed-in" : "signed-out");
+      } catch {
+        if (!cancelled) setAuthState("error");
+      }
+    }
+
+    void checkSession();
+    const { data: listener } = auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) setAuthState(session ? "signed-in" : "signed-out");
     });
     return () => {
       cancelled = true;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [authCheckAttempt]);
 
-  if (!supabaseConfigured || signedIn === undefined) return null;
+  if (!supabaseConfigured) return null;
 
-  if (!signedIn) {
+  if (authState === "loading") {
+    return <span className="text-sm font-bold text-ink/60" role="status">Checking account...</span>;
+  }
+
+  if (authState === "error") {
+    return (
+      <div className="flex flex-wrap items-center justify-end gap-2 text-sm" role="alert">
+        <span className="font-bold text-red-700">Account check failed.</span>
+        <Link href="/auth/sign-in" className="rounded-xl border border-ink/20 px-3 py-1.5 font-bold hover:border-coral hover:text-coral">
+          Sign in
+        </Link>
+        <button
+          type="button"
+          className="rounded-xl border border-ink/20 px-3 py-1.5 font-bold hover:border-coral hover:text-coral"
+          onClick={() => setAuthCheckAttempt((attempt) => attempt + 1)}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (authState === "signed-out") {
     return (
       <Link href="/auth/sign-in" className="rounded-xl border border-ink/20 px-3 py-1.5 text-sm font-bold hover:border-coral hover:text-coral">
         Sign in
@@ -76,7 +110,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <div className="page-shell pb-20 md:pb-0">
+    <div className="page-shell app-shell">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-ink/10 py-5">
         <Link href="/" className="font-black tracking-tight text-ink">
           French for Life
@@ -102,7 +136,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <AuthAction />
       </header>
-      {children}
+      <div id="main-content" className="focus-target" tabIndex={-1}>
+        {children}
+      </div>
       <footer className="flex flex-wrap gap-x-4 gap-y-2 border-t border-ink/10 py-6 text-sm font-bold text-ink/75">
         <Link href="/privacy" className="hover:text-coral">Privacy</Link>
         <Link href="/terms" className="hover:text-coral">Terms</Link>
@@ -112,7 +148,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-ink/10 bg-white/95 px-2 py-2 backdrop-blur md:hidden"
+        className="mobile-primary-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-ink/10 bg-white/95 px-2 pt-2 backdrop-blur md:hidden"
       >
         {mobilePrimaryLinks.map(([label, href]) => (
           <Link

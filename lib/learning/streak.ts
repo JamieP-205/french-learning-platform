@@ -4,6 +4,8 @@
 // - A single missed day is absorbed by a freeze automatically.
 // - Longer gaps restart at 1 — the comeback session handles the emotional part.
 
+import { calendarDaysBetween } from "@/lib/time/calendar-day";
+
 export const MAX_STREAK_FREEZES = 2;
 export const FREEZE_EARN_INTERVAL = 7;
 
@@ -11,6 +13,7 @@ export type StreakState = {
   currentStreak: number;
   streakFreezes: number;
   lastCompletedAt?: string;
+  timeZone?: string;
 };
 
 export type StreakAdvance = StreakState & {
@@ -18,21 +21,14 @@ export type StreakAdvance = StreakState & {
   earnedFreeze: boolean;
 };
 
-const dayKey = (iso: string) => iso.slice(0, 10);
-
-function daysBetween(fromDay: string, toDay: string): number {
-  return Math.round((new Date(`${toDay}T00:00:00Z`).getTime() - new Date(`${fromDay}T00:00:00Z`).getTime()) / 86_400_000);
-}
-
 export function advanceStreak(state: StreakState, now = new Date()): StreakAdvance {
-  const today = dayKey(now.toISOString());
   const nowIso = now.toISOString();
 
   if (!state.lastCompletedAt) {
-    return { currentStreak: 1, streakFreezes: state.streakFreezes, lastCompletedAt: nowIso, usedFreeze: false, earnedFreeze: false };
+    return { ...state, currentStreak: 1, streakFreezes: state.streakFreezes, lastCompletedAt: nowIso, usedFreeze: false, earnedFreeze: false };
   }
 
-  const gap = daysBetween(dayKey(state.lastCompletedAt), today);
+  const gap = calendarDaysBetween(state.lastCompletedAt, now, state.timeZone);
 
   if (gap <= 0) {
     // Already counted today. Keep the timestamp fresh for resume logic.
@@ -57,5 +53,5 @@ export function advanceStreak(state: StreakState, now = new Date()): StreakAdvan
     currentStreak > 0 && currentStreak % FREEZE_EARN_INTERVAL === 0 && streakFreezes < MAX_STREAK_FREEZES;
   if (earnedFreeze) streakFreezes += 1;
 
-  return { currentStreak, streakFreezes, lastCompletedAt: nowIso, usedFreeze, earnedFreeze };
+  return { ...state, currentStreak, streakFreezes, lastCompletedAt: nowIso, usedFreeze, earnedFreeze };
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { LearnerProfile } from "@/lib/domain/types";
 import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from "@/lib/auth/browser";
+import { detectRuntimeTimeZone } from "@/lib/time/calendar-day";
 
 const focusOptions = [
   { value: "speaking", label: "Speaking" },
@@ -12,12 +13,16 @@ const focusOptions = [
   { value: "review", label: "Review" },
 ] as const;
 
+const goalOptions = ["travel", "work", "relationships", "exams", "culture", "hobby"] as const;
+const levelOptions = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+
 export function AccountProfileSettings() {
   const [profile, setProfile] = useState<LearnerProfile>();
   const [state, setState] = useState<"loading" | "signed-out" | "no-profile" | "ready">("loading");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
+  const [interestText, setInterestText] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +44,7 @@ export function AccountProfileSettings() {
           return;
         }
         setProfile(payload.profile);
+        setInterestText((payload.profile.interests ?? []).join(", "));
         setState("ready");
       } catch {
         if (!cancelled) {
@@ -56,25 +62,44 @@ export function AccountProfileSettings() {
 
   async function save() {
     if (!profile) return;
+    const interests = [...new Set(
+      interestText
+        .split(",")
+        .map((interest) => interest.trim().toLowerCase())
+        .filter(Boolean),
+    )].slice(0, 12);
     setSaving(true);
     setMessage(undefined);
     setError(undefined);
-    const response = await fetch("/api/profile", {
-      method: "PATCH",
-      headers: await getBrowserAuthHeaders({ json: true }),
-      body: JSON.stringify({
-        displayName: profile.displayName,
-        dailyMinutes: profile.dailyMinutes,
-        preferredMode: profile.preferredMode,
-        focusPreferences: profile.focusPreferences ?? [],
-        speakingConfidence: profile.speakingConfidence ?? "medium",
-      }),
-    });
-    const payload = await response.json();
-    setSaving(false);
-    if (!response.ok) return setError(payload.error ?? "Your settings could not be saved.");
-    setProfile(payload.profile);
-    setMessage("Saved. Your next session uses these straight away.");
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: await getBrowserAuthHeaders({ json: true }),
+        body: JSON.stringify({
+          displayName: profile.displayName,
+          currentLevel: profile.currentLevel,
+          learningGoals: profile.learningGoals,
+          interests,
+          dailyMinutes: profile.dailyMinutes,
+          preferredMode: profile.preferredMode,
+          timeZone: detectRuntimeTimeZone(),
+          focusPreferences: profile.focusPreferences ?? [],
+          speakingConfidence: profile.speakingConfidence ?? "medium",
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(payload.error ?? "Your settings could not be saved.");
+        return;
+      }
+      setProfile(payload.profile);
+      setInterestText((payload.profile.interests ?? []).join(", "));
+      setMessage("Saved. Your next session uses these straight away.");
+    } catch {
+      setError("Your settings could not be saved. Check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (state === "loading") return <div className="card animate-pulse">Loading your learning setup…</div>;
@@ -101,12 +126,12 @@ export function AccountProfileSettings() {
     );
   }
 
-  if (!profile) return error ? <p className="status-error">{error}</p> : null;
+  if (!profile) return error ? <p className="status-error" role="alert">{error}</p> : null;
 
   return (
     <div className="card">
       <p className="eyebrow">Learning setup</p>
-      <h2 className="mt-2 text-2xl font-black">Your plan, live-editable</h2>
+      <h2 className="mt-2 text-2xl font-black">Change your learning plan</h2>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <label className="block font-bold">
@@ -134,6 +159,17 @@ export function AccountProfileSettings() {
         </label>
 
         <label className="block font-bold">
+          Current level
+          <select
+            className="field"
+            value={profile.currentLevel}
+            onChange={(event) => setProfile({ ...profile, currentLevel: event.target.value as LearnerProfile["currentLevel"] })}
+          >
+            {levelOptions.map((level) => <option key={level} value={level}>{level}</option>)}
+          </select>
+        </label>
+
+        <label className="block font-bold">
           Session feel
           <select
             className="field"
@@ -141,7 +177,7 @@ export function AccountProfileSettings() {
             onChange={(event) => setProfile({ ...profile, preferredMode: event.target.value as "normal" | "short" })}
           >
             <option value="normal">A normal mixed session</option>
-            <option value="short">A quick save-my-streak session</option>
+            <option value="short">A quick two-minute session</option>
           </select>
         </label>
 
@@ -160,6 +196,46 @@ export function AccountProfileSettings() {
           </select>
         </label>
       </div>
+
+      <fieldset className="mt-5">
+        <legend className="font-bold">Goals</legend>
+        <p className="mt-1 text-sm text-ink/60">Choose at least one. This guides recommendations and tutor examples.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {goalOptions.map((goal) => {
+            const selected = profile.learningGoals.includes(goal);
+            return (
+              <button
+                key={goal}
+                type="button"
+                aria-pressed={selected}
+                className={selected ? "rounded-xl bg-ink px-4 py-2 font-bold capitalize text-white" : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold capitalize"}
+                onClick={() => setProfile({
+                  ...profile,
+                  learningGoals: selected
+                    ? profile.learningGoals.length > 1
+                      ? profile.learningGoals.filter((item) => item !== goal)
+                      : profile.learningGoals
+                    : [...profile.learningGoals, goal],
+                })}
+              >
+                {goal}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <label className="mt-5 block font-bold">
+        Interests
+        <span className="mt-1 block text-sm font-normal text-ink/60">Separate interests with commas; up to 12.</span>
+        <input
+          className="field"
+          value={interestText}
+          maxLength={360}
+          placeholder="music, food, films"
+          onChange={(event) => setInterestText(event.target.value)}
+        />
+      </label>
 
       <fieldset className="mt-5">
         <legend className="font-bold">Extra focus</legend>
@@ -196,7 +272,7 @@ export function AccountProfileSettings() {
       {error && <p className="status-error mt-5" role="alert">{error}</p>}
       {message && <p className="status-success mt-5" role="status">{message}</p>}
 
-      <button className="button-primary mt-6" disabled={saving || !profile.displayName.trim()} onClick={save}>
+      <button className="button-primary mt-6" disabled={saving || !profile.displayName.trim() || profile.learningGoals.length === 0} onClick={save}>
         {saving ? "Saving…" : "Save changes"}
       </button>
     </div>

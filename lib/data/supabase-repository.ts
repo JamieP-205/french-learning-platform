@@ -8,21 +8,28 @@ import type {
   ProgressSnapshot,
   ReviewItem,
   SessionPlanV1,
+  SessionRecord,
   SocialProfile,
   SocialSnapshot,
   TutorContextPackV1,
   TutorFeedbackV1,
   ValidationResultV1,
 } from "@/lib/domain/types";
-import type { LearningRepository, SubmissionInput } from "@/lib/data/repository";
-import { advanceStreak } from "@/lib/learning/streak";
+import type {
+  LearningRepository,
+  ProfilePreferenceChanges,
+  SessionCreationOptions,
+  SubmissionInput,
+} from "@/lib/data/repository";
 import { buildProgressSnapshot } from "@/lib/learning/progress-summary";
+import { getMissionById, getScoredActivityById } from "@/lib/content/scored-missions";
 import {
   inferEvidenceKind,
-  isQualifyingSessionEvidence,
   transitionResponseState,
 } from "@/lib/learning/response-transition";
-import { friendCodeForUser, normalizeFriendCode } from "@/lib/social/friend-code";
+import { generateFriendCode } from "@/lib/social/friend-code";
+import { coopChallengeProgress } from "@/lib/social/integrity";
+import { normalizeIanaTimeZone } from "@/lib/time/calendar-day";
 
 const requiredEnvironment = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,6 +39,18 @@ const requiredEnvironment = () => {
 };
 
 type Row = Record<string, unknown>;
+const RESUMABLE_SESSION_LOOKBACK_MS = 48 * 60 * 60 * 1000;
+const RESUMABLE_SESSION_LIMIT = 50;
+const SOCIAL_FRIEND_LIMIT = 200;
+const SOCIAL_PENDING_REQUEST_LIMIT = 100;
+const SOCIAL_BLOCK_LIMIT = 500;
+const LEARNING_SIGNAL_LIMIT = 200;
+
+type ExportPageOptions = {
+  orderBy: string;
+  cutoffColumn: string;
+  cutoff: string;
+};
 
 function mistakePatternFromRow(row: Row): MistakePattern {
   return {
@@ -45,6 +64,53 @@ function mistakePatternFromRow(row: Row): MistakePattern {
     separateProductionSuccesses: row.separate_production_successes as number,
     resolved: row.resolved as boolean,
     lastSeenAt: row.last_seen_at as string,
+    transitionRevision: (row.transition_revision as number | undefined) ?? 0,
+  };
+}
+
+function reviewItemFromRow(row: Row): ReviewItem {
+  return {
+    id: row.id as string,
+    userId: row.user_id as string,
+    contentItemId: row.content_item_id as string,
+    activityId: row.activity_id as string,
+    ruleId: row.rule_id as string | undefined,
+    prompt: row.prompt as string,
+    expectedAnswers: row.expected_answers as ReviewItem["expectedAnswers"],
+    stage: row.stage as number,
+    dueAt: row.due_at as string,
+    successCount: row.success_count as number,
+    failureCount: row.failure_count as number,
+    priority: row.priority as number,
+    transitionRevision: (row.transition_revision as number | undefined) ?? 0,
+  };
+}
+
+function activityAttemptFromRow(row: Row): ActivityAttempt {
+  return {
+    id: row.id as string,
+    requestId: row.request_id as string | undefined,
+    userId: row.user_id as string,
+    sessionId: row.session_id as string,
+    activityId: row.activity_id as string,
+    submittedAnswer: row.submitted_answer as string,
+    latencyMs: (row.latency_ms as number) ?? 0,
+    completed: (row.completed as boolean | undefined) ?? true,
+    correct: (row.is_correct as boolean | undefined) ?? Boolean((row.result_json as ValidationResultV1).isCorrect),
+    evidenceKind: row.evidence_kind as ActivityAttempt["evidenceKind"] | undefined,
+    result: row.result_json as ValidationResultV1,
+    createdAt: row.created_at as string,
+  };
+}
+
+function sessionFromRow(row: Row): SessionRecord {
+  return {
+    id: row.id as string,
+    userId: row.user_id as string,
+    plan: row.plan_json as SessionPlanV1,
+    startedAt: row.started_at as string,
+    completedAt: row.completed_at as string | undefined,
+    currentIndex: row.current_index as number,
   };
 }
 
@@ -62,12 +128,13 @@ export class SupabaseLearningRepository implements LearningRepository {
     return {
       userId: row.id as string,
       displayName: (row.display_name as string) ?? "Learner",
-      friendCode: (row.friend_code as string | undefined) ?? friendCodeForUser(row.id as string),
+      friendCode: row.friend_code as string | undefined,
       currentLevel: ((row.current_level as CefrLevel) ?? "A1"),
       learningGoals: (row.learning_goals as string[]) ?? [],
       interests: (row.interests as string[]) ?? [],
       dailyMinutes: (row.daily_minutes as number) ?? 8,
       preferredMode: (row.preferred_mode as "normal" | "short") ?? "normal",
+      timeZone: normalizeIanaTimeZone(row.time_zone as string | undefined),
       focusPreferences: (row.focus_preferences as string[]) ?? [],
       speakingConfidence: ((row.speaking_confidence as "low" | "medium" | "high") ?? "medium"),
       ageConfirmed: Boolean(row.age_confirmed),
@@ -82,15 +149,17 @@ export class SupabaseLearningRepository implements LearningRepository {
   }
 
   async saveProfile(profile: LearnerProfile) {
+    const existing = await this.getProfile(profile.userId);
     const { error } = await this.client.from("profiles").upsert({
       id: profile.userId,
       display_name: profile.displayName,
-      friend_code: profile.friendCode ?? friendCodeForUser(profile.userId),
+      friend_code: existing?.friendCode ?? profile.friendCode ?? generateFriendCode(),
       current_level: profile.currentLevel,
       learning_goals: profile.learningGoals,
       interests: profile.interests,
       daily_minutes: profile.dailyMinutes,
       preferred_mode: profile.preferredMode,
+      time_zone: normalizeIanaTimeZone(profile.timeZone),
       focus_preferences: profile.focusPreferences ?? [],
       speaking_confidence: profile.speakingConfidence ?? "medium",
       age_confirmed: profile.ageConfirmed ?? false,
@@ -103,19 +172,45 @@ export class SupabaseLearningRepository implements LearningRepository {
       streak_freezes: profile.streakFreezes ?? 0,
     });
     if (error) throw error;
-    return profile;
+    return (await this.getProfile(profile.userId)) ?? profile;
   }
 
-  async recordRequiredPrivacyConsents(userId: string, policyVersion: string) {
-    const { error } = await this.client.from("privacy_consents").insert(
-      ["terms", "privacy", "ai_tutor"].map((consentType) => ({
-        user_id: userId,
-        consent_type: consentType,
-        policy_version: policyVersion,
-        granted: true,
-      })),
-    );
+  async updateProfilePreferences(userId: string, changes: ProfilePreferenceChanges) {
+    const update: Row = {};
+    if (changes.displayName !== undefined) update.display_name = changes.displayName;
+    if (changes.currentLevel !== undefined) update.current_level = changes.currentLevel;
+    if (changes.learningGoals !== undefined) update.learning_goals = changes.learningGoals;
+    if (changes.interests !== undefined) update.interests = changes.interests;
+    if (changes.dailyMinutes !== undefined) update.daily_minutes = changes.dailyMinutes;
+    if (changes.preferredMode !== undefined) update.preferred_mode = changes.preferredMode;
+    if (changes.timeZone !== undefined) update.time_zone = normalizeIanaTimeZone(changes.timeZone);
+    if (changes.focusPreferences !== undefined) update.focus_preferences = changes.focusPreferences;
+    if (changes.speakingConfidence !== undefined) update.speaking_confidence = changes.speakingConfidence;
+    if (Object.keys(update).length === 0) return this.getProfile(userId);
+
+    const { error } = await this.client.from("profiles").update(update).eq("id", userId);
     if (error) throw error;
+    return this.getProfile(userId);
+  }
+
+  async completeOnboardingProfile(profile: LearnerProfile) {
+    const { error } = await this.client.rpc("complete_onboarding", {
+      p_user_id: profile.userId,
+      p_display_name: profile.displayName,
+      p_current_level: profile.currentLevel,
+      p_learning_goals: profile.learningGoals,
+      p_interests: profile.interests,
+      p_daily_minutes: profile.dailyMinutes,
+      p_preferred_mode: profile.preferredMode,
+      p_time_zone: normalizeIanaTimeZone(profile.timeZone),
+      p_focus_preferences: profile.focusPreferences ?? [],
+      p_speaking_confidence: profile.speakingConfidence ?? "medium",
+      p_age_confirmed: profile.ageConfirmed ?? false,
+      p_policy_version: profile.policyVersion,
+      p_friend_code: profile.friendCode ?? generateFriendCode(),
+    });
+    if (error) throw error;
+    return (await this.getProfile(profile.userId)) ?? profile;
   }
 
   async getMission() {
@@ -143,14 +238,21 @@ export class SupabaseLearningRepository implements LearningRepository {
       .from("content_items")
       .select("*")
       .in("id", contentItemIds)
-      .eq("publication_status", "published");
+      .eq("publication_status", "published")
+      .eq("verification_status", "source_validated");
     if (contentError) throw contentError;
     if (!contentRows || contentRows.length !== contentItemIds.length) {
       throw new Error("A published activity refers to missing or unpublished canonical content.");
     }
+    if (contentRows.some((row) => !Array.isArray(row.source_ids) || row.source_ids.length === 0)) {
+      throw new Error("Published learning content must cite at least one reviewed source.");
+    }
     const sourceIds = [...new Set(contentRows.flatMap((row) => (row.source_ids as string[]) ?? []))];
     const { data: sourceRows, error: sourceError } = await this.client.from("content_sources").select("*").in("id", sourceIds);
     if (sourceError) throw sourceError;
+    if (!sourceRows || sourceRows.length !== sourceIds.length) {
+      throw new Error("Published learning content refers to a missing source record.");
+    }
     const contentItems = contentRows.map((value) => {
       const row = value as Row;
       return {
@@ -165,7 +267,7 @@ export class SupabaseLearningRepository implements LearningRepository {
         cefrLevel: row.cefr_level as "A1",
         grammarTags: (row.grammar_tags as string[]) ?? [],
         sourceIds: (row.source_ids as string[]) ?? [],
-        verificationStatus: "source_validated" as const,
+        verificationStatus: row.verification_status as "source_validated",
         publicationStatus: "published" as const,
         reviewerNotes: row.reviewer_notes as string | undefined,
       };
@@ -189,101 +291,96 @@ export class SupabaseLearningRepository implements LearningRepository {
   }
 
   async getDueReviews(userId: string) {
-    const { data, error } = await this.client.from("review_items").select("*").eq("user_id", userId).order("due_at");
+    const { data, error } = await this.client
+      .from("review_items")
+      .select("*")
+      .eq("user_id", userId)
+      .order("due_at")
+      .limit(LEARNING_SIGNAL_LIMIT);
     if (error) throw error;
-    return (data ?? []).map((value) => {
-      const row = value as Row;
-      return {
-        id: row.id as string,
-        userId: row.user_id as string,
-        contentItemId: row.content_item_id as string,
-        activityId: row.activity_id as string,
-        ruleId: row.rule_id as string | undefined,
-        prompt: row.prompt as string,
-        expectedAnswers: row.expected_answers as ReviewItem["expectedAnswers"],
-        stage: row.stage as number,
-        dueAt: row.due_at as string,
-        successCount: row.success_count as number,
-        failureCount: row.failure_count as number,
-        priority: row.priority as number,
-      };
-    });
+    return (data ?? []).map((value) => reviewItemFromRow(value as Row));
   }
 
   async getOpenMistakes(userId: string) {
-    const { data, error } = await this.client.from("mistake_patterns").select("*").eq("user_id", userId).eq("resolved", false);
+    const { data, error } = await this.client
+      .from("mistake_patterns")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("resolved", false)
+      .order("last_seen_at", { ascending: false })
+      .limit(LEARNING_SIGNAL_LIMIT);
     if (error) throw error;
     return (data ?? []).map((value) => mistakePatternFromRow(value as Row));
   }
 
-  private async ensureMissionRowsForSession(plan: SessionPlanV1) {
-    const slug = plan.missionId.replace(/^mission-/, "").replace(/-v\d+$/, "");
-    const title = slug
-      .split("-")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
+  private async assertPublishedMissionRowsForSession(plan: SessionPlanV1) {
+    const mission = getMissionById(plan.missionId);
+    if (!mission) throw new Error("The session references an unknown mission.");
+    const canonicalActivityIds = new Set(mission.activities.map((activity) => activity.id));
+    if (plan.activities.some((entry) => !canonicalActivityIds.has(entry.activity.id))) {
+      throw new Error("The session plan contains an activity outside its canonical mission.");
+    }
 
-    const { error: missionError } = await this.client.from("missions").upsert(
-      {
-        id: plan.missionId,
-        slug,
-        title,
-        description: plan.weakFocus || title,
-        outcome: plan.completionReward || title,
-        estimated_minutes: plan.estimatedMinutes,
-        cefr_level: "A1",
-        publication_status: "published",
-      },
-      { onConflict: "id" },
+    // Learner requests must never create or rewrite shared curriculum rows.
+    // Content is provisioned by reviewed migrations and seed data; session
+    // creation only verifies that the published foreign-key targets exist.
+    const [missionResult, activityResult] = await Promise.all([
+      this.client
+        .from("missions")
+        .select("id")
+        .eq("id", mission.id)
+        .eq("publication_status", "published")
+        .maybeSingle(),
+      this.client
+        .from("activities")
+        .select("id,activity_type,step_order")
+        .eq("mission_id", mission.id)
+        .eq("publication_status", "published"),
+    ]);
+    if (missionResult.error || activityResult.error) throw missionResult.error ?? activityResult.error;
+    if (!missionResult.data) throw new Error("The reviewed mission has not been published to learning storage.");
+
+    const publishedById = new Map(
+      ((activityResult.data ?? []) as Row[]).map((row) => [row.id as string, row]),
     );
-
-    if (missionError) throw missionError;
-
-    const activities = plan.activities.map((planned, index) => ({
-      id: planned.activity.id,
-      mission_id: plan.missionId,
-      step_order: index + 1,
-      payload: planned.activity,
-      publication_status: "published",
-    }));
-
-    if (activities.length > 0) {
-      const { error: activitiesError } = await this.client.from("activities").upsert(activities, { onConflict: "id" });
-      if (activitiesError) throw activitiesError;
+    for (const entry of plan.activities) {
+      const row = publishedById.get(entry.activity.id);
+      if (!row || row.activity_type !== entry.activity.type) {
+        throw new Error("The reviewed activity set is missing or out of date in learning storage.");
+      }
     }
   }
 
-  async createSession(userId: string, plan: SessionPlanV1) {
-    await this.ensureMissionRowsForSession(plan);
+  async createSession(
+    userId: string,
+    plan: SessionPlanV1,
+    { resumeIfAvailable = false, requestId }: SessionCreationOptions = {},
+  ) {
+    await this.assertPublishedMissionRowsForSession(plan);
 
     const id = crypto.randomUUID();
     const startedAt = new Date().toISOString();
-    const { error } = await this.client.from("sessions").insert({
-      id,
-      user_id: userId,
-      mission_id: plan.missionId,
-      plan_json: plan,
-      mode: plan.mode,
-      started_at: startedAt,
-      current_index: 0,
+    const { data, error } = await this.client.rpc("create_or_resume_learning_session", {
+      p_user_id: userId,
+      p_session_id: id,
+      p_mission_id: plan.missionId,
+      p_plan_json: plan,
+      p_mode: plan.mode,
+      p_started_at: startedAt,
+      p_resume_if_available: resumeIfAvailable,
+      p_request_id: requestId ?? crypto.randomUUID(),
     });
     if (error) throw error;
-    return { id, userId, plan, startedAt, currentIndex: 0 };
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("The session start did not return a learning session.");
+    return sessionFromRow(row as Row);
   }
 
   async getSession(userId: string, sessionId: string) {
     const { data, error } = await this.client.from("sessions").select("*").eq("id", sessionId).eq("user_id", userId).maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    const row = data as Row;
-    return {
-      id: row.id as string,
-      userId: row.user_id as string,
-      plan: row.plan_json as SessionPlanV1,
-      startedAt: row.started_at as string,
-      completedAt: row.completed_at as string | undefined,
-      currentIndex: row.current_index as number,
-    };
+    return sessionFromRow(data as Row);
   }
 
   async getActiveSession(userId: string) {
@@ -297,15 +394,33 @@ export class SupabaseLearningRepository implements LearningRepository {
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    const row = data as Row;
-    return {
-      id: row.id as string,
-      userId: row.user_id as string,
-      plan: row.plan_json as SessionPlanV1,
-      startedAt: row.started_at as string,
-      completedAt: row.completed_at as string | undefined,
-      currentIndex: row.current_index as number,
-    };
+    return sessionFromRow(data as Row);
+  }
+
+  async getActiveSessions(userId: string) {
+    const cutoff = new Date(Date.now() - RESUMABLE_SESSION_LOOKBACK_MS).toISOString();
+    const { data, error } = await this.client
+      .from("sessions")
+      .select("*")
+      .eq("user_id", userId)
+      .is("completed_at", null)
+      .gte("started_at", cutoff)
+      .order("started_at", { ascending: false })
+      .limit(RESUMABLE_SESSION_LIMIT);
+
+    if (error) throw error;
+    return ((data ?? []) as Row[]).map(sessionFromRow);
+  }
+
+  async getSessionAttempts(userId: string, sessionId: string) {
+    const { data, error } = await this.client
+      .from("activity_attempts")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return ((data ?? []) as Row[]).map(activityAttemptFromRow);
   }
 
   async getRecentAttempts(userId: string, limit = 200) {
@@ -316,19 +431,19 @@ export class SupabaseLearningRepository implements LearningRepository {
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) throw error;
-    return ((data ?? []) as Row[]).reverse().map((row) => ({
-      id: row.id as string,
-      userId: row.user_id as string,
-      sessionId: row.session_id as string,
-      activityId: row.activity_id as string,
-      submittedAnswer: row.submitted_answer as string,
-      latencyMs: (row.latency_ms as number) ?? 0,
-      completed: (row.completed as boolean | undefined) ?? true,
-      correct: (row.is_correct as boolean | undefined) ?? Boolean((row.result_json as ValidationResultV1).isCorrect),
-      evidenceKind: row.evidence_kind as ActivityAttempt["evidenceKind"] | undefined,
-      result: row.result_json as ValidationResultV1,
-      createdAt: row.created_at as string,
-    }));
+    return ((data ?? []) as Row[]).reverse().map(activityAttemptFromRow);
+  }
+
+  async getAttemptByRequestId(userId: string, requestId: string) {
+    const { data, error } = await this.client
+      .from("activity_attempts")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("request_id", requestId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return activityAttemptFromRow(data as Row);
   }
 
   async recordSubmission(input: SubmissionInput): Promise<ActivityAttempt> {
@@ -336,46 +451,30 @@ export class SupabaseLearningRepository implements LearningRepository {
     const completed = input.completed ?? true;
     const evidenceKind = input.evidenceKind ?? inferEvidenceKind(input.activity.type);
     const correct = evidenceKind === "self-report" ? false : input.result.isCorrect;
-    const attempt: ActivityAttempt = {
-      id: crypto.randomUUID(),
-      userId: input.userId,
-      sessionId: input.sessionId,
-      activityId: input.activity.id,
-      submittedAnswer: input.submittedAnswer,
-      latencyMs: input.latencyMs,
-      completed,
-      correct,
-      evidenceKind,
-      result: input.result,
-      createdAt,
-    };
-    const { error: attemptError } = await this.client.from("activity_attempts").insert({
-      id: attempt.id,
-      user_id: input.userId,
-      session_id: input.sessionId,
-      activity_id: input.activity.id,
-      submitted_answer: input.submittedAnswer,
-      latency_ms: input.latencyMs,
-      completed,
-      evidence_kind: evidenceKind,
-      result_json: input.result,
-      is_correct: correct,
-      created_at: createdAt,
-    });
-    if (attemptError) throw attemptError;
-
     const contentItemId = input.activity.contentItemIds[0] ?? input.activity.id;
     const ruleId = input.result.ruleIds[0] ?? input.activity.grammarRuleIds[0] ?? input.activity.id;
     const reviewKey = `${input.userId}:${contentItemId}:${ruleId}`;
-    const { data: patternData, error: patternError } = await this.client
-      .from("mistake_patterns")
-      .select("*")
-      .eq("user_id", input.userId)
-      .eq("rule_id", ruleId)
-      .maybeSingle();
-    if (patternError) throw patternError;
-    const existingPattern = patternData ? mistakePatternFromRow(patternData as Row) : undefined;
-    const existingReview = (await this.getDueReviews(input.userId)).find((review) => review.id === reviewKey);
+    const [patternResult, reviewResult] = await Promise.all([
+      this.client
+        .from("mistake_patterns")
+        .select("*")
+        .eq("user_id", input.userId)
+        .eq("rule_id", ruleId)
+        .maybeSingle(),
+      this.client
+        .from("review_items")
+        .select("*")
+        .eq("id", reviewKey)
+        .eq("user_id", input.userId)
+        .maybeSingle(),
+    ]);
+    if (patternResult.error || reviewResult.error) throw patternResult.error ?? reviewResult.error;
+    const existingPattern = patternResult.data
+      ? mistakePatternFromRow(patternResult.data as Row)
+      : undefined;
+    const existingReview = reviewResult.data
+      ? reviewItemFromRow(reviewResult.data as Row)
+      : undefined;
     const transition = transitionResponseState({
       userId: input.userId,
       activity: input.activity,
@@ -392,98 +491,99 @@ export class SupabaseLearningRepository implements LearningRepository {
       existingPattern,
       existingReview,
     });
-
-    if (transition.recordMistakeEvent) {
-      const { error: mistakeEventError } = await this.client.from("mistake_events").insert({
-        id: crypto.randomUUID(), user_id: input.userId, session_id: input.sessionId, activity_id: input.activity.id,
-        content_item_id: contentItemId, rule_id: ruleId, submitted_answer: input.submittedAnswer,
-        corrected_answer: input.result.correctAnswer, mistake_type: input.result.mistakeType ?? "unknown",
-        explanation: input.result.feedback, created_at: createdAt,
-      });
-      if (mistakeEventError) throw mistakeEventError;
-    }
-    if (transition.mistakePattern) {
-      const pattern = transition.mistakePattern;
-      const { error } = await this.client.from("mistake_patterns").upsert({
-        id: pattern.id,
-        user_id: pattern.userId,
-        rule_id: pattern.ruleId,
-        mistake_type: pattern.mistakeType,
-        corrected_answer: pattern.correctedAnswer,
-        explanation: pattern.explanation,
-        repeat_count: pattern.repeatCount,
-        separate_production_successes: pattern.separateProductionSuccesses,
-        resolved: pattern.resolved,
-        last_seen_at: pattern.lastSeenAt,
-      }, { onConflict: "user_id,rule_id" });
-      if (error) throw error;
-    }
-    if (transition.reviewItem) {
-      const review = transition.reviewItem;
-      const { error: reviewError } = await this.client.from("review_items").upsert({
-        id: review.id, user_id: review.userId, content_item_id: review.contentItemId, activity_id: review.activityId,
-        rule_id: review.ruleId ?? null, prompt: review.prompt, expected_answers: review.expectedAnswers, stage: review.stage,
-        due_at: review.dueAt, success_count: review.successCount, failure_count: review.failureCount, priority: review.priority,
-      });
-      if (reviewError) throw reviewError;
-    }
-
-    const session = await this.getSession(input.userId, input.sessionId);
-    if (session && completed) {
-      const currentIndex = Math.min(session.currentIndex + 1, session.plan.activities.length);
-      const completedAt = currentIndex >= session.plan.activities.length ? createdAt : null;
-      const { error } = await this.client.from("sessions").update({ current_index: currentIndex, completed_at: completedAt }).eq("id", session.id);
-      if (error) throw error;
-      if (completedAt) {
-        const recentAttempts = await this.getRecentAttempts(input.userId);
-        const hasQualifyingSessionEvidence = recentAttempts.some(
-          (candidate) => candidate.sessionId === session.id && isQualifyingSessionEvidence({
-            completed: candidate.completed ?? true,
-            correct: candidate.correct ?? candidate.result.isCorrect,
-            evidenceKind: candidate.evidenceKind ?? "controlled",
-          }),
-        );
-        const profile = await this.getProfile(input.userId);
-        if (profile && evidenceKind !== "self-report" && hasQualifyingSessionEvidence) {
-          const streak = advanceStreak({
-            currentStreak: profile.currentStreak,
-            streakFreezes: profile.streakFreezes ?? 0,
-            lastCompletedAt: profile.lastCompletedAt,
-          });
-          await this.saveProfile({
-            ...profile,
-            lastCompletedAt: streak.lastCompletedAt,
-            completedSessions: profile.completedSessions + 1,
-            currentStreak: streak.currentStreak,
-            streakFreezes: streak.streakFreezes,
-          });
+    const mistakeEvent = transition.recordMistakeEvent
+      ? {
+          content_item_id: contentItemId,
+          rule_id: ruleId,
+          corrected_answer: input.result.correctAnswer,
+          mistake_type: input.result.mistakeType ?? "unknown",
+          explanation: input.result.feedback,
         }
-      }
-    }
-    return attempt;
+      : null;
+    const mistakePattern = transition.mistakePattern
+      ? {
+          id: transition.mistakePattern.id,
+          user_id: transition.mistakePattern.userId,
+          rule_id: transition.mistakePattern.ruleId,
+          mistake_type: transition.mistakePattern.mistakeType,
+          corrected_answer: transition.mistakePattern.correctedAnswer,
+          explanation: transition.mistakePattern.explanation,
+          repeat_count: transition.mistakePattern.repeatCount,
+          separate_production_successes: transition.mistakePattern.separateProductionSuccesses,
+          resolved: transition.mistakePattern.resolved,
+          expected_revision: existingPattern?.transitionRevision ?? 0,
+        }
+      : null;
+    const reviewItem = transition.reviewItem
+      ? {
+          id: transition.reviewItem.id,
+          user_id: transition.reviewItem.userId,
+          content_item_id: transition.reviewItem.contentItemId,
+          activity_id: transition.reviewItem.activityId,
+          rule_id: transition.reviewItem.ruleId ?? null,
+          prompt: transition.reviewItem.prompt,
+          expected_answers: transition.reviewItem.expectedAnswers,
+          stage: transition.reviewItem.stage,
+          due_at: transition.reviewItem.dueAt,
+          success_count: transition.reviewItem.successCount,
+          failure_count: transition.reviewItem.failureCount,
+          priority: transition.reviewItem.priority,
+          expected_revision: existingReview?.transitionRevision ?? 0,
+        }
+      : null;
+
+    const { data, error } = await this.client.rpc("submit_activity_attempt", {
+      p_user_id: input.userId,
+      p_session_id: input.sessionId,
+      p_request_id: input.requestId,
+      p_expected_current_index: input.expectedCurrentIndex,
+      p_activity_id: input.activity.id,
+      p_submitted_answer: input.submittedAnswer,
+      p_latency_ms: input.latencyMs,
+      p_result_json: input.result,
+      p_completed: completed,
+      p_is_correct: correct,
+      p_evidence_kind: evidenceKind,
+      p_mistake_event: mistakeEvent,
+      p_mistake_pattern: mistakePattern,
+      p_review_item: reviewItem,
+    });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("The activity submission did not return a saved attempt.");
+    return activityAttemptFromRow(row as Row);
   }
 
   async getProgress(userId: string): Promise<ProgressSnapshot> {
     const profile = await this.getProfile(userId);
     const mission = getSeedMission();
     const [attempts, reviews, mistakes] = await Promise.all([
-      this.client.from("activity_attempts").select("activity_id,is_correct,completed,evidence_kind").eq("user_id", userId),
+      this.client.rpc("get_progress_attempt_signals", { p_user_id: userId }),
       this.getDueReviews(userId),
-      this.client.from("mistake_patterns").select("resolved").eq("user_id", userId),
+      this.client.rpc("get_progress_mistake_signals", { p_user_id: userId }),
     ]);
     if (attempts.error || mistakes.error) throw attempts.error ?? mistakes.error;
 
     return buildProgressSnapshot({
       profile,
-      attempts: (attempts.data ?? [])
-        .filter((row) => ((row.completed as boolean | undefined) ?? true) && row.evidence_kind !== "self-report")
-        .map((row) => ({
-          activityId: row.activity_id as string,
-          isCorrect: Boolean(row.is_correct),
-        })),
+      attempts: ((attempts.data ?? []) as Row[])
+        .map((row) => {
+          const activityId = row.activity_id as string;
+          const activity = getScoredActivityById(activityId);
+          return {
+            activityId,
+            isCorrect: Boolean(row.is_correct),
+            activity,
+            completed: (row.completed as boolean | undefined) ?? true,
+            evidenceKind: (row.evidence_kind as ActivityAttempt["evidenceKind"]) ??
+              (activity ? inferEvidenceKind(activity.type) : undefined),
+            count: Number(row.attempt_count ?? 0),
+          };
+        }),
       reviews,
-      mistakes: (mistakes.data ?? []).map((row) => ({
+      mistakes: ((mistakes.data ?? []) as Row[]).map((row) => ({
         resolved: Boolean(row.resolved),
+        count: Number(row.mistake_count ?? 0),
       })),
       missionTitle: mission.title,
       missionActivityCount: mission.activities.length,
@@ -493,7 +593,7 @@ export class SupabaseLearningRepository implements LearningRepository {
   private async ensureSocialProfile(userId: string) {
     const profile = await this.getProfile(userId);
     if (!profile) throw new Error("Finish onboarding before using friends.");
-    if (!profile.friendCode) return this.saveProfile({ ...profile, friendCode: friendCodeForUser(userId) });
+    if (!profile.friendCode) return this.saveProfile({ ...profile, friendCode: generateFriendCode() });
     return profile;
   }
 
@@ -501,33 +601,36 @@ export class SupabaseLearningRepository implements LearningRepository {
     return {
       userId: profile.userId,
       displayName: profile.displayName,
-      friendCode: profile.friendCode,
       currentLevel: profile.currentLevel,
       completedSessions: profile.completedSessions,
       currentStreak: profile.currentStreak,
     };
   }
 
-  private friendshipPair(userId: string, friendUserId: string) {
-    const [userOne, userTwo] = [userId, friendUserId].sort();
-    return { userOne, userTwo };
-  }
-
   private async socialProfiles(userIds: string[]) {
     const ids = [...new Set(userIds)].filter(Boolean);
     if (ids.length === 0) return new Map<string, SocialProfile>();
-    const { data, error } = await this.client
-      .from("profiles")
-      .select("id,display_name,friend_code,current_level,completed_sessions,current_streak")
-      .in("id", ids);
-    if (error) throw error;
+    const batches = Array.from(
+      { length: Math.ceil(ids.length / 100) },
+      (_, index) => ids.slice(index * 100, (index + 1) * 100),
+    );
+    const results = await Promise.all(
+      batches.map((batch) =>
+        this.client
+          .from("profiles")
+          .select("id,display_name,current_level,completed_sessions,current_streak")
+          .in("id", batch),
+      ),
+    );
+    const failed = results.find((result) => result.error);
+    if (failed?.error) throw failed.error;
+    const rows = results.flatMap((result) => (result.data ?? []) as Row[]);
     return new Map(
-      ((data ?? []) as Row[]).map((row) => [
+      rows.map((row) => [
         row.id as string,
         {
           userId: row.id as string,
           displayName: (row.display_name as string) ?? "Learner",
-          friendCode: (row.friend_code as string | undefined) ?? friendCodeForUser(row.id as string),
           currentLevel: ((row.current_level as CefrLevel) ?? "A1"),
           completedSessions: (row.completed_sessions as number) ?? 0,
           currentStreak: (row.current_streak as number) ?? 0,
@@ -540,7 +643,9 @@ export class SupabaseLearningRepository implements LearningRepository {
     const { data, error } = await this.client
       .from("social_blocks")
       .select("blocker_user_id,blocked_user_id")
-      .or(`blocker_user_id.eq.${userId},blocked_user_id.eq.${userId}`);
+      .or(`blocker_user_id.eq.${userId},blocked_user_id.eq.${userId}`)
+      .order("created_at", { ascending: false })
+      .limit(SOCIAL_BLOCK_LIMIT);
     if (error) throw error;
     const rows = (data ?? []) as Row[];
     return {
@@ -553,73 +658,129 @@ export class SupabaseLearningRepository implements LearningRepository {
     };
   }
 
-  private async hasSocialBlock(userId: string, targetUserId: string) {
-    const { data, error } = await this.client
-      .from("social_blocks")
-      .select("blocker_user_id")
-      .or(
-        `and(blocker_user_id.eq.${userId},blocked_user_id.eq.${targetUserId}),and(blocker_user_id.eq.${targetUserId},blocked_user_id.eq.${userId})`,
-      )
-      .limit(1);
-    if (error) throw error;
-    return Boolean(data?.length);
-  }
-
   async getSocialSnapshot(userId: string): Promise<SocialSnapshot> {
     const profile = await this.ensureSocialProfile(userId);
     const { ownBlockedUserIds, blockedEitherDirection } = await this.blockedPairs(userId);
-    const [friendshipRows, requestRows, challengeRows] = await Promise.all([
+    const [friendshipRows, incomingRequestRows, outgoingRequestRows, challengeRows] = await Promise.all([
       this.client
         .from("friendships")
         .select("*")
         .or(`user_one_id.eq.${userId},user_two_id.eq.${userId}`)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(SOCIAL_FRIEND_LIMIT),
       this.client
         .from("friend_requests")
         .select("*")
-        .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
+        .eq("to_user_id", userId)
         .eq("status", "pending")
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(SOCIAL_PENDING_REQUEST_LIMIT),
+      this.client
+        .from("friend_requests")
+        .select("*")
+        .eq("from_user_id", userId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(SOCIAL_PENDING_REQUEST_LIMIT),
       this.client
         .from("coop_challenges")
         .select("*")
         .or(`created_by_user_id.eq.${userId},friend_user_id.eq.${userId}`)
-        .eq("status", "active")
         .order("created_at", { ascending: false })
-        .limit(1),
+        .limit(20),
     ]);
-    if (friendshipRows.error || requestRows.error || challengeRows.error) {
-      throw friendshipRows.error ?? requestRows.error ?? challengeRows.error;
+    if (
+      friendshipRows.error ||
+      incomingRequestRows.error ||
+      outgoingRequestRows.error ||
+      challengeRows.error
+    ) {
+      throw friendshipRows.error ??
+        incomingRequestRows.error ??
+        outgoingRequestRows.error ??
+        challengeRows.error;
     }
 
     const friendships = ((friendshipRows.data ?? []) as Row[]).filter((row) => {
       const friendUserId = row.user_one_id === userId ? (row.user_two_id as string) : (row.user_one_id as string);
       return !blockedEitherDirection.has(friendUserId);
     });
-    const requests = ((requestRows.data ?? []) as Row[]).filter((row) => {
+    const requests = ([
+      ...((incomingRequestRows.data ?? []) as Row[]),
+      ...((outgoingRequestRows.data ?? []) as Row[]),
+    ]).filter((row) => {
       const otherUserId = row.from_user_id === userId ? (row.to_user_id as string) : (row.from_user_id as string);
       return !blockedEitherDirection.has(otherUserId);
     });
-    const challenge = ((challengeRows.data ?? []) as Row[]).find((row) => {
+    const visibleChallenges = ((challengeRows.data ?? []) as Row[]).filter((row) => {
       const friendUserId = row.created_by_user_id === userId ? (row.friend_user_id as string) : (row.created_by_user_id as string);
       return !blockedEitherDirection.has(friendUserId);
     });
+    const challenge = visibleChallenges.find((row) => row.status === "active") ?? visibleChallenges[0];
 
     const profileIds = [
       ...friendships.flatMap((row) => [row.user_one_id as string, row.user_two_id as string]),
       ...requests.flatMap((row) => [row.from_user_id as string, row.to_user_id as string]),
+      ...ownBlockedUserIds,
       ...(challenge ? [challenge.created_by_user_id as string, challenge.friend_user_id as string] : []),
     ];
     const profiles = await this.socialProfiles(profileIds);
     const fallbackProfile = this.toSocialProfile(profile);
     const getProfile = (id: string) => profiles.get(id) ?? (id === userId ? fallbackProfile : undefined);
+    const getPendingProfile = (id: string) => {
+      const candidate = getProfile(id);
+      if (!candidate) throw new Error("The friend request profile could not be loaded.");
+      return { userId: candidate.userId, displayName: candidate.displayName };
+    };
+    let activeChallenge: SocialSnapshot["activeChallenge"];
+
+    if (challenge) {
+      const friendUserId =
+        challenge.created_by_user_id === userId ? (challenge.friend_user_id as string) : (challenge.created_by_user_id as string);
+      const friend = getProfile(friendUserId);
+      if (!friend) throw new Error("The challenge participant profile could not be loaded.");
+      const startingSessions = (challenge.starting_sessions as Record<string, number>) ?? {};
+      const yourStartingSessions = startingSessions[userId] ?? fallbackProfile.completedSessions;
+      const friendStartingSessions = startingSessions[friendUserId] ?? friend.completedSessions;
+      const progress = coopChallengeProgress({
+        yourStartingSessions,
+        friendStartingSessions,
+        yourCompletedSessions: fallbackProfile.completedSessions,
+        friendCompletedSessions: friend.completedSessions,
+      });
+
+      if (challenge.status === "active" && progress.combinedProgress >= ((challenge.target_sessions as number) ?? 3)) {
+        const completedAt = new Date().toISOString();
+        const { error: completionError } = await this.client
+          .from("coop_challenges")
+          .update({ status: "completed", completed_at: completedAt })
+          .eq("id", challenge.id as string)
+          .eq("status", "active");
+        if (completionError) throw completionError;
+        challenge.status = "completed";
+        challenge.completed_at = completedAt;
+      }
+
+      activeChallenge = {
+        id: challenge.id as string,
+        friend,
+        title: challenge.title as string,
+        description: "Both learners complete focused sessions. The challenge rewards showing up, not competing on mistakes.",
+        targetSessions: (challenge.target_sessions as number) ?? 3,
+        yourStartingSessions,
+        friendStartingSessions,
+        ...progress,
+        status: challenge.status as "active" | "completed",
+        createdAt: challenge.created_at as string,
+        completedAt: challenge.completed_at as string | undefined,
+      };
+    }
 
     const incomingRequests = requests
       .filter((row) => row.to_user_id === userId)
       .map((row) => ({
         id: row.id as string,
-        from: getProfile(row.from_user_id as string)!,
-        to: getProfile(row.to_user_id as string)!,
+        from: getPendingProfile(row.from_user_id as string),
         status: row.status as "pending" | "accepted" | "declined",
         createdAt: row.created_at as string,
         respondedAt: row.responded_at as string | undefined,
@@ -628,8 +789,7 @@ export class SupabaseLearningRepository implements LearningRepository {
       .filter((row) => row.from_user_id === userId)
       .map((row) => ({
         id: row.id as string,
-        from: getProfile(row.from_user_id as string)!,
-        to: getProfile(row.to_user_id as string)!,
+        to: { displayName: getPendingProfile(row.to_user_id as string).displayName },
         status: row.status as "pending" | "accepted" | "declined",
         createdAt: row.created_at as string,
         respondedAt: row.responded_at as string | undefined,
@@ -637,7 +797,7 @@ export class SupabaseLearningRepository implements LearningRepository {
 
     return {
       profile: fallbackProfile,
-      friendCode: fallbackProfile.friendCode ?? friendCodeForUser(userId),
+      friendCode: profile.friendCode ?? generateFriendCode(),
       friends: friendships.map((row) => {
         const friendUserId = row.user_one_id === userId ? (row.user_two_id as string) : (row.user_one_id as string);
         return { id: row.id as string, friend: getProfile(friendUserId)!, createdAt: row.created_at as string };
@@ -645,205 +805,341 @@ export class SupabaseLearningRepository implements LearningRepository {
       incomingRequests,
       outgoingRequests,
       blockedUserIds: ownBlockedUserIds,
-      activeChallenge: challenge
-        ? {
-            id: challenge.id as string,
-            friend: getProfile(challenge.created_by_user_id === userId ? (challenge.friend_user_id as string) : (challenge.created_by_user_id as string))!,
-            title: challenge.title as string,
-            description: "Both learners complete focused sessions. The challenge rewards showing up, not competing on mistakes.",
-            targetSessions: (challenge.target_sessions as number) ?? 3,
-            yourStartingSessions: ((challenge.starting_sessions as Record<string, number>) ?? {})[userId] ?? 0,
-            friendStartingSessions:
-              ((challenge.starting_sessions as Record<string, number>) ?? {})[
-                challenge.created_by_user_id === userId ? (challenge.friend_user_id as string) : (challenge.created_by_user_id as string)
-              ] ?? 0,
-            status: challenge.status as "active" | "completed",
-            createdAt: challenge.created_at as string,
-            completedAt: challenge.completed_at as string | undefined,
-          }
-        : undefined,
+      blockedUsers: ownBlockedUserIds.map((blockedUserId) => ({
+        userId: blockedUserId,
+        displayName: getProfile(blockedUserId)?.displayName ?? "Blocked learner",
+      })),
+      activeChallenge,
     };
   }
 
   async sendFriendRequestByCode(userId: string, friendCode: string) {
     await this.ensureSocialProfile(userId);
-    const normalizedCode = normalizeFriendCode(friendCode);
-    const { data, error } = await this.client.from("profiles").select("id").eq("friend_code", normalizedCode).maybeSingle();
+    const { error } = await this.client.rpc("send_friend_request_by_code", {
+      p_user_id: userId,
+      p_friend_code: friendCode,
+    });
     if (error) throw error;
-    const targetUserId = (data as Row | null)?.id as string | undefined;
-    if (!targetUserId || targetUserId === userId) throw new Error("That friend code could not be added.");
-    if (await this.hasSocialBlock(userId, targetUserId)) throw new Error("This learner cannot be added.");
-    const { userOne, userTwo } = this.friendshipPair(userId, targetUserId);
-    const { data: existingFriendship, error: friendshipError } = await this.client
-      .from("friendships")
-      .select("id")
-      .eq("user_one_id", userOne)
-      .eq("user_two_id", userTwo)
-      .maybeSingle();
-    if (friendshipError) throw friendshipError;
-    if (!existingFriendship) {
-      const { error: requestError } = await this.client.from("friend_requests").upsert(
-        {
-          from_user_id: userId,
-          to_user_id: targetUserId,
-          status: "pending",
-          responded_at: null,
-        },
-        { onConflict: "from_user_id,to_user_id" },
-      );
-      if (requestError) throw requestError;
-    }
+    return this.getSocialSnapshot(userId);
+  }
+
+  async rotateFriendCode(userId: string, requestId: string) {
+    const { error } = await this.client.rpc("rotate_friend_code", {
+      p_user_id: userId,
+      p_request_id: requestId,
+    });
+    if (error) throw error;
     return this.getSocialSnapshot(userId);
   }
 
   async respondFriendRequest(userId: string, requestId: string, decision: "accepted" | "declined") {
-    const { data, error } = await this.client.from("friend_requests").select("*").eq("id", requestId).maybeSingle();
+    const { error } = await this.client.rpc("respond_friend_request", {
+      p_user_id: userId,
+      p_request_id: requestId,
+      p_decision: decision,
+    });
     if (error) throw error;
-    const request = data as Row | null;
-    if (!request || request.to_user_id !== userId || request.status !== "pending") throw new Error("That friend request is not available.");
-    const respondedAt = new Date().toISOString();
-    const { error: updateError } = await this.client
-      .from("friend_requests")
-      .update({ status: decision, responded_at: respondedAt })
-      .eq("id", requestId);
-    if (updateError) throw updateError;
-    if (decision === "accepted" && !(await this.hasSocialBlock(request.from_user_id as string, request.to_user_id as string))) {
-      const { userOne, userTwo } = this.friendshipPair(request.from_user_id as string, request.to_user_id as string);
-      const { error: friendshipError } = await this.client.from("friendships").upsert(
-        {
-          user_one_id: userOne,
-          user_two_id: userTwo,
-          created_at: respondedAt,
-        },
-        { onConflict: "user_one_id,user_two_id" },
-      );
-      if (friendshipError) throw friendshipError;
-    }
     return this.getSocialSnapshot(userId);
   }
 
   async blockSocialUser(userId: string, targetUserId: string) {
-    if (targetUserId === userId) throw new Error("You cannot block yourself.");
-    const { userOne, userTwo } = this.friendshipPair(userId, targetUserId);
-    const { error: blockError } = await this.client.from("social_blocks").upsert({
-      blocker_user_id: userId,
-      blocked_user_id: targetUserId,
+    const { error } = await this.client.rpc("block_social_user", {
+      p_user_id: userId,
+      p_target_user_id: targetUserId,
     });
-    if (blockError) throw blockError;
-    await Promise.all([
-      this.client.from("friendships").delete().eq("user_one_id", userOne).eq("user_two_id", userTwo),
-      this.client.from("friend_requests").delete().eq("from_user_id", userId).eq("to_user_id", targetUserId),
-      this.client.from("friend_requests").delete().eq("from_user_id", targetUserId).eq("to_user_id", userId),
-      this.client.from("coop_challenges").update({ status: "completed", completed_at: new Date().toISOString() }).eq("created_by_user_id", userId).eq("friend_user_id", targetUserId),
-      this.client.from("coop_challenges").update({ status: "completed", completed_at: new Date().toISOString() }).eq("created_by_user_id", targetUserId).eq("friend_user_id", userId),
-    ]);
+    if (error) throw error;
     return this.getSocialSnapshot(userId);
   }
 
-  async reportSocialUser(userId: string, targetUserId: string, reason: string, details?: string) {
+  async unblockSocialUser(userId: string, targetUserId: string) {
+    const { error } = await this.client.rpc("unblock_social_user", {
+      p_user_id: userId,
+      p_target_user_id: targetUserId,
+    });
+    if (error) throw error;
+    return this.getSocialSnapshot(userId);
+  }
+
+  async reportSocialUser(
+    userId: string,
+    targetUserId: string,
+    reason: string,
+    details: string | undefined,
+    requestId: string,
+  ) {
     if (targetUserId === userId) throw new Error("You cannot report yourself.");
-    const { error } = await this.client.from("social_reports").insert({
-      reporter_user_id: userId,
-      reported_user_id: targetUserId,
-      reason,
-      details: details ?? null,
+    const { error } = await this.client.rpc("report_social_user", {
+      p_user_id: userId,
+      p_target_user_id: targetUserId,
+      p_request_id: requestId,
+      p_reason: reason,
+      p_details: details ?? null,
     });
     if (error) throw error;
     return this.getSocialSnapshot(userId);
   }
 
   async startCoopChallenge(userId: string, friendUserId: string) {
-    const profile = await this.ensureSocialProfile(userId);
-    const friend = await this.ensureSocialProfile(friendUserId);
-    const { userOne, userTwo } = this.friendshipPair(userId, friendUserId);
-    const { data: friendship, error: friendshipError } = await this.client
-      .from("friendships")
-      .select("id")
-      .eq("user_one_id", userOne)
-      .eq("user_two_id", userTwo)
-      .maybeSingle();
-    if (friendshipError) throw friendshipError;
-    if (!friendship) throw new Error("Add this learner as a friend before starting a challenge.");
-    const { data: existing, error: existingError } = await this.client
-      .from("coop_challenges")
-      .select("id")
-      .or(`and(created_by_user_id.eq.${userId},friend_user_id.eq.${friendUserId}),and(created_by_user_id.eq.${friendUserId},friend_user_id.eq.${userId})`)
-      .eq("status", "active")
-      .limit(1);
-    if (existingError) throw existingError;
-    if (!existing?.length) {
-      const { error } = await this.client.from("coop_challenges").insert({
-        created_by_user_id: userId,
-        friend_user_id: friendUserId,
-        title: "Three-session co-op",
-        target_sessions: 3,
-        starting_sessions: {
-          [userId]: profile.completedSessions,
-          [friendUserId]: friend.completedSessions,
-        },
-      });
-      if (error) throw error;
-    }
+    const { error } = await this.client.rpc("start_coop_challenge", {
+      p_user_id: userId,
+      p_friend_user_id: friendUserId,
+      p_title: "Three-session co-op",
+      p_target_sessions: 3,
+    });
+    if (error) throw error;
     return this.getSocialSnapshot(userId);
   }
 
   async logTutorInteraction(input: { userId: string; contextPack: TutorContextPackV1; feedback: TutorFeedbackV1; provider: "fallback" | "openai" }) {
-    const { error } = await this.client.from("ai_interactions").insert({
-      id: crypto.randomUUID(), user_id: input.userId, interaction_type: input.contextPack.task,
-      context_pack_summary: { activityId: input.contextPack.activity.id, sourceIds: input.contextPack.allowedSourceIds, ruleIds: input.contextPack.ruleNotes.map((note) => note.id) },
+    const { error } = await this.client.from("ai_interactions").upsert({
+      id: input.contextPack.attemptId, user_id: input.userId, interaction_type: input.contextPack.task,
+      attempt_id: input.contextPack.attemptId,
+      context_pack_summary: { sessionId: input.contextPack.sessionId, activityId: input.contextPack.activity.id, sourceIds: input.contextPack.allowedSourceIds, ruleIds: input.contextPack.ruleNotes.map((note) => note.id) },
       response_summary: input.feedback, provider: input.provider, created_at: new Date().toISOString(),
-    });
+    }, { onConflict: "user_id,attempt_id" });
     if (error) throw error;
   }
 
-  async exportLearnerData(userId: string) {
-    const [profile, sessions, attempts, reviews, mistakes, privacyConsents, friendRequests, friendshipsOne, friendshipsTwo, socialBlocks, socialReports, challengesCreated, challengesJoined] = await Promise.all([
-      this.getProfile(userId),
-      this.client.from("sessions").select("*").eq("user_id", userId),
-      this.client.from("activity_attempts").select("*").eq("user_id", userId),
-      this.getDueReviews(userId),
-      this.client.from("mistake_patterns").select("*").eq("user_id", userId),
-      this.client.from("privacy_consents").select("*").eq("user_id", userId),
-      this.client.from("friend_requests").select("*").or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`),
-      this.client.from("friendships").select("*").eq("user_one_id", userId),
-      this.client.from("friendships").select("*").eq("user_two_id", userId),
-      this.client.from("social_blocks").select("*").or(`blocker_user_id.eq.${userId},blocked_user_id.eq.${userId}`),
-      this.client.from("social_reports").select("*").or(`reporter_user_id.eq.${userId},reported_user_id.eq.${userId}`),
-      this.client.from("coop_challenges").select("*").eq("created_by_user_id", userId),
-      this.client.from("coop_challenges").select("*").eq("friend_user_id", userId),
-    ]);
+  async claimTutorInteraction(userId: string, contextPack: TutorContextPackV1) {
+    const { data, error } = await this.client.rpc("claim_tutor_interaction", {
+      p_user_id: userId,
+      p_attempt_id: contextPack.attemptId,
+      p_interaction_type: contextPack.task,
+      p_context_pack_summary: {
+        sessionId: contextPack.sessionId,
+        activityId: contextPack.activity.id,
+        sourceIds: contextPack.allowedSourceIds,
+        ruleIds: contextPack.ruleNotes.map((note) => note.id),
+      },
+    });
+    if (error) throw error;
+    return data === true;
+  }
+
+  async getTutorInteractionForAttempt(userId: string, attemptId: string) {
+    const { data, error } = await this.client
+      .from("ai_interactions")
+      .select("response_summary,provider")
+      .eq("user_id", userId)
+      .eq("attempt_id", attemptId)
+      .neq("provider", "pending")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
     return {
+      feedback: data.response_summary as TutorFeedbackV1,
+      provider: data.provider as "fallback" | "openai",
+    };
+  }
+
+  async countTutorInteractionsSince(userId: string, since: string) {
+    const { count, error } = await this.client
+      .from("ai_interactions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", since);
+    if (error) throw error;
+    return count ?? 0;
+  }
+
+  async consumeRateLimit(
+    userId: string,
+    action: string,
+    options: { limit: number; windowSeconds: number },
+    requestId?: string,
+  ) {
+    const { data, error } = await this.client.rpc("consume_api_quota", {
+      p_user_id: userId,
+      p_action: action,
+      p_window_seconds: options.windowSeconds,
+      p_limit: options.limit,
+      p_request_id: requestId ?? null,
+    });
+    if (error) throw error;
+    return data === true;
+  }
+
+  private async selectAllBy(
+    table: string,
+    column: string,
+    value: string,
+    options: ExportPageOptions,
+  ): Promise<Row[]> {
+    const pageSize = 500;
+    const rows: Row[] = [];
+    let afterKey: string | number | undefined;
+
+    for (;;) {
+      let query = this.client
+        .from(table)
+        .select("*")
+        .eq(column, value)
+        .lte(options.cutoffColumn, options.cutoff)
+        .order(options.orderBy, { ascending: true })
+        .limit(pageSize);
+      if (afterKey !== undefined) query = query.gt(options.orderBy, afterKey);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      const page = (data ?? []) as Row[];
+      rows.push(...page);
+      if (page.length < pageSize) return rows;
+
+      const nextKey = page.at(-1)?.[options.orderBy];
+      if (typeof nextKey !== "string" && typeof nextKey !== "number") {
+        throw new Error(`Cannot paginate ${table}: ${options.orderBy} is not a stable scalar key.`);
+      }
+      afterKey = nextKey;
+    }
+  }
+
+  private async selectAllEither(table: string, filter: string, options: ExportPageOptions): Promise<Row[]> {
+    const pageSize = 500;
+    const rows: Row[] = [];
+    let afterKey: string | number | undefined;
+
+    for (;;) {
+      let query = this.client
+        .from(table)
+        .select("*")
+        .or(filter)
+        .lte(options.cutoffColumn, options.cutoff)
+        .order(options.orderBy, { ascending: true })
+        .limit(pageSize);
+      if (afterKey !== undefined) query = query.gt(options.orderBy, afterKey);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      const page = (data ?? []) as Row[];
+      rows.push(...page);
+      if (page.length < pageSize) return rows;
+
+      const nextKey = page.at(-1)?.[options.orderBy];
+      if (typeof nextKey !== "string" && typeof nextKey !== "number") {
+        throw new Error(`Cannot paginate ${table}: ${options.orderBy} is not a stable scalar key.`);
+      }
+      afterKey = nextKey;
+    }
+  }
+
+  async exportLearnerData(userId: string) {
+    const { data: cutoff, error: cutoffError } = await this.client.rpc("get_learner_export_cutoff");
+    if (cutoffError) throw cutoffError;
+    if (typeof cutoff !== "string" || Number.isNaN(Date.parse(cutoff))) {
+      throw new Error("The database returned an invalid privacy export cutoff.");
+    }
+    const exportCutoff = cutoff;
+    const atCutoff = (orderBy: string, cutoffColumn: string): ExportPageOptions => ({
+      orderBy,
+      cutoffColumn,
+      cutoff: exportCutoff,
+    });
+    const [
       profile,
-      sessions: sessions.data ?? [],
-      attempts: attempts.data ?? [],
+      authAccount,
+      sessions,
+      sessionStartRequests,
+      attempts,
       reviews,
-      mistakes: mistakes.data ?? [],
-      privacyConsents: privacyConsents.data ?? [],
-      friendRequests: friendRequests.data ?? [],
-      friendships: [...(friendshipsOne.data ?? []), ...(friendshipsTwo.data ?? [])],
-      socialBlocks: socialBlocks.data ?? [],
-      socialReports: socialReports.data ?? [],
-      coopChallenges: [...(challengesCreated.data ?? []), ...(challengesJoined.data ?? [])],
+      mistakes,
+      mistakeEvents,
+      privacyConsents,
+      aiInteractions,
+      friendRequests,
+      friendshipsOne,
+      friendshipsTwo,
+      socialBlocks,
+      socialReports,
+      challengesCreated,
+      challengesJoined,
+      streakEvents,
+      rewards,
+      aiSessionSummaries,
+      contentVersions,
+      friendCodeRotationRequests,
+      rateLimitEvents,
+    ] = await Promise.all([
+      this.getProfile(userId),
+      this.client.auth.admin.getUserById(userId),
+      this.selectAllBy("sessions", "user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy(
+        "session_start_requests",
+        "user_id",
+        userId,
+        atCutoff("request_id", "created_at"),
+      ),
+      this.selectAllBy("activity_attempts", "user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("review_items", "user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("mistake_patterns", "user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("mistake_events", "user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("privacy_consents", "user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("ai_interactions", "user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllEither(
+        "friend_requests",
+        `from_user_id.eq.${userId},to_user_id.eq.${userId}`,
+        atCutoff("id", "created_at"),
+      ),
+      this.selectAllBy("friendships", "user_one_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("friendships", "user_two_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("social_blocks", "blocker_user_id", userId, atCutoff("blocked_user_id", "created_at")),
+      this.selectAllBy("social_reports", "reporter_user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("coop_challenges", "created_by_user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("coop_challenges", "friend_user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("streak_events", "user_id", userId, atCutoff("id", "occurred_at")),
+      this.selectAllBy("rewards", "user_id", userId, atCutoff("id", "earned_at")),
+      this.selectAllBy("ai_session_summaries", "user_id", userId, atCutoff("id", "created_at")),
+      this.selectAllBy("content_versions", "created_by", userId, atCutoff("id", "created_at")),
+      this.selectAllBy(
+        "friend_code_rotation_requests",
+        "user_id",
+        userId,
+        atCutoff("request_id", "created_at"),
+      ),
+      this.selectAllBy("api_rate_events", "user_id", userId, atCutoff("id", "created_at")),
+    ]);
+    if (authAccount.error) throw authAccount.error;
+    const account = authAccount.data.user;
+
+    return {
+      exportedAt: exportCutoff,
+      account: {
+        id: account.id,
+        email: account.email,
+        emailConfirmedAt: account.email_confirmed_at,
+        createdAt: account.created_at,
+        lastSignInAt: account.last_sign_in_at,
+      },
+      profile,
+      sessions,
+      sessionStartRequests,
+      attempts,
+      reviews,
+      mistakes,
+      mistakeEvents,
+      privacyConsents,
+      tutorInteractions: aiInteractions,
+      friendRequests,
+      friendships: [...friendshipsOne, ...friendshipsTwo],
+      socialBlocks,
+      socialReports,
+      coopChallenges: [...challengesCreated, ...challengesJoined],
+      streakEvents,
+      rewards,
+      aiSessionSummaries,
+      contentVersions,
+      friendCodeRotationRequests,
+      rateLimitEvents,
+      retentionNotice:
+        "Rate-limit and abuse-prevention events may remain for up to eight days. Limited blocks and moderation reports may be retained after learner-data deletion to protect other learners and preserve safety investigations. For authorised content editors, restricted version attribution remains with editorial history and is anonymised if the sign-in account is deleted.",
     };
   }
 
   async deleteLearnerData(userId: string) {
-    const tables: { table: string; column: string }[] = [
-      { table: "ai_interactions", column: "user_id" }, { table: "activity_attempts", column: "user_id" },
-      { table: "mistake_events", column: "user_id" }, { table: "mistake_patterns", column: "user_id" },
-      { table: "review_items", column: "user_id" }, { table: "sessions", column: "user_id" },
-      { table: "privacy_consents", column: "user_id" },
-      { table: "friend_requests", column: "from_user_id" }, { table: "friend_requests", column: "to_user_id" },
-      { table: "friendships", column: "user_one_id" }, { table: "friendships", column: "user_two_id" },
-      { table: "social_blocks", column: "blocker_user_id" }, { table: "social_blocks", column: "blocked_user_id" },
-      { table: "social_reports", column: "reporter_user_id" }, { table: "social_reports", column: "reported_user_id" },
-      { table: "coop_challenges", column: "created_by_user_id" }, { table: "coop_challenges", column: "friend_user_id" },
-      { table: "profiles", column: "id" },
-    ];
-    for (const { table, column } of tables) {
-      const { error } = await this.client.from(table).delete().eq(column, userId);
-      if (error) throw error;
-    }
+    // Profile-owned learner and social rows use ON DELETE CASCADE, so this is
+    // one atomic database statement. Safety records and short-lived quota
+    // events reference auth.users directly and intentionally survive.
+    const { error } = await this.client.from("profiles").delete().eq("id", userId);
+    if (error) throw error;
   }
 }
 

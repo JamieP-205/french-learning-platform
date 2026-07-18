@@ -60,7 +60,7 @@ export default function RoleplayPage() {
     const teachingStep = getRoleplayTeachingStep(scenario.id, turn.id);
     setFeedback({
       outcome: "reveal",
-      text: `Correct answer: ${strongestChoice?.text ?? "Use the safest option shown."} Rule: ${teachingStep?.metalinguisticRule ?? "Match the form to the relationship and setting."} Shown as self-report evidence with no score credit.`,
+      text: `Best option: ${strongestChoice?.text ?? "Use the safest option shown."} Why: ${teachingStep?.metalinguisticRule ?? "Match the form to the relationship and setting."} Showing the answer does not add to your score.`,
       nextTurnIndex: turnIndex + 1,
     });
     setScoredAttemptActive(false);
@@ -78,10 +78,9 @@ export default function RoleplayPage() {
     <AppShell>
       <main className="py-10">
         <p className="eyebrow">Real French</p>
-        <h1 className="mt-2 text-4xl font-black">Practise the social judgement, not just the sentence.</h1>
+        <h1 className="mt-2 text-4xl font-black">Choose French that fits the situation.</h1>
         <p className="mt-4 max-w-3xl text-ink/75">
-          Roleplay here is deterministic: every choice has explicit register feedback. No free-form AI guesses, no
-          hidden scoring, and no pretending one phrase works everywhere.
+          Each choice explains its tone and level of formality, so you know when a phrase is appropriate.
         </p>
 
         <section className="mt-8 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
@@ -113,6 +112,7 @@ export default function RoleplayPage() {
                 <ActivityTeachingGate
                   concepts={ROLEPLAY_CONCEPTS}
                   actionLabel="Start roleplay"
+                  headingLevel={2}
                   onComplete={() => {
                     setTeachingComplete(true);
                     setScoredAttemptActive(true);
@@ -124,7 +124,9 @@ export default function RoleplayPage() {
                 <p className="text-xs font-black uppercase tracking-wide text-coral">
                   Turn {turnIndex + 1} of {scenario.turns.length}
                 </p>
-                <p className="mt-3 rounded-2xl bg-white p-4 font-bold">Other person: {turn.npcLine}</p>
+                <p className="mt-3 rounded-2xl bg-white p-4 font-bold">
+                  Other person: <span lang="fr">{turn.npcLine}</span>
+                </p>
                 <h3 className="mt-5 text-xl font-black">{turn.task}</h3>
                 {!feedback && <div className="mt-4 grid gap-3">
                   {turn.choices.map((choice) => (
@@ -134,7 +136,7 @@ export default function RoleplayPage() {
                       disabled={Boolean(feedback)}
                       onClick={() => choose(choice.id)}
                     >
-                      <span className="block">{choice.text}</span>
+                      <span className="block" lang="fr">{choice.text}</span>
                       <span className="mt-1 block text-xs uppercase tracking-wide text-ink/50">{choice.register.replace("_", " ")}</span>
                     </button>
                   ))}
@@ -177,8 +179,8 @@ export default function RoleplayPage() {
         </section>
 
         {!scoredAttemptActive && <section className="card mt-8">
-          <p className="eyebrow">Register comparisons</p>
-          <h2 className="mt-2 text-2xl font-black">The same intent changes shape by situation.</h2>
+          <p className="eyebrow">Tone and formality</p>
+          <h2 className="mt-2 text-2xl font-black">See how the same message changes by situation.</h2>
           <div className="mt-5 grid gap-4 lg:grid-cols-3">
             {registerComparisons.map((comparison) => (
               <article key={comparison.id} className="rounded-2xl bg-cream p-4">

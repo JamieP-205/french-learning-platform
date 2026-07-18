@@ -23,7 +23,7 @@ export default function SpeakPage() {
         <h1 className="mt-2 text-4xl font-black">Say French out loud, without an audience.</h1>
         <p className="mt-4 max-w-3xl text-ink/75">
           The app does not store voice recordings. If you use speech checking, your browser or its speech provider
-          may process the audio. Feedback is gentle on purpose: the goal is being understood, not sounding like a newsreader.
+          may process the audio. The optional check compares recognised words with the phrase; it does not grade your accent.
         </p>
 
         <section className="card mt-7">
@@ -31,11 +31,12 @@ export default function SpeakPage() {
             <ActivityTeachingGate
               concepts={speakingConcepts}
               actionLabel="Start speaking check"
+              headingLevel={2}
               onComplete={() => setTeachingComplete(true)}
             />
           ) : <>
             <p className="eyebrow">Repeat after me</p>
-            <h2 className="mt-2 text-2xl font-black">One phrase, your voice, instant feedback.</h2>
+            <h2 className="mt-2 text-2xl font-black">Say one phrase and check the recognised words.</h2>
             <div className="mt-6 rounded-3xl bg-cream p-6" data-testid="speaking-scored-check">
               <SpeakCheck key={shadow.id} targetText={shadow.french} audioSource={shadow.audioSource} />
               <p className="mt-4 text-sm text-ink/70">

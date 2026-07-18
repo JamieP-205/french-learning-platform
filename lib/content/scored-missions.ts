@@ -30,8 +30,8 @@ export const CAFE_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["polite-request", "cafe", "vouloir"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
       reviewerNotes: "Starter phrase. Needs qualified review before strong public accuracy claims.",
     },
     {
@@ -45,8 +45,8 @@ export const CAFE_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["ordering", "cafe"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
     {
       id: "phrase-cafe-combien-v1",
@@ -60,8 +60,8 @@ export const CAFE_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["price", "question"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
     {
       id: "phrase-cafe-addition-v1",
@@ -74,8 +74,8 @@ export const CAFE_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["restaurant", "politeness"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
     {
       id: "rule-cafe-politeness-v1",
@@ -89,8 +89,8 @@ export const CAFE_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["politeness", "conditional-chunk"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
   ],
   activities: [
@@ -135,7 +135,7 @@ export const CAFE_MISSION: Mission = {
       prompt: "Complete the order: Bonjour, je voudrais un ___, s'il vous plaît.",
       promptFrenchSegments: ["Bonjour, je voudrais un ___, s'il vous plaît."],
       helperText: "Type the missing item.",
-      placeholder: "café",
+      placeholder: "Type the missing word",
       targetText: "Bonjour, je voudrais un café, s'il vous plaît.",
       contentItemIds: ["phrase-cafe-je-voudrais-v1"],
       grammarRuleIds: ["rule-cafe-politeness-v1"],
@@ -238,8 +238,8 @@ export const TRAVEL_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["where-is", "travel"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
     {
       id: "phrase-travel-billet-v1",
@@ -252,8 +252,8 @@ export const TRAVEL_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["ticket", "travel", "polite-request"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
     {
       id: "phrase-travel-train-time-v1",
@@ -266,8 +266,8 @@ export const TRAVEL_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["time", "train", "question"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
     {
       id: "phrase-travel-repeat-v1",
@@ -280,8 +280,8 @@ export const TRAVEL_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["rescue-phrase", "politeness"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
     {
       id: "phrase-travel-lost-v1",
@@ -294,8 +294,8 @@ export const TRAVEL_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["lost", "travel"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
     {
       id: "rule-travel-politeness-v1",
@@ -308,8 +308,8 @@ export const TRAVEL_MISSION: Mission = {
       cefrLevel: "A1",
       grammarTags: ["politeness", "vous", "question"],
       sourceIds: [PRACTICAL_A1_SOURCE.id],
-      verificationStatus: "source_validated",
-      publicationStatus: "published",
+      verificationStatus: "needs_review",
+      publicationStatus: "draft",
     },
   ],
   activities: [
@@ -337,7 +337,7 @@ export const TRAVEL_MISSION: Mission = {
       prompt: "Complete: Où est la ___ ?",
       promptFrenchSegments: ["Où est la ___ ?"],
       helperText: "Type the word for station.",
-      placeholder: "gare",
+      placeholder: "Type the missing word",
       targetText: "Où est la gare ?",
       contentItemIds: ["phrase-travel-gare-v1"],
       grammarRuleIds: ["phrase-travel-gare-v1"],
@@ -400,7 +400,7 @@ export const TRAVEL_MISSION: Mission = {
       prompt: "Complete: Je suis ___.",
       promptFrenchSegments: ["Je suis ___."],
       helperText: "Type the phrase for lost.",
-      placeholder: "perdu",
+      placeholder: "Type the missing word",
       targetText: "Je suis perdu.",
       contentItemIds: ["phrase-travel-lost-v1"],
       grammarRuleIds: ["phrase-travel-lost-v1"],
@@ -430,6 +430,16 @@ export const SCORED_MISSIONS: Mission[] = [INTRO_MISSION, CAFE_MISSION, TRAVEL_M
 
 export function getMissionBySlug(slug: string): Mission | undefined {
   return SCORED_MISSIONS.find((mission) => mission.slug === slug);
+}
+
+export function getMissionById(id: string): Mission | undefined {
+  return SCORED_MISSIONS.find((mission) => mission.id === id);
+}
+
+export function getScoredActivityById(activityId: string) {
+  return SCORED_MISSIONS
+    .flatMap((mission) => mission.activities)
+    .find((activity) => activity.id === activityId);
 }
 
 export function getScoredMissionSlugs() {

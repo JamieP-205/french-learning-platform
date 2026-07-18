@@ -23,7 +23,7 @@ export default function LearnPage() {
       href: "/learn/cafe-food",
     },
     {
-      title: "Adaptive review",
+      title: "Focused review",
       detail: "Live locally",
       description: "Mistakes from the public lesson come back first in this browser so practice is not random.",
       href: "/review",
@@ -42,15 +42,15 @@ export default function LearnPage() {
         <p className="eyebrow">Learn</p>
         <h1 className="mt-2 text-4xl font-black">Pick a useful French topic.</h1>
         <p className="mt-4 max-w-3xl text-lg text-ink/75">
-          Start with a verified scored mission, then branch into practical previews. The app stays honest about what is fully scored, what is practice-ready, and what is still planned.
+          Start with a guided foundation lesson, then branch into practical topics. Each activity is clearly labelled as a full lesson, extra practice, or planned content.
         </p>
 
         <section className="mt-8 grid gap-5 md:grid-cols-3">
           <Link href="/speak" className="card transition hover:bg-cream">
             <p className="eyebrow">Speak</p>
-            <h2 className="mt-2 text-2xl font-black">Pronunciation practice with instant feedback</h2>
+            <h2 className="mt-2 text-2xl font-black">Speaking practice with word-matching feedback</h2>
             <p className="mt-3 text-ink/75">
-              Repeat-after-me with browser speech checking, tricky sound contrasts like tu/tout, and shadowing for rhythm.
+              Repeat phrases with optional browser word matching, compare tricky sounds such as tu and tout, and shadow the rhythm.
             </p>
           </Link>
           <Link href="/listen" className="card transition hover:bg-cream">
@@ -73,7 +73,7 @@ export default function LearnPage() {
           <p className="text-sm font-bold uppercase tracking-wide text-amber">Public path</p>
           <h2 className="mt-2 text-3xl font-black">A learner always has a next useful step.</h2>
           <p className="mt-3 max-w-2xl text-white/75">
-            The public release path is foundation first: complete a verified mission, catch one mistake, repair it, then expand into practical situations.
+            Start with the foundations, revisit anything you miss, then expand into practical situations.
           </p>
           <div className="mt-6 grid gap-3 md:grid-cols-4">
             {pathSteps.map((step, index) => (
@@ -89,18 +89,18 @@ export default function LearnPage() {
         </section>
 
         <section className="card mt-6">
-          <p className="eyebrow">All levels, evidence first</p>
-          <h2 className="mt-2 text-2xl font-black">Choose any starting level, then let the app calibrate safely.</h2>
+          <p className="eyebrow">Choose your starting point</p>
+          <h2 className="mt-2 text-2xl font-black">Start at any level with a short foundation check.</h2>
           <p className="mt-3 text-ink/75">
-            A2, B1, B2, C1, and C2 learners are not given fake advanced AI lessons. They start with a short verified
-            calibration, then the app recommends repair, preview topics, and future level coverage from real evidence.
+            A2, B1, B2, C1, and C2 learners begin with a short, reviewed foundation check. Recommendations then use
+            their answers to point to useful repair work and the topic coverage that is genuinely available.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link className="button-primary" href="/settings">
               Set level and goal
             </Link>
             <Link className="button-secondary" href="/progress">
-              See adaptive evidence
+              See your progress
             </Link>
           </div>
         </section>
@@ -124,11 +124,11 @@ export default function LearnPage() {
 
               {topic.href ? (
                 <Link className={topic.status === "ready" ? "button-primary mt-6" : "button-secondary mt-6"} href={topic.href}>
-                  {topic.status === "ready" ? "Open scored topic" : "Open practice preview"}
+                  {topic.status === "ready" ? "Start reviewed lesson" : "Open practice preview"}
                 </Link>
               ) : (
                 <div className="mt-6 rounded-2xl bg-cream p-4 text-sm font-bold text-ink/70">
-                  Planned for a later content patch.
+                  More practice for this topic is on the way.
                 </div>
               )}
             </article>
@@ -136,12 +136,11 @@ export default function LearnPage() {
         </section>
 
         <section className="card mt-6">
-          <p className="eyebrow">How this should grow</p>
-          <h2 className="mt-2 text-2xl font-black">Practice previews become scored missions later.</h2>
+          <p className="eyebrow">How the course grows</p>
+          <h2 className="mt-2 text-2xl font-black">Practice previews become full lessons after review.</h2>
           <p className="mt-3 text-ink/75">
-            The next content layer should connect more preview topics to the full lesson player, accepted-answer
-            validation, mistake repair, and review scheduling. Roleplay is deterministic now; deeper branches can grow
-            from the same register-labelled content.
+            Each preview needs reviewed answers, useful mistake feedback, and follow-up practice before it becomes a
+            full lesson. Roleplay will also gain more choices for different situations and levels of formality.
           </p>
         </section>
       </main>

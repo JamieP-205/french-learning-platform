@@ -14,11 +14,11 @@ type GardenUnlock = {
 export function gardenUnlocks(progress: ProgressSnapshot): GardenUnlock[] {
   return [
     { id: "sprout", label: "First sprout", earnedBy: "Complete your first session", earned: progress.sessionsCompleted >= 1 },
-    { id: "flowers", label: "Flower bed", earnedBy: "Recall 5 phrases", earned: progress.phrasesLearned >= 5 },
+    { id: "flowers", label: "Flower bed", earnedBy: "Recall your first phrase", earned: progress.phrasesLearned >= 1 },
     { id: "bench", label: "Repaired bench", earnedBy: "Fix a mistake through review", earned: progress.mistakesFixed >= 1 },
     { id: "sun", label: "Morning sun", earnedBy: "Reach a 3-day streak", earned: progress.currentStreak >= 3 },
     { id: "cafe", label: "Cafe stall", earnedBy: "Complete 5 sessions", earned: progress.sessionsCompleted >= 5 },
-    { id: "tree", label: "Chestnut tree", earnedBy: "Recall 25 phrases", earned: progress.phrasesLearned >= 25 },
+    { id: "tree", label: "Chestnut tree", earnedBy: "Complete 10 sessions", earned: progress.sessionsCompleted >= 10 },
   ];
 }
 

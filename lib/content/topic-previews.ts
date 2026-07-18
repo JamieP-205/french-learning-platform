@@ -45,7 +45,7 @@ export const topicPreviews: TopicPreview[] = [
     detail: "Mixed lesson",
     description: "Say who you are, give your age correctly, and talk about today.",
     outcome: "You can introduce yourself with a safe everyday version and avoid the common age mistake.",
-    sourceNote: "Verified seed mission already connected to the lesson player and deterministic answer checks.",
+    sourceNote: "Reviewed introduction lesson with clear answer checks and follow-up practice.",
     phrases: [
       {
         french: "Je m'appelle Jamie.",
@@ -86,12 +86,12 @@ export const topicPreviews: TopicPreview[] = [
     title: "Cafe and food",
     href: "/learn/cafe-food",
     status: "practice_preview",
-    statusLabel: "Review-stage preview",
+    statusLabel: "Practice preview",
     level: "A1",
     detail: "Scenario preview",
     description: "Order simply, ask for prices, and use safer polite café phrases.",
     outcome: "You can order one item politely, ask the price, and avoid sounding too blunt.",
-    sourceNote: "Source-backed starter phrases for preview. The scored lesson remains gated until independent French review clears the accepted answers and feedback.",
+    sourceNote: "This topic is available for extra practice. A full lesson will be added after a final language review.",
     phrases: [
       {
         french: "Bonjour, je voudrais un café, s'il vous plaît.",
@@ -146,19 +146,19 @@ export const topicPreviews: TopicPreview[] = [
         reason: "This is a short everyday phrase you can use when paying.",
       },
     ],
-    comingNext: ["Expand café roleplay", "Add listening-style menu prompts", "Add a mini café roleplay"],
+    comingNext: ["Longer café roleplay", "Menu listening", "Paying and asking for the bill"],
   },
   {
     slug: "travel-basics",
     title: "Travel basics",
     href: "/learn/travel-basics",
     status: "practice_preview",
-    statusLabel: "Review-stage preview",
+    statusLabel: "Practice preview",
     level: "A1",
     detail: "Scenario preview",
     description: "Ask where something is, buy a ticket, ask for repeat help, and handle simple travel problems.",
     outcome: "You can ask for a station, buy a ticket, and recover when you do not understand.",
-    sourceNote: "Source-backed starter phrases for preview. The scored lesson remains gated until independent French review clears the accepted answers and feedback.",
+    sourceNote: "This topic is available for extra practice. A full lesson will be added after a final language review.",
     phrases: [
       {
         french: "Où est la gare ?",
@@ -223,7 +223,7 @@ export const topicPreviews: TopicPreview[] = [
         reason: "It is a safe polite way to ask someone to repeat.",
       },
     ],
-    comingNext: ["Add ticket-buying variations", "Add lost/travel repair phrases", "Add listening-speed practice later"],
+    comingNext: ["Ticket-buying variations", "Getting unstuck while travelling", "Faster listening"],
   },
   {
     slug: "work-basics",
@@ -235,7 +235,7 @@ export const topicPreviews: TopicPreview[] = [
     detail: "Goal preview",
     description: "Introduce your role, ask for clarification, and keep workplace French polite and simple.",
     outcome: "You can say what you do, ask someone to repeat, and explain that you are learning French.",
-    sourceNote: "Reviewed starter phrases for public preview. Not scored until accepted-answer feedback is fully checked.",
+    sourceNote: "This topic is available for extra practice. A full lesson will be added after a final language review.",
     phrases: [
       {
         french: "Je travaille dans le marketing.",
@@ -288,7 +288,7 @@ export const topicPreviews: TopicPreview[] = [
         reason: "Je travaille dans... is a practical way to give your work area.",
       },
     ],
-    comingNext: ["Add meeting phrases", "Add email openings", "Add role-specific vocabulary packs"],
+    comingNext: ["Meeting phrases", "Email openings", "Role-specific vocabulary"],
   },
   {
     slug: "everyday-conversation",
@@ -300,7 +300,7 @@ export const topicPreviews: TopicPreview[] = [
     detail: "Conversation preview",
     description: "Keep a simple conversation alive with opinions, reasons, and repair phrases.",
     outcome: "You can say what you think, give a simple reason, and recover when you miss something.",
-    sourceNote: "Reviewed starter phrases for public preview. Not scored until accepted-answer feedback is fully checked.",
+    sourceNote: "This topic is available for extra practice. A full lesson will be added after a final language review.",
     phrases: [
       {
         french: "Je pense que c'est une bonne idée.",
@@ -350,7 +350,7 @@ export const topicPreviews: TopicPreview[] = [
         reason: "It lets you keep the conversation going while learning the exact word.",
       },
     ],
-    comingNext: ["Add opinion contrast", "Add short story prompts", "Add conversation branching"],
+    comingNext: ["Contrasting opinions", "Short stories", "Branching conversations"],
   },
   {
     slug: "texting-casual-french",

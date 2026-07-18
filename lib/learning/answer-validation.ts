@@ -20,6 +20,13 @@ function findNearMiss(activity: ActivityDefinition, answer: string): NearMiss | 
   );
 }
 
+function learnerFacingCorrectAnswer(activity: ActivityDefinition) {
+  const acceptedValue = activity.acceptedAnswers[0]?.value ?? "";
+  if (activity.type !== "multiple_choice") return acceptedValue;
+
+  return activity.choices.find((choice) => choice.id === acceptedValue)?.label ?? acceptedValue;
+}
+
 export function validateActivityAnswer(
   activity: ActivityDefinition,
   submittedAnswer: string,
@@ -40,7 +47,7 @@ export function validateActivityAnswer(
       isNearMiss: false,
       normalizedAnswer,
       feedback: activity.feedbackCorrect,
-      correctAnswer: activity.acceptedAnswers[0]?.value ?? "",
+      correctAnswer: learnerFacingCorrectAnswer(activity),
       ruleIds: activity.grammarRuleIds,
       shouldCreateReview: false,
     };
@@ -52,7 +59,7 @@ export function validateActivityAnswer(
     isNearMiss: Boolean(nearMiss),
     normalizedAnswer,
     feedback: nearMiss?.explanation ?? activity.feedbackIncorrect,
-    correctAnswer: nearMiss?.correctedAnswer ?? activity.acceptedAnswers[0]?.value ?? "",
+    correctAnswer: nearMiss?.correctedAnswer ?? learnerFacingCorrectAnswer(activity),
     mistakeType: nearMiss?.mistakeType ?? "unknown",
     ruleIds: nearMiss ? [nearMiss.ruleId] : activity.grammarRuleIds,
     shouldCreateReview: true,

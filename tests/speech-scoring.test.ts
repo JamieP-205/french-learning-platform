@@ -10,6 +10,13 @@ describe("pronunciation scoring", () => {
     expect(feedback.score).toBe(1);
   });
 
+  it("does not accept the right words in the wrong order", () => {
+    const feedback = scorePronunciation("café un voudrais je", ["Je voudrais un café"]);
+
+    expect(feedback.verdict).toBe("retry");
+    expect(feedback.score).toBeLessThan(0.4);
+  });
+
   it("marks partial phrases as close with the missing words listed", () => {
     const feedback = scorePronunciation("je voudrais café", ["Je voudrais un café, s'il vous plaît."]);
     expect(feedback.verdict).toBe("close");

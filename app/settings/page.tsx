@@ -1,46 +1,64 @@
+"use client";
+
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { AccountProfileSettings } from "@/components/settings/account-profile-settings";
 import { LocalLearningDataControls } from "@/components/settings/local-learning-data-controls";
 import { LocalLearningPreferences } from "@/components/settings/local-learning-preferences";
+import { LearningModeUnavailable } from "@/components/learning-mode-unavailable";
+import { useLearningMode } from "@/lib/auth/use-learning-mode";
 
 export default function SettingsPage() {
+  const learningMode = useLearningMode();
+
   return (
     <AppShell>
       <main className="py-10">
         <p className="eyebrow">Settings</p>
-        <h1 className="mt-2 text-4xl font-black">Your learning controls.</h1>
+        <h1 className="mt-2 text-4xl font-black">Your profile and learning controls.</h1>
         <p className="mt-4 max-w-3xl text-ink/75">
-          Some controls are live now, and some are marked clearly as future work. The app should be honest about that.
+          Set the pace, goals, and practice focus that should shape your next session.
         </p>
 
-        <section className="mt-7">
-          <AccountProfileSettings />
-        </section>
-
-        <section className="mt-7">
-          <LocalLearningPreferences />
-        </section>
-
-        <section className="mt-7">
-          <LocalLearningDataControls />
-        </section>
+        {learningMode === "loading" && (
+          <div className="card mt-7" role="status">Loading your settings...</div>
+        )}
+        {learningMode === "unavailable" && <LearningModeUnavailable />}
+        {learningMode === "account" && (
+          <section className="mt-7">
+            <AccountProfileSettings />
+          </section>
+        )}
+        {learningMode === "local" && (
+          <section className="mt-7">
+            <LocalLearningPreferences />
+          </section>
+        )}
+        {(learningMode === "local" || learningMode === "account") && (
+          <section className="mt-7">
+            <LocalLearningDataControls />
+          </section>
+        )}
 
         <section className="mt-7 grid gap-5 lg:grid-cols-2">
           <div className="card">
             <p className="eyebrow">Learning setup</p>
             <h2 className="mt-2 text-2xl font-black">Keep setup lightweight</h2>
             <p className="mt-3 text-ink/75">
-              Name, session length, speaking confidence and practice focus can be changed above without repeating onboarding.
+              {learningMode === "account"
+                ? "Name, level, goals, session length, speaking confidence, and practice focus can be changed above without repeating onboarding."
+                : learningMode === "local"
+                  ? "Name, level, main goal, daily time, and session feel can be changed above whenever your routine changes."
+                  : "Learning controls will appear after the app confirms whether this is an account or device-only session."}
             </p>
           </div>
 
           <div className="card">
             <p className="eyebrow">Speaking</p>
-            <h2 className="mt-2 text-2xl font-black">Browser speech, with honest fallback</h2>
+            <h2 className="mt-2 text-2xl font-black">Speech practice on supported browsers</h2>
             <p className="mt-3 text-ink/75">
-              Where the browser supports it, Speak can check repeat-after-me practice. Nothing is uploaded; unsupported
-              browsers stay as a clear self-check.
+              Where supported, Speak compares recognised words with the target phrase. The app does not store recordings,
+              but your browser or speech provider may process audio. You can still complete a self-check without automatic matching.
             </p>
           </div>
 
@@ -48,8 +66,15 @@ export default function SettingsPage() {
             <p className="eyebrow">Data</p>
             <h2 className="mt-2 text-2xl font-black">Account data controls</h2>
             <p className="mt-3 text-ink/75">
-              Account export and deletion live in the privacy centre. Browser-only public progress can be exported or
-              reset above.
+              {learningMode === "account"
+                ? "Account-linked learner-data export and deletion live in the privacy centre. Browser-only data controls remain above because data saved on this device stays separate from your account."
+                : learningMode === "local"
+                  ? "Browser-only progress can be exported or reset above; it never leaves this device."
+                  : "Data controls will appear after the app confirms whether this is an account or device-only session."}
+            </p>
+            <p className="mt-3 text-sm text-ink/65">
+              Rate-limit and abuse-prevention events may remain for up to eight days. Limited safety blocks and reports
+              may be retained after learner-data deletion. Restricted editorial attribution follows the separate content-history policy.
             </p>
             <Link className="button-secondary mt-6" href="/privacy">
               Open privacy centre
@@ -61,8 +86,8 @@ export default function SettingsPage() {
           <p className="eyebrow">Coming later</p>
           <h2 className="mt-2 text-2xl font-black">Calendar, topic badges, and deeper roleplay.</h2>
           <p className="mt-3 text-ink/75">
-            The next product layer should add richer real-life scenarios, deterministic roleplay branches, and more
-            reviewed topic depth beyond the current vertical slice.
+            More real-life scenarios, carefully written roleplay choices, and fully reviewed lessons are planned as the
+            course grows.
           </p>
         </section>
       </main>

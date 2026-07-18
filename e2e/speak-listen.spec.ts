@@ -153,6 +153,7 @@ test("bundled French audio decodes without browser speech synthesis", async ({ p
 
 test("speak practice page works and degrades honestly", async ({ page }) => {
   await page.goto("/speak");
+  await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.getByRole("heading", { name: /say french out loud/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Learn this first" })).toBeVisible();
   await expect(page.getByTestId("speaking-scored-check")).toHaveCount(0);
@@ -169,7 +170,8 @@ test("speak practice page works and degrades honestly", async ({ page }) => {
 
 test("listen dictation checks typed answers", async ({ page }) => {
   await page.goto("/listen");
-  await expect(page.getByRole("heading", { name: /train your ear/i })).toBeVisible();
+  await expect(page.locator("h1")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Build confidence understanding spoken French." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Learn this first" })).toBeVisible();
   await expect(page.getByLabel("Your answer")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Check", exact: true })).toHaveCount(0);

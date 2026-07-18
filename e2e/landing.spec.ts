@@ -12,7 +12,7 @@ test("landing page has one clear way to begin the first lesson", async ({ page }
   await expect(lessonCta).toHaveAttribute("href", "/demo");
   await expect(page.locator("a.button-primary")).toHaveCount(1);
 
-  const accountStatus = page.getByRole("link", { name: "Account sync status", exact: true });
+  const accountStatus = page.getByRole("link", { name: "Account availability", exact: true });
   await expect(accountStatus).toBeVisible();
   await expect(accountStatus).toHaveAttribute("href", "/status");
   await expect(accountStatus).not.toHaveClass(/button-primary|button-secondary/);

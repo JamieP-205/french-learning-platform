@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { LearningRepository, SubmissionInput } from "../lib/data/repository";
 import { MockLearningRepository } from "../lib/data/mock-repository";
 import { SupabaseLearningRepository } from "../lib/data/supabase-repository";
-import type { MistakePattern, ReviewItem } from "../lib/domain/types";
+import type { LearnerProfile, MistakePattern, ReviewItem } from "../lib/domain/types";
 import { INTRO_MISSION } from "../lib/content/seed";
 import { validateActivityAnswer } from "../lib/learning/answer-validation";
+import { buildSessionPlan } from "../lib/learning/session-planner";
 
 type DbRow = Record<string, unknown>;
 type QueryResult = { data: DbRow[] | DbRow | null; error: null };
@@ -13,6 +14,7 @@ class FakeQuery {
   private operation: "select" | "update" = "select";
   private updateValues: DbRow = {};
   private readonly filters: { column: string; value: unknown }[] = [];
+  private rowLimit: number | undefined;
 
   constructor(
     private readonly table: string,
@@ -30,6 +32,11 @@ class FakeQuery {
   }
 
   order() {
+    return this;
+  }
+
+  limit(count: number) {
+    this.rowLimit = count;
     return this;
   }
 
@@ -76,7 +83,10 @@ class FakeQuery {
   }
 
   private matchingRows() {
-    return this.rows().filter((row) => this.filters.every(({ column, value }) => row[column] === value));
+    const rows = this.rows().filter((row) =>
+      this.filters.every(({ column, value }) => row[column] === value),
+    );
+    return this.rowLimit === undefined ? rows : rows.slice(0, this.rowLimit);
   }
 
   private execute(): QueryResult {
@@ -96,8 +106,74 @@ class FakeSupabaseClient {
     return new FakeQuery(table, this.tables);
   }
 
+  async rpc(name: string, input: DbRow): Promise<QueryResult> {
+    if (name === "create_or_resume_learning_session") {
+      const session = {
+        id: input.p_session_id,
+        user_id: input.p_user_id,
+        mission_id: input.p_mission_id,
+        plan_json: input.p_plan_json,
+        mode: input.p_mode,
+        started_at: input.p_started_at,
+        completed_at: null,
+        current_index: 0,
+        created_at: new Date().toISOString(),
+      };
+      this.rowsFor("sessions").push(session);
+      return { data: session, error: null };
+    }
+
+    if (name !== "submit_activity_attempt") throw new Error(`Unexpected RPC: ${name}`);
+    const createdAt = new Date().toISOString();
+    const attempt = {
+      id: crypto.randomUUID(),
+      request_id: input.p_request_id,
+      user_id: input.p_user_id,
+      session_id: input.p_session_id,
+      activity_id: input.p_activity_id,
+      submitted_answer: input.p_submitted_answer,
+      latency_ms: input.p_latency_ms,
+      result_json: input.p_result_json,
+      completed: input.p_completed,
+      is_correct: input.p_is_correct,
+      evidence_kind: input.p_evidence_kind,
+      created_at: createdAt,
+    };
+    this.rowsFor("activity_attempts").push(attempt);
+
+    const pattern = input.p_mistake_pattern as DbRow | null;
+    if (pattern) {
+      this.upsertRow("mistake_patterns", ["user_id", "rule_id"], {
+        ...pattern,
+        last_seen_at: createdAt,
+        transition_revision: Number(pattern.expected_revision) + 1,
+      });
+    }
+    const review = input.p_review_item as DbRow | null;
+    if (review) {
+      this.upsertRow("review_items", ["id"], {
+        ...review,
+        transition_revision: Number(review.expected_revision) + 1,
+      });
+    }
+    return { data: attempt, error: null };
+  }
+
   rows(table: string) {
     return this.tables.get(table) ?? [];
+  }
+
+  private rowsFor(table: string) {
+    const rows = this.tables.get(table) ?? [];
+    this.tables.set(table, rows);
+    return rows;
+  }
+
+  private upsertRow(table: string, keys: string[], incoming: DbRow) {
+    const rows = this.rowsFor(table);
+    const index = rows.findIndex((row) => keys.every((key) => row[key] === incoming[key]));
+    if (index >= 0) rows[index] = { ...rows[index], ...incoming };
+    else rows.push({ ...incoming });
   }
 }
 
@@ -117,9 +193,10 @@ function stateShape(pattern: MistakePattern) {
   };
 }
 
-async function record(repository: LearningRepository, input: SubmissionInput) {
+async function record(repository: LearningRepository, input: Omit<SubmissionInput, "requestId">) {
   return repository.recordSubmission({
     ...input,
+    requestId: crypto.randomUUID(),
     completed: true,
     correct: input.result.isCorrect,
     evidenceKind: "free-production",
@@ -132,7 +209,7 @@ describe("repository response transition parity", () => {
     const activity = INTRO_MISSION.activities.find((candidate) => candidate.id === "act-age-typing-v1")!;
     const wrongResult = validateActivityAnswer(activity, "Je suis 20 ans");
     const correctResult = validateActivityAnswer(activity, "J'ai 20 ans");
-    const base = { userId, sessionId: "no-session", activity, latencyMs: 2_000 };
+    const base = { userId, sessionId: "no-session", expectedCurrentIndex: 0, activity, latencyMs: 2_000 };
     const mock = new MockLearningRepository();
     const fakeClient = new FakeSupabaseClient();
     const supabase = supabaseRepositoryWith(fakeClient);
@@ -178,5 +255,51 @@ describe("repository response transition parity", () => {
       failureCount: supabaseReview.failure_count,
       priority: supabaseReview.priority,
     });
+  });
+
+  it("never rewrites canonical curriculum rows while creating an adaptive session", async () => {
+    const client = new FakeSupabaseClient();
+    const repository = supabaseRepositoryWith(client);
+    const profile: LearnerProfile = {
+      userId: crypto.randomUUID(),
+      displayName: "Learner",
+      currentLevel: "A1",
+      learningGoals: ["travel"],
+      interests: [],
+      dailyMinutes: 8,
+      preferredMode: "normal",
+      policyVersion: "test",
+      completedSessions: 0,
+      currentStreak: 0,
+    };
+    const plan = buildSessionPlan({
+      profile,
+      mission: INTRO_MISSION,
+      dueReviews: [],
+      mistakes: [],
+    });
+    const canonicalMission = {
+      id: INTRO_MISSION.id,
+      title: INTRO_MISSION.title,
+      publication_status: "published",
+    };
+    const canonicalActivities = INTRO_MISSION.activities.map((activity, index) => ({
+      id: activity.id,
+      mission_id: INTRO_MISSION.id,
+      step_order: index + 1,
+      activity_type: activity.type,
+      publication_status: "published",
+    }));
+    client.tables.set("missions", [canonicalMission]);
+    client.tables.set("activities", canonicalActivities.map((row) => ({ ...row })));
+
+    await repository.createSession(profile.userId, {
+      ...plan,
+      activities: [...plan.activities].reverse(),
+    });
+
+    expect(client.rows("missions")).toEqual([canonicalMission]);
+    expect(client.rows("activities")).toEqual(canonicalActivities);
+    expect(client.rows("sessions")).toHaveLength(1);
   });
 });

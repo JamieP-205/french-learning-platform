@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAccountSyncReady } from "@/lib/auth/readiness";
+import { isServerAccountSyncReady } from "@/lib/auth/readiness";
 import { getSafeAuthDestination } from "@/lib/auth/redirects";
 
 type CookieToSet = {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
   let response = NextResponse.redirect(new URL(safeNext, requestUrl.origin));
 
-  if (!isAccountSyncReady() || !supabaseUrl || !supabaseAnonKey) {
+  if (!isServerAccountSyncReady() || !supabaseUrl || !supabaseAnonKey) {
     return NextResponse.redirect(new URL("/auth/sign-in", requestUrl.origin));
   }
 

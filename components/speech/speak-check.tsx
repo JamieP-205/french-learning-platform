@@ -68,7 +68,7 @@ export function SpeakCheck({
         />
         {support.canListen && (
           <button type="button" className="button-secondary" disabled={disabled || listening} onClick={record}>
-            {listening ? "Listening…" : feedback || notice ? "Try again" : "Say it — check me"}
+            {listening ? "Listening…" : feedback || notice ? "Try again" : "Say it — check the words"}
           </button>
         )}
         {onDone && (
@@ -97,10 +97,10 @@ export function SpeakCheck({
         >
           <p className="font-black">
             {feedback.verdict === "match"
-              ? "That was clearly understandable. Nice."
+              ? "The recognised words matched the phrase."
               : feedback.verdict === "close"
-                ? "Close — most of it came through."
-                : "Worth another go, slower this time."}
+                ? "Most of the recognised words matched."
+                : "Try again a little more slowly."}
           </p>
           <p className="mt-1 text-ink/70">Heard: “{feedback.heard}”</p>
           {feedback.verdict !== "match" && feedback.missingWords.length > 0 && (
@@ -111,7 +111,7 @@ export function SpeakCheck({
       {notice && <p className="mt-4 rounded-2xl bg-cream p-4 text-sm text-ink/70" aria-live="polite">{notice}</p>}
       {!support.canListen && (
         <p className="mt-4 text-sm text-ink/60">
-          This browser cannot check speech, so this stays an honest self-check. Chrome or Edge can score it.
+          Automatic word matching is not available in this browser, but you can still complete a self-check. Chrome or Edge may support it.
         </p>
       )}
     </div>

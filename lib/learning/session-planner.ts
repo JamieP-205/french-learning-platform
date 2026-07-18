@@ -9,6 +9,7 @@ import type {
   SessionPlanV1,
 } from "@/lib/domain/types";
 import { skillForActivityType, skillLabels, type LearnerStats, type SkillKey } from "@/lib/learning/learner-model";
+import { calendarDaysSince } from "@/lib/time/calendar-day";
 
 const focusPreferenceSkills: Record<string, SkillKey> = {
   speaking: "speaking",
@@ -16,19 +17,14 @@ const focusPreferenceSkills: Record<string, SkillKey> = {
   writing: "writing",
 };
 
-const daysSince = (iso?: string, now = new Date()) => {
-  if (!iso) return 0;
-  return (now.getTime() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24);
-};
-
 export function selectSessionMode(profile: LearnerProfile, requestedMode?: "normal" | "short", now = new Date()): SessionMode {
-  if (daysSince(profile.lastCompletedAt, now) >= 3) return "comeback";
-  if (requestedMode === "short" || profile.dailyMinutes <= 3) return "two_minute";
+  if ((calendarDaysSince(profile.lastCompletedAt, now, profile.timeZone) ?? 0) >= 3) return "comeback";
+  if ((requestedMode ?? profile.preferredMode) === "short" || profile.dailyMinutes <= 3) return "two_minute";
   return "normal";
 }
 
 const activityForReview = (mission: Mission, review: ReviewItem) =>
-  mission.activities.find((activity) => activity.id === review.activityId) ?? mission.activities[0];
+  mission.activities.find((activity) => activity.id === review.activityId);
 
 const outputTypes = new Set(["typing", "fill_blank", "sentence_builder", "speak_repeat"]);
 
@@ -80,7 +76,7 @@ export function buildSessionPlan({
       "repair",
       freshFormat && failedTypes.length > 0 && freshFormat !== repairCandidates[0]
         ? "Same weak point, new format — a different activity type beats repeating the one that failed."
-        : "This repairs a pattern that has appeared more than once.",
+        : "This revisits a pattern that has appeared more than once.",
     );
   }
 
@@ -105,6 +101,21 @@ export function buildSessionPlan({
 
   if (mode === "comeback") {
     activities.splice(4);
+  }
+
+  if (mode === "two_minute") {
+    const firstPriority =
+      activities.find((entry) => entry.kind === "review") ??
+      activities.find((entry) => entry.kind === "repair") ??
+      activities.find((entry) => entry.kind === "mission");
+    const firstProductive = activities.find(
+      (entry) => outputTypes.has(entry.activity.type) && entry.activity.id !== firstPriority?.activity.id,
+    );
+    const shortPlan = [firstPriority, firstProductive, ...activities]
+      .filter((entry): entry is PlannedActivity => Boolean(entry))
+      .filter((entry, index, entries) => entries.findIndex((candidate) => candidate.activity.id === entry.activity.id) === index)
+      .slice(0, 2);
+    activities.splice(0, activities.length, ...shortPlan);
   }
 
   // Adaptive emphasis: the weakest evidenced skill (or the learner's chosen
@@ -136,12 +147,12 @@ export function buildSessionPlan({
   const weakFocus =
     adaptiveNote +
     (repair
-      ? `Repair: ${repair.explanation}`
+      ? `Review first: ${repair.explanation}`
       : due.length > 0
         ? "Keep your due phrases fresh before adding more."
         : profile.currentLevel === "A1"
           ? mission.description
-          : `Calibration for ${profile.currentLevel}: confirm the verified foundations first, then the app can recommend what to strengthen next.`);
+          : `Start at ${profile.currentLevel}: confirm the foundations first, then the app can recommend what to strengthen next.`);
 
   return {
     id: `plan-${profile.userId}-${now.getTime()}`,
@@ -157,7 +168,7 @@ export function buildSessionPlan({
         ? "Welcome back—one useful sentence is a real restart."
         : profile.currentLevel === "A1"
           ? "A practical French win, earned through recall."
-          : "Calibration evidence saved. The app now has a safer signal for what to recommend next.",
+          : "Starting check saved. The app can now recommend a more useful next step.",
   };
 }
 

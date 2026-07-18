@@ -22,27 +22,39 @@ export async function buildTutorContextPack({
   userId,
   sessionId,
   activityId,
-  submittedAnswer,
 }: {
   userId: string;
   sessionId: string;
   activityId: string;
-  submittedAnswer: string;
 }): Promise<TutorContextPackV1> {
   const repository = getLearningRepository();
-  const [session, profile, mission, mistakes] = await Promise.all([
+  const [session, profile, mission, mistakes, attempts] = await Promise.all([
     repository.getSession(userId, sessionId),
     repository.getProfile(userId),
     repository.getMission(),
     repository.getOpenMistakes(userId),
+    repository.getRecentAttempts(userId, 100),
   ]);
-  const planned = session?.plan.activities.find((entry) => entry.activity.id === activityId);
-  if (!session || !profile || !planned) throw new Error("The requested tutor context is unavailable.");
+  const activityIndex = session?.plan.activities.findIndex((entry) => entry.activity.id === activityId) ?? -1;
+  const planned = activityIndex >= 0 ? session?.plan.activities[activityIndex] : undefined;
+  const justAnsweredIndex = session ? Math.min(session.currentIndex - 1, session.plan.activities.length - 1) : -1;
+  const attempt = [...attempts].reverse().find(
+    (candidate) =>
+      candidate.sessionId === sessionId &&
+      candidate.activityId === activityId &&
+      candidate.completed !== false &&
+      !(candidate.correct ?? candidate.result.isCorrect),
+  );
+  if (!session || !profile || !planned || !attempt || activityIndex !== justAnsweredIndex) {
+    throw new Error("The tutor is available only for the answer you just completed.");
+  }
 
-  const result = validateActivityAnswer(planned.activity, submittedAnswer);
+  const result = attempt.result ?? validateActivityAnswer(planned.activity, attempt.submittedAnswer);
   const verifiedContent = mission.contentItems.filter((item) => planned.activity.contentItemIds.includes(item.id));
   const ruleIds = result.ruleIds.length > 0 ? result.ruleIds : planned.activity.grammarRuleIds;
   return {
+    attemptId: attempt.id,
+    sessionId,
     task: result.isCorrect ? "safe_standard" : "explain_mistake",
     learner: {
       level: profile.currentLevel,
@@ -50,7 +62,7 @@ export async function buildTutorContextPack({
       weakRuleIds: mistakes.filter((mistake) => !mistake.resolved).map((mistake) => mistake.ruleId).slice(0, 3),
     },
     activity: { id: planned.activity.id, prompt: planned.activity.prompt, type: planned.activity.type },
-    submittedAnswer,
+    submittedAnswer: attempt.submittedAnswer,
     deterministicResult: result,
     verifiedContent: verifiedContent.map(({ id, frenchText, englishMeaning, register, usageContext }) => ({ id, frenchText, englishMeaning, register, usageContext })),
     ruleNotes: ruleIds.map(ruleText),
@@ -88,20 +100,40 @@ function fallbackFeedback(contextPack: TutorContextPackV1): TutorFeedbackV1 {
 }
 
 async function requestOpenAIFeedback(contextPack: TutorContextPackV1): Promise<TutorFeedbackV1 | null> {
+  if (process.env.ENABLE_GENERATIVE_TUTOR !== "true") return null;
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL_TUTOR;
   if (!apiKey || !model) return null;
+  const providerContext = {
+    task: contextPack.task,
+    learner: {
+      level: contextPack.learner.level,
+      goal: contextPack.learner.goal,
+    },
+    activity: {
+      prompt: contextPack.activity.prompt,
+      type: contextPack.activity.type,
+    },
+    submittedAnswer: contextPack.submittedAnswer,
+    deterministicResult: contextPack.deterministicResult,
+    verifiedContent: contextPack.verifiedContent,
+    ruleNotes: contextPack.ruleNotes,
+    allowedSourceIds: contextPack.allowedSourceIds,
+  };
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(8_000),
     body: JSON.stringify({
       model,
+      store: false,
+      max_output_tokens: 300,
       input: [
         {
           role: "system",
           content: "You are a concise French tutor. Use only the verified content supplied in the context. Do not invent rules, examples, register claims, or source IDs. Return JSON only.",
         },
-        { role: "user", content: JSON.stringify(contextPack) },
+        { role: "user", content: JSON.stringify(providerContext) },
       ],
       text: {
         format: {

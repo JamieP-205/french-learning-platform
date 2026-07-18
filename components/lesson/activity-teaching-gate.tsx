@@ -17,8 +17,11 @@ type WordMeaning = {
 function uniqueWordMeanings(concept: ConceptDefinition) {
   const seen = new Set<string>();
   const words: WordMeaning[] = [];
+  const source = concept.teachingStep.inputSegment.inlineGlosses.length
+    ? concept.teachingStep.inputSegment.inlineGlosses
+    : concept.vocabulary;
 
-  for (const item of [...concept.teachingStep.inputSegment.inlineGlosses, ...concept.vocabulary]) {
+  for (const item of source) {
     const key = `${item.form.trim().toLocaleLowerCase("fr")}\u0000${item.meaning.trim().toLocaleLowerCase("en")}`;
     if (seen.has(key)) continue;
     seen.add(key);

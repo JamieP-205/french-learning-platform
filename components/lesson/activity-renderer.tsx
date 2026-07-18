@@ -4,7 +4,11 @@ import { useState, useSyncExternalStore } from "react";
 import { SpeakCheck } from "@/components/speech/speak-check";
 import { SpeechPlaybackButton } from "@/components/speech/speech-playback-button";
 import { audioSourceForFrench } from "@/lib/content/french-audio";
-import type { ActivityDefinition, AttemptEvidenceKind } from "@/lib/domain/types";
+import type {
+  ActivityDefinition,
+  AttemptEvidenceKind,
+  LearnerActivityDefinition,
+} from "@/lib/domain/types";
 
 export type SubmissionMetadata = {
   completed: boolean;
@@ -13,7 +17,7 @@ export type SubmissionMetadata = {
 };
 
 type ActivityRendererProps = {
-  activity: ActivityDefinition;
+  activity: ActivityDefinition | LearnerActivityDefinition;
   disabled: boolean;
   onSubmit: (answer: string, metadata?: SubmissionMetadata) => void;
 };
@@ -121,11 +125,16 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
   }
 
   if (activity.type === "speak_repeat") {
+    const targetText = activity.targetText ?? activity.prompt;
+    const audioSource = "audioSource" in activity
+      ? activity.audioSource
+      : audioSourceForFrench(targetText);
+
     return (
       <div className="mt-8 rounded-2xl bg-cream p-5 sm:p-6">
         <SpeakCheck
-          targetText={activity.targetText ?? activity.prompt}
-          audioSource={audioSourceForFrench(activity.targetText ?? activity.prompt)}
+          targetText={targetText}
+          audioSource={audioSource}
           disabled={controlsDisabled}
           onDone={(outcome) => onSubmit("completed", outcome)}
           doneLabel="I did the speaking self-check"
@@ -136,23 +145,30 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
 
   const answerId = `answer-${activity.id}`;
   const audioHelpId = `audio-help-${activity.id}`;
+  const dictationAudioSource = activity.type === "dictation"
+    ? "audioSource" in activity
+      ? activity.audioSource
+      : activity.targetText
+        ? audioSourceForFrench(activity.targetText)
+        : undefined
+    : undefined;
 
   return (
     <div className="mt-8">
-      {activity.type === "dictation" && activity.targetText && (
+      {activity.type === "dictation" && dictationAudioSource && (
         <div className="rounded-2xl bg-cream p-4 sm:p-5" id={audioHelpId}>
           <p className="font-bold">Listen, then type what you hear.</p>
           <div className="mt-4 flex flex-wrap items-start gap-4">
             <SpeechPlaybackButton
-              text={activity.targetText}
-              audioSource={audioSourceForFrench(activity.targetText)}
+              text=""
+              audioSource={dictationAudioSource}
               rate={0.95}
               label="Play the phrase"
               disabled={controlsDisabled}
             />
             <SpeechPlaybackButton
-              text={activity.targetText}
-              audioSource={audioSourceForFrench(activity.targetText)}
+              text=""
+              audioSource={dictationAudioSource}
               rate={0.65}
               label="Play slowly"
               replayLabel="Play slowly again"

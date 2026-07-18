@@ -1,18 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { ProgressSnapshot } from "@/lib/domain/types";
 import { AppShell } from "@/components/app-shell";
 import { getBrowserAuthHeaders } from "@/lib/auth/browser";
 import { PublicLocalProgressPanel } from "@/components/demo/public-local-learning-panels";
+import { LearningModeUnavailable } from "@/components/learning-mode-unavailable";
 import { LearningGarden } from "@/components/progress/learning-garden";
+import { useLearningMode } from "@/lib/auth/use-learning-mode";
 
-function evidenceLabel(score: number) {
-  if (score <= 0) return "No evidence yet";
-  if (score < 40) return "Early signal";
-  if (score < 70) return "Some evidence";
-  return "Repeated evidence";
+function evidenceLabel(score: number | null, practiceAttempts: number) {
+  if (score === null) {
+    return practiceAttempts === 0
+      ? "Not started"
+      : `Practised ${practiceAttempts === 1 ? "once" : `${practiceAttempts} times`} · not scored`;
+  }
+  if (score <= 0) return "Not started";
+  if (score < 40) return "Just started";
+  if (score < 70) return "Developing";
+  return "Practised often";
 }
 
 function formatReviewDate(iso?: string) {
@@ -20,18 +27,43 @@ function formatReviewDate(iso?: string) {
   return new Intl.DateTimeFormat(undefined, { weekday: "long", month: "short", day: "numeric" }).format(new Date(iso));
 }
 
+function subscribeToCompletionLocation(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("popstate", onStoreChange);
+  return () => window.removeEventListener("popstate", onStoreChange);
+}
+
+function getCompletionLocationSnapshot() {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("complete") === "1";
+}
+
+function getServerCompletionLocationSnapshot() {
+  return false;
+}
+
 export default function ProgressPage() {
+  const learningMode = useLearningMode();
   const [progress, setProgress] = useState<ProgressSnapshot>();
   const [error, setError] = useState<string>();
-  const [showCompletion] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return new URLSearchParams(window.location.search).get("complete") === "1";
-  });
+  const showCompletion = useSyncExternalStore(
+    subscribeToCompletionLocation,
+    getCompletionLocationSnapshot,
+    getServerCompletionLocationSnapshot,
+  );
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadProgress() {
+      if (learningMode === "loading") return;
+      if (learningMode === "local") {
+        setProgress(undefined);
+        setError(undefined);
+        return;
+      }
+      if (learningMode === "unavailable") return;
+
       try {
         const response = await fetch("/api/progress", { headers: await getBrowserAuthHeaders() });
         const payload = await response.json();
@@ -49,29 +81,34 @@ export default function ProgressPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [learningMode]);
 
   return (
     <AppShell>
       <main className="py-10">
         <p className="eyebrow">Progress</p>
-        <h1 className="mt-2 text-4xl font-black">Your learning evidence.</h1>
+        <h1 className="mt-2 text-4xl font-black">Your progress.</h1>
         <p className="mt-4 max-w-3xl text-ink/75">
-          This is the proof layer: sessions, recall, mistakes, review timing, achievements, and the next useful action.
+          See the sessions you have finished, phrases recalled from memory, mistakes repaired, reviews due, and the most useful next step.
         </p>
 
-        {error && <p className="status-error mt-7">{error}</p>}
-        <PublicLocalProgressPanel />
-        {!progress && !error && <div className="card mt-7 animate-pulse">Adding up your learning evidence...</div>}
+        {learningMode === "loading" && (
+          <div className="card mt-7" role="status">Loading your progress...</div>
+        )}
+        {learningMode === "unavailable" && <LearningModeUnavailable />}
+        {learningMode === "local" && <PublicLocalProgressPanel />}
+        {learningMode === "account" && <>
+        {error && <p className="status-error mt-7" role="alert">{error}</p>}
+        {!progress && !error && <div className="card mt-7 animate-pulse">Adding up your progress...</div>}
 
         {progress && (
           <>
             {showCompletion && (
               <section className="card mt-7 bg-moss/10">
                 <p className="eyebrow">Session complete</p>
-                <h2 className="mt-2 text-3xl font-black">Nice. You made French usable, not just watched it.</h2>
+                <h2 className="mt-2 text-3xl font-black">You finished today&apos;s French practice.</h2>
                 <p className="mt-3 max-w-2xl text-ink/75">
-                  The app saved your attempts, captured weak points, updated progress, and set up the next review pull.
+                  Your answers, progress, and next review are saved.
                 </p>
               </section>
             )}
@@ -102,10 +139,10 @@ export default function ProgressPage() {
             <section className="card mt-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="eyebrow">Mission progress</p>
+                  <p className="eyebrow">Lesson progress</p>
                   <h2 className="mt-2 text-2xl font-black">{progress.mission.title}</h2>
                   <p className="mt-2 text-ink/70">
-                    {progress.mission.completedSteps} of {progress.mission.totalSteps} mission steps have learning evidence.
+                    {progress.mission.completedSteps} of {progress.mission.totalSteps} lesson steps completed.
                   </p>
                 </div>
                 <p className="text-4xl font-black text-coral">{progress.mission.completionPercent}%</p>
@@ -118,7 +155,7 @@ export default function ProgressPage() {
             <section className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="card">
                 <p className="eyebrow">Recent wins</p>
-                <h2 className="mt-2 text-2xl font-black">Satisfaction you can trust.</h2>
+                <h2 className="mt-2 text-2xl font-black">What is going well.</h2>
                 <ul className="mt-5 space-y-3 text-sm text-ink/75">
                   {progress.recentWins.map((win) => (
                     <li key={win} className="rounded-2xl bg-cream p-4 font-bold">
@@ -130,7 +167,7 @@ export default function ProgressPage() {
 
               <div className="card">
                 <p className="eyebrow">Achievements</p>
-                <h2 className="mt-2 text-2xl font-black">Reward mastery, not button tapping.</h2>
+                <h2 className="mt-2 text-2xl font-black">Milestones from completed practice.</h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {progress.achievements.map((achievement) => (
                     <article
@@ -149,25 +186,34 @@ export default function ProgressPage() {
             </section>
 
             <section className="card mt-6">
-              <h2 className="text-2xl font-black">Practice evidence</h2>
+              <h2 className="text-2xl font-black">Skills practised</h2>
               <p className="mt-2 text-ink/70">
-                These are not ability percentages. They are rough signals from the activity types you have completed so far.
+                These scores combine your accuracy and number of checked attempts in this course. They are not CEFR levels or overall proficiency grades.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {progress.skills.map((skill) => (
                   <div key={skill.label} className="rounded-2xl bg-cream p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-black">{skill.label}</p>
-                      <span className="text-sm font-black text-coral">{skill.score}</span>
+                      <span className="text-sm font-black text-coral">
+                        {skill.score === null ? "Not scored" : skill.score}
+                      </span>
                     </div>
-                    <p className="mt-1 text-sm text-ink/70">{evidenceLabel(skill.score)}</p>
+                    <p className="mt-1 text-sm text-ink/70">
+                      {evidenceLabel(skill.score, skill.practiceAttempts)}
+                    </p>
+                    {skill.score === null && skill.practiceAttempts > 0 && (
+                      <p className="mt-2 text-xs text-ink/60">
+                        Speaking self-checks record participation, not pronunciation mastery.
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
             </section>
 
             <section className="card mt-6 bg-ink text-white">
-              <p className="text-sm font-bold uppercase tracking-wide text-amber">Next best action</p>
+              <p className="text-sm font-bold uppercase tracking-wide text-amber">Next up</p>
               <h2 className="mt-2 text-2xl font-black">{progress.nextAction.label}</h2>
               <p className="mt-2 text-white/75">{progress.nextAction.reason}</p>
               <p className="mt-3 text-sm text-white/60">
@@ -185,9 +231,9 @@ export default function ProgressPage() {
 
             <section className="card mt-6">
               <p className="eyebrow">Recommendations</p>
-              <h2 className="mt-2 text-2xl font-black">Personal path, based on evidence.</h2>
+              <h2 className="mt-2 text-2xl font-black">Practice chosen from your recent work.</h2>
               <p className="mt-2 text-ink/70">
-                These are based on your level choice, sessions, mistakes, reviews, and activity evidence—not generic streak pressure.
+                Recommendations use your level, completed sessions, mistakes, and reviews to keep the next step useful.
               </p>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {progress.recommendations.map((recommendation) => (
@@ -205,6 +251,7 @@ export default function ProgressPage() {
             </section>
           </>
         )}
+        </>}
       </main>
     </AppShell>
   );

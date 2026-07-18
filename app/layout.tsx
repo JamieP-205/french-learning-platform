@@ -3,9 +3,18 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "French, for real life",
-  description: "Practical French missions, adaptive review, and source-bound tutor support.",
+  description: "Practical French lessons, helpful review, and carefully grounded tutor support.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return (
+    <html lang="en">
+      <body>
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
+        {children}
+      </body>
+    </html>
+  );
 }

@@ -1,12 +1,12 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getBrowserAccessToken, getBrowserAuthHeaders } from "@/lib/auth/browser";
+import { getBrowserAuthHeaders } from "@/lib/auth/browser";
 
 export function ScoredMissionStartButton({
   missionSlug,
-  label = "Start scored mission",
+  label = "Start full lesson",
   mode = "normal",
   className = "button-primary",
 }: {
@@ -19,48 +19,55 @@ export function ScoredMissionStartButton({
   const pathname = usePathname();
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string>();
+  const requestId = useRef<string | undefined>(undefined);
 
   async function startMission() {
     setStarting(true);
     setError(undefined);
+    requestId.current ??= crypto.randomUUID();
 
-    const accessToken = await getBrowserAccessToken();
-    const headers = await getBrowserAuthHeaders({ json: true });
+    try {
+      const headers = await getBrowserAuthHeaders({ json: true });
+      const response = await fetch("/api/session/start", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ requestId: requestId.current, missionSlug, mode }),
+      });
+      const payload = (await response.json().catch(() => undefined)) as
+        | { error?: string; session?: { id?: string } }
+        | undefined;
 
-    const response = await fetch("/api/session/start", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ missionSlug, mode }),
-    });
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push(`/auth/sign-in?redirectTo=${encodeURIComponent(pathname)}`);
+          return;
+        }
 
-    const payload = await response.json().catch(() => ({
-      error: "Response was not valid JSON.",
-    }));
+        if (response.status === 409) {
+          router.push("/onboarding");
+          return;
+        }
 
-    setStarting(false);
-
-    if (!response.ok) {
-      if (response.status === 401 && !accessToken) {
-        router.push(`/auth/sign-in?redirectTo=${encodeURIComponent(pathname)}`);
+        setError(payload?.error ?? "We couldn’t start this lesson. Check your connection and try again.");
         return;
       }
 
-      if (response.status === 409) {
-        router.push("/onboarding");
-        return;
+      if (!payload?.session?.id) {
+        throw new Error("Missing session details");
       }
 
-      setError(payload.error ?? "This mission could not start yet. Try Today, or sign in again if your session expired.");
-      return;
+      router.push(`/lesson/${payload.session.id}`);
+    } catch {
+      setError("We couldn’t start this lesson. Check your connection and try again.");
+    } finally {
+      setStarting(false);
     }
-
-    router.push(`/lesson/${payload.session.id}`);
   }
 
   return (
     <div>
-      <button className={className} disabled={starting} onClick={startMission}>
-        {starting ? "Starting..." : label}
+      <button className={className} type="button" disabled={starting} onClick={startMission}>
+        {starting ? "Starting..." : error ? "Try again" : label}
       </button>
 
       {error && (

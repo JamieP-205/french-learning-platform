@@ -1,3 +1,9 @@
+import {
+  calendarDayKey,
+  calendarDaysSince,
+  detectRuntimeTimeZone,
+} from "@/lib/time/calendar-day";
+
 export const localLearningStorageKey = "bonjour:public-demo-progress-v1";
 export const localProgressUpdatedEvent = "bonjour-local-progress-updated";
 
@@ -36,6 +42,8 @@ export type LocalLearningProgress = {
   sessionsCompleted: number;
   attemptsCount: number;
   correctCount: number;
+  mistakesCaptured: number;
+  repairsCompleted: number;
   mistakePrompts: string[];
   weakActivityIds: string[];
   topicPreviewStats: Record<string, LocalTopicPreviewProgress>;
@@ -106,6 +114,8 @@ export const emptyLocalLearningProgress: LocalLearningProgress = {
   sessionsCompleted: 0,
   attemptsCount: 0,
   correctCount: 0,
+  mistakesCaptured: 0,
+  repairsCompleted: 0,
   mistakePrompts: [],
   weakActivityIds: [],
   topicPreviewStats: {},
@@ -159,17 +169,16 @@ export function localLearningAccuracy(progress: LocalLearningProgress) {
   return progress.attemptsCount > 0 ? Math.round((progress.correctCount / progress.attemptsCount) * 100) : 0;
 }
 
-export function localLearningDaysSince(iso?: string) {
-  if (!iso) return undefined;
-  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24)));
+export function localLearningDaysSince(
+  iso?: string,
+  now = new Date(),
+  timeZone = detectRuntimeTimeZone(),
+) {
+  return calendarDaysSince(iso, now, timeZone);
 }
 
 function unique(values: string[]) {
   return Array.from(new Set(values));
-}
-
-function dateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
 }
 
 function skillLabel(key: LocalSkillKey) {
@@ -184,10 +193,14 @@ function skillLabel(key: LocalSkillKey) {
   }[key];
 }
 
-export function recordLocalActiveDate(progress: LocalLearningProgress, now = new Date()): LocalLearningProgress {
+export function recordLocalActiveDate(
+  progress: LocalLearningProgress,
+  now = new Date(),
+  timeZone = detectRuntimeTimeZone(),
+): LocalLearningProgress {
   return {
     ...progress,
-    activeDates: unique([dateKey(now), ...(progress.activeDates ?? [])]).slice(0, 30),
+    activeDates: unique([calendarDayKey(now, timeZone), ...(progress.activeDates ?? [])]).slice(0, 30),
   };
 }
 
@@ -355,7 +368,7 @@ export function localLearnerPreferenceSummary(progress: LocalLearningProgress) {
 
   return {
     headline: `${currentLevel} · ${primaryGoal} · ${dailyMinutes} min`,
-    detail: `Local sessions should feel ${energyLabel}, with ${primaryGoal} examples pulled forward where the verified content supports it.`,
+    detail: `Your sessions will feel ${energyLabel}, with more ${primaryGoal} examples when they fit the lesson.`,
   };
 }
 
@@ -366,31 +379,31 @@ export function localLearningAchievements(progress: LocalLearningProgress): Loca
     {
       id: "first-session",
       title: "First useful session",
-      description: "You completed the intro mission instead of only previewing it.",
+      description: "You completed your first introduction lesson.",
       earned: progress.sessionsCompleted > 0,
     },
     {
       id: "mistake-captured",
       title: "Mistake caught",
-      description: "A real weak point was saved so the next session can repair it.",
-      earned: progress.mistakePrompts.length > 0,
+      description: "Something you missed was saved so it can return in Review.",
+      earned: progress.mistakesCaptured > 0 || progress.mistakePrompts.length > 0,
     },
     {
       id: "repair-loop",
-      title: "Adaptive loop unlocked",
-      description: "The next session can move missed work earlier instead of repeating a fixed course.",
-      earned: progress.weakActivityIds.length > 0,
+      title: "Focused practice ready",
+      description: "A missed answer was saved for focused practice or has already been reviewed.",
+      earned: progress.repairsCompleted > 0 || progress.weakActivityIds.length > 0,
     },
     {
       id: "steady-recall",
       title: "Steady recall",
-      description: "Reach 80%+ accuracy after at least one full local session.",
+      description: "Reach 80%+ accuracy after at least one full session on this device.",
       earned: progress.sessionsCompleted > 0 && accuracy >= 80,
     },
     {
       id: "topic-explorer",
       title: "Practical explorer",
-      description: "Try a café or travel preview self-check without waiting for account signup.",
+      description: "Try a café or travel self-check without creating an account.",
       earned: Object.keys(progress.topicPreviewStats).length > 0,
     },
     {
@@ -402,7 +415,7 @@ export function localLearningAchievements(progress: LocalLearningProgress): Loca
     {
       id: "skill-balanced",
       title: "Mixed-skill learner",
-      description: "Build evidence in at least four skill areas, not just one answer type.",
+      description: "Practise at least four skill areas, not just one answer type.",
       earned: Object.values(progress.skillSignals ?? {}).filter((signal) => signal.attempts > 0).length >= 4,
     },
   ];
@@ -410,38 +423,39 @@ export function localLearningAchievements(progress: LocalLearningProgress): Loca
 
 export function localLearningPath(progress: LocalLearningProgress): LocalLearningPathStep[] {
   const hasSession = progress.sessionsCompleted > 0;
-  const hasMistake = progress.mistakePrompts.length > 0;
+  const hasMistake = progress.mistakesCaptured > 0 || progress.mistakePrompts.length > 0;
   const hasWeakPoint = progress.weakActivityIds.length > 0;
-  const hasReturnedForRepair = progress.sessionsCompleted >= 2;
 
   return [
     {
       id: "start",
-      title: "Start with verified A1 French",
-      description: "Complete the introduction mission with deterministic answer checks.",
+      title: "Start with practical A1 French",
+      description: "Complete the guided introduction lesson and check each answer as you go.",
       complete: hasSession,
       current: !hasSession,
     },
     {
       id: "capture",
-      title: "Capture what needs repair",
-      description: "Mistakes become useful evidence instead of a dead-end error message.",
-      complete: hasMistake,
-      current: hasSession && !hasMistake,
+      title: "Save checked answers",
+      description: hasMistake
+        ? "A missed answer is saved so it can come back as useful practice."
+        : "Correct and incorrect answers both shape what the app recommends next.",
+      complete: hasSession,
+      current: false,
     },
     {
       id: "repair",
-      title: "Repair weak points first",
+      title: "Review mistakes first",
       description: "Your next session prioritises missed activities before adding more work.",
-      complete: hasReturnedForRepair && !hasWeakPoint,
+      complete: hasSession && !hasWeakPoint,
       current: hasWeakPoint,
     },
     {
       id: "expand",
       title: "Expand into new situations",
       description: "Use the topic map to preview café, travel, and later casual French.",
-      complete: hasReturnedForRepair,
-      current: hasSession && !hasWeakPoint && !hasReturnedForRepair,
+      complete: Object.keys(progress.topicPreviewStats).length > 0,
+      current: hasSession && !hasWeakPoint && Object.keys(progress.topicPreviewStats).length === 0,
     },
   ];
 }
@@ -483,17 +497,16 @@ export function localSkillReadiness(progress: LocalLearningProgress): LocalSkill
 export function localLevelRoadmap(progress: LocalLearningProgress): LocalLevelRoadmapStep[] {
   const selectedLevel = progress.preferences.currentLevel;
   const levels: LocalLearnerPreferences["currentLevel"][] = ["A1", "A2", "B1", "B2", "C1", "C2"];
-  const selectedIndex = levels.indexOf(selectedLevel);
 
-  return levels.map((level, index) => {
+  return levels.map((level) => {
     const status =
-      index < selectedIndex
-        ? "preview"
+      level === "A1" && progress.sessionsCompleted > 0
+        ? "active"
         : level === selectedLevel
-          ? progress.sessionsCompleted > 0
-            ? "active"
-            : "calibrate"
-          : "later";
+          ? "calibrate"
+          : level === "A1"
+        ? "preview"
+        : "later";
 
     return {
       level,
@@ -504,7 +517,7 @@ export function localLevelRoadmap(progress: LocalLearningProgress): LocalLevelRo
           : level === "A2"
             ? "Handle everyday situations"
             : level === "B1"
-              ? "Explain, narrate, and repair gaps"
+              ? "Explain, narrate, and fill gaps"
               : level === "B2"
                 ? "Discuss with confidence"
                 : level === "C1"
@@ -512,18 +525,22 @@ export function localLevelRoadmap(progress: LocalLearningProgress): LocalLevelRo
                   : "Polish near-native precision",
       description:
         status === "active"
-          ? "Your public path is collecting evidence here now."
+          ? "Your completed practice is from the reviewed A1 introduction lesson."
           : status === "calibrate"
-            ? "Start with a short verified calibration so the app adapts from evidence."
+            ? level === "A1"
+              ? "This is your selected level; the reviewed introduction lesson is available now."
+              : `You selected ${level}. The available A1 check cannot confirm this level, and a full ${level} course is not available yet.`
             : status === "preview"
-              ? "Keep this warm through repair and quick recall."
-              : "Later lessons unlock only after verified topic coverage exists.",
+              ? "The reviewed A1 introduction can be used as a foundation check; it does not confirm a higher level."
+              : "Full reviewed lessons at this level are not available yet.",
     };
   });
 }
 
 export function localDailyPlan(progress: LocalLearningProgress): LocalDailyPlanStep[] {
   const preferences = progress.preferences;
+  const shortLesson = preferences.sessionEnergy === "low" || preferences.dailyMinutes <= 3;
+  const lessonHref = shortLesson ? "/demo?mode=short" : "/demo";
   const totalMinutes =
     preferences.sessionEnergy === "low"
       ? Math.min(5, preferences.dailyMinutes)
@@ -536,11 +553,11 @@ export function localDailyPlan(progress: LocalLearningProgress): LocalDailyPlanS
     progress.weakActivityIds.length > 0
       ? {
           id: "repair-lesson",
-          kicker: "Repair first",
-          title: "Fix the thing that tripped you up.",
-          description: progress.mistakePrompts[0] ?? "Your intro mission has a weak point ready to repair.",
-          href: "/demo",
-          label: "Start repair",
+          kicker: "Review first",
+          title: "Revisit the thing that tripped you up.",
+          description: progress.mistakePrompts[0] ?? "Your introduction lesson has a weak point ready to practise.",
+          href: lessonHref,
+          label: "Start review",
         }
       : firstTopicReview
         ? {
@@ -549,73 +566,84 @@ export function localDailyPlan(progress: LocalLearningProgress): LocalDailyPlanS
             title: "Bring back a preview phrase.",
             description: `${firstTopicReview[1].needsReviewPrompts.length} phrase${firstTopicReview[1].needsReviewPrompts.length === 1 ? "" : "s"} need another look before new material.`,
             href: "/review",
-            label: "Repair review",
+            label: "Start review",
           }
         : {
             id: "foundation",
             kicker: progress.sessionsCompleted > 0 ? "Warm up" : "Start here",
             title:
               preferences.currentLevel === "A1"
-                ? "Build the verified intro foundation."
-                : `Calibrate ${preferences.currentLevel} with verified basics.`,
+                ? "Build a strong introduction foundation."
+                : "Use the A1 introduction as a foundation check.",
             description:
               preferences.currentLevel === "A1"
-                ? "Use a short scored loop with meaning, grammar, listening-style, speaking, and register checks."
-                : "The app starts from evidence so stronger learners are not guessed into the wrong path.",
-            href: "/demo",
+                ? shortLesson
+                  ? "Use two quick checks for phrase meaning and a basic sentence pattern."
+                  : "Use a short lesson with meaning, grammar, listening, speaking, and formality checks."
+                : `This lesson covers A1 basics only. It does not assess or teach a full ${preferences.currentLevel} course.`,
+            href: lessonHref,
             label: progress.sessionsCompleted > 0 ? "Warm up" : "Start",
           };
 
-  return [
-    {
-      ...firstStep,
-      estimatedMinutes: Math.max(2, Math.round(totalMinutes * 0.45)),
-    },
-    {
-      id: "goal-stretch",
-      kicker: "Goal stretch",
-      title: goalTopic.title,
-      description: goalTopic.reason,
-      href: goalTopic.href,
-      label: "Open goal topic",
-      estimatedMinutes: Math.max(2, Math.round(totalMinutes * 0.35)),
-    },
-    {
-      id: "finish",
-      kicker: "Satisfaction finish",
-      title: preferences.sessionEnergy === "low" ? "Stop after one clean win." : "End with evidence, not guilt.",
-      description:
-        preferences.sessionEnergy === "challenge"
-          ? "Finish by checking Progress and choosing one extra repair only if it still feels useful."
-          : "Check what improved, then stop while the session still feels successful.",
-      href: "/progress",
-      label: "See progress",
-      estimatedMinutes: Math.max(1, totalMinutes - Math.max(2, Math.round(totalMinutes * 0.45)) - Math.max(2, Math.round(totalMinutes * 0.35))),
-    },
-  ];
+  const lessonStep: LocalDailyPlanStep = {
+    ...firstStep,
+    // Describe the lesson that actually opens instead of assigning it an
+    // arbitrary fraction of the learner's daily target.
+    estimatedMinutes: shortLesson ? 2 : 10,
+  };
+  const goalStep: LocalDailyPlanStep = {
+    id: "goal-stretch",
+    kicker: "Goal stretch",
+    title: goalTopic.title,
+    description: goalTopic.reason,
+    href: goalTopic.href,
+    label: "Open goal topic",
+    estimatedMinutes: shortLesson ? Math.max(1, totalMinutes - 3) : Math.max(2, Math.round(totalMinutes * 0.35)),
+  };
+  const finishStep: LocalDailyPlanStep = {
+    id: "finish",
+    kicker: "Finish well",
+    title: preferences.sessionEnergy === "low" ? "Stop after one clear win." : "End with a win, not guilt.",
+    description:
+      preferences.sessionEnergy === "challenge"
+        ? "Finish by checking Progress and choosing one extra review only if it still feels useful."
+        : "Check what improved, then stop while the session still feels successful.",
+    href: "/progress",
+    label: "See progress",
+    estimatedMinutes: 1,
+  };
+
+  if (!shortLesson) return [lessonStep, goalStep, finishStep];
+  if (totalMinutes <= 2) return [lessonStep];
+  if (totalMinutes === 3) return [lessonStep, finishStep];
+  return [lessonStep, goalStep, finishStep];
 }
 
 export function localLearningNextAction(progress: LocalLearningProgress): LocalLearningNextAction {
   const daysAway = localLearningDaysSince(progress.lastCompletedAt);
   const topicNeedingReview = firstTopicNeedingPreviewReview(progress);
   const preferences = progress.preferences;
+  const lessonHref =
+    preferences.sessionEnergy === "low" || preferences.dailyMinutes <= 3
+      ? "/demo?mode=short"
+      : "/demo";
 
   if (daysAway !== undefined && daysAway >= 3) {
     return {
       label: "Restart gently",
       title: "Come back with one small win.",
       reason: "You have been away for a few days, so the best next session should feel confidence-first.",
-      href: "/demo",
+      href: lessonHref,
       tone: "comeback",
     };
   }
 
   if (progress.weakActivityIds.length > 0) {
     return {
-      label: "Repair weak point",
-      title: "Start with the thing that tripped you up.",
-      reason: "The app has local evidence of a missed activity, so repair comes before new material.",
-      href: "/demo",
+      label: "Review weak point",
+      title: "Start with what tripped you up.",
+      reason: "A missed answer is saved in this browser, so another try comes before new material.",
+      href: lessonHref,
       tone: "repair",
     };
   }
@@ -636,19 +664,19 @@ export function localLearningNextAction(progress: LocalLearningProgress): LocalL
       label: "Continue the path",
       title: "Keep the foundation warm.",
       reason: `You have a completed session; another ${preferences.sessionEnergy === "low" ? "gentle" : "short"} pass will strengthen recall for your ${preferences.primaryGoal} goal.`,
-      href: "/demo",
+      href: lessonHref,
       tone: "continue",
     };
   }
 
   return {
-    label: "Start local session",
-    title: preferences.currentLevel === "A1" ? "Begin with the verified intro mission." : `Calibrate your ${preferences.currentLevel} French safely.`,
+    label: "Start lesson",
+    title: preferences.currentLevel === "A1" ? "Begin with the introduction lesson." : "Use the A1 introduction as a foundation check.",
     reason:
       preferences.currentLevel === "A1"
-        ? "No account is needed. The first session creates browser-only learning evidence."
-        : "Stronger learners still start with a short verified calibration so recommendations are based on evidence, not guesses.",
-    href: "/demo",
+        ? "No account is needed. This session and its review reminders stay in this browser."
+        : `You selected ${preferences.currentLevel}. This reviewed lesson covers A1 basics and does not confirm your wider level.`,
+    href: lessonHref,
     tone: "start",
   };
 }

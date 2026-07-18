@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
-import { ActivityTeachingGate } from "@/components/lesson/activity-teaching-gate";
-import { getConceptDefinitionsForActivity } from "@/lib/content/curriculum";
 import { getTopicPreview } from "@/lib/content/topic-previews";
 import {
   emptyLocalLearningProgress,
@@ -90,6 +88,39 @@ function useLocalProgress() {
   return { progress, reset, save };
 }
 
+function ConfirmedLocalReset({ onReset }: { onReset: () => void }) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <button className="button-secondary" type="button" onClick={() => setConfirming(true)}>
+        Reset all browser progress
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <p className="status-coaching w-full" role="alert">
+        This clears every lesson attempt, review reminder, and preference saved in this browser. It cannot be undone.
+      </p>
+      <button
+        className="button-secondary border-coral/60"
+        type="button"
+        onClick={() => {
+          onReset();
+          setConfirming(false);
+        }}
+      >
+        Yes, reset browser progress
+      </button>
+      <button className="button-secondary" type="button" onClick={() => setConfirming(false)}>
+        Cancel
+      </button>
+    </>
+  );
+}
+
 export function PublicLocalTodayPanel() {
   const { progress } = useLocalProgress();
   const nextAction = localLearningNextAction(progress);
@@ -100,12 +131,12 @@ export function PublicLocalTodayPanel() {
 
   return (
     <section className={isComeback ? "card mt-7 bg-amber/20" : "card mt-7 bg-moss/10"}>
-      <p className="eyebrow">Public learner mode</p>
+      <p className="eyebrow">Learning on this device</p>
       <h2 className="mt-2 text-3xl font-black">
         {nextAction.title}
       </h2>
       <p className="mt-3 max-w-2xl text-ink/75">
-        {nextAction.reason} The no-account path keeps browser-only progress and expands only through reviewed or clearly labelled practice content.
+        {nextAction.reason} New lessons are added only after review.
       </p>
       <p className="mt-4 rounded-2xl bg-white/70 p-4 text-sm font-bold text-ink/75">
         Local setup: {preferenceSummary.headline}. {preferenceSummary.detail}
@@ -120,12 +151,12 @@ export function PublicLocalTodayPanel() {
           {nextAction.label}
         </Link>
         <Link className="button-secondary" href="/progress">
-          See local progress
+          See progress
         </Link>
       </div>
 
       <div className="mt-7">
-        <p className="eyebrow">Adaptive plan</p>
+        <p className="eyebrow">Today&apos;s plan</p>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           {dailyPlan.map((step, index) => (
             <Link key={step.id} href={step.href} className="rounded-2xl bg-white/70 p-4 transition hover:bg-white">
@@ -162,10 +193,10 @@ export function PublicLocalProgressPanel() {
   return (
     <section className="mt-7 space-y-6">
       <div className="card bg-moss/10">
-        <p className="eyebrow">Public local progress</p>
-        <h2 className="mt-2 text-3xl font-black">Browser-only learning evidence.</h2>
+        <p className="eyebrow">Progress on this device</p>
+        <h2 className="mt-2 text-3xl font-black">Your practice, saved in this browser.</h2>
         <p className="mt-3 max-w-2xl text-ink/75">
-          This progress belongs to this browser. It gives public learners an adaptive loop without opening account signup.
+          Missed answers can return at the right time without creating an account or sending this progress to our server.
         </p>
         <p className="mt-4 rounded-2xl bg-white/70 p-4 text-sm font-bold text-ink/75">
           {preferenceSummary.headline} — {preferenceSummary.detail}
@@ -194,7 +225,7 @@ export function PublicLocalProgressPanel() {
       <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="card">
           <p className="eyebrow">Path</p>
-          <h2 className="mt-2 text-2xl font-black">A clear route, not a random demo.</h2>
+          <h2 className="mt-2 text-2xl font-black">A clear route from your first lesson to real situations.</h2>
           <ol className="mt-5 space-y-3">
             {path.map((step, index) => (
               <li
@@ -213,7 +244,7 @@ export function PublicLocalProgressPanel() {
 
         <div className="card">
           <p className="eyebrow">Achievements</p>
-          <h2 className="mt-2 text-2xl font-black">{earnedAchievements.length} earned from real evidence.</h2>
+          <h2 className="mt-2 text-2xl font-black">{earnedAchievements.length} earned through completed practice.</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {achievements.map((achievement) => (
               <article
@@ -233,7 +264,7 @@ export function PublicLocalProgressPanel() {
 
       <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="card">
-          <p className="eyebrow">Skill evidence</p>
+          <p className="eyebrow">Skills you have practised</p>
           <h2 className="mt-2 text-2xl font-black">The app adapts from what you actually do.</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {skillReadiness.map((skill) => (
@@ -246,12 +277,12 @@ export function PublicLocalProgressPanel() {
                 </div>
                 <p className="mt-2 text-sm text-ink/70">
                   {skill.attempts === 0
-                    ? "No evidence yet."
+                    ? "Not practised yet."
                     : `${skill.accuracy}% across ${skill.attempts} attempt${skill.attempts === 1 ? "" : "s"}.`}
                 </p>
                 {skill.needsReview > 0 && (
                   <p className="mt-2 text-sm font-bold text-coral">
-                    {skill.needsReview} signal{skill.needsReview === 1 ? "" : "s"} need repair.
+                     {skill.needsReview} answer{skill.needsReview === 1 ? "" : "s"} to revisit.
                   </p>
                 )}
               </article>
@@ -261,12 +292,12 @@ export function PublicLocalProgressPanel() {
 
         <div className="card">
           <p className="eyebrow">Level route</p>
-          <h2 className="mt-2 text-2xl font-black">Useful for any claimed level, honest about coverage.</h2>
+          <h2 className="mt-2 text-2xl font-black">Your selected level and the lessons actually available.</h2>
           <div className="mt-5 space-y-3">
             {levelRoadmap.map((step) => (
               <article key={step.level} className="rounded-2xl bg-cream p-4">
                 <p className="text-xs font-black uppercase tracking-wide text-coral">
-                  {step.level} · {step.status}
+                  {step.level} · {{ calibrate: "Selected", active: "Practised", preview: "Foundation", later: "Not available yet" }[step.status]}
                 </p>
                 <h3 className="mt-1 font-black">{step.title}</h3>
                 <p className="mt-1 text-sm text-ink/70">{step.description}</p>
@@ -280,16 +311,14 @@ export function PublicLocalProgressPanel() {
       </div>
 
       <div className="card">
-        <p className="eyebrow">Adaptive recommendation</p>
+        <p className="eyebrow">Recommended next</p>
         <h2 className="mt-2 text-2xl font-black">{nextAction.title}</h2>
         <p className="mt-3 text-ink/75">{nextAction.reason}</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link className="button-primary" href={nextAction.href}>
             {nextAction.label}
           </Link>
-          <button className="button-secondary" onClick={reset}>
-            Reset local progress
-          </button>
+          <ConfirmedLocalReset onReset={reset} />
         </div>
       </div>
 
@@ -305,7 +334,7 @@ export function PublicLocalProgressPanel() {
                   {summary.confidentCount} confident · {summary.needsReviewCount} to revisit
                 </h3>
                 <p className="mt-1 text-sm text-ink/70">
-                  Preview self-checks are not scored lessons yet, but they help the app pull useful topics back into view.
+                  Preview checks do not count as completed lessons yet, but they help bring useful topics back for practice.
                 </p>
               </Link>
             ))}
@@ -320,7 +349,6 @@ export function PublicLocalReviewPanel() {
   const { progress, reset, save } = useLocalProgress();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [messages, setMessages] = useState<Record<string, { correct: boolean; text: string; stage?: "prompt" | "recast" | "self-report" }>>({});
-  const [startedReviewKeys, setStartedReviewKeys] = useState<string[]>([]);
   const [missCounts, setMissCounts] = useState<Record<string, number>>({});
   const [recentlyRepaired, setRecentlyRepaired] = useState<string[]>([]);
   const nextAction = localLearningNextAction(progress);
@@ -390,7 +418,7 @@ export function PublicLocalReviewPanel() {
         correct,
         stage: correct ? undefined : "recast",
         text: correct
-          ? "Repaired. This preview phrase has moved out of local review."
+          ? "Correct. This phrase has left Review."
           : `Correct answer: ${entry.answer ?? "the phrase on the topic page"}. Rule: ${entry.reason ?? "Use the reviewed form from the teaching step."}`,
       },
     }));
@@ -403,24 +431,24 @@ export function PublicLocalReviewPanel() {
       [key]: {
         correct: false,
         stage: "self-report",
-        text: `Correct answer: ${entry.answer ?? "Revisit the topic to see the phrase"}. Rule: ${entry.reason ?? "Use the reviewed form from the teaching step."} Shown without review or mastery credit.`,
+        text: `Correct answer: ${entry.answer ?? "Revisit the topic to see the phrase"}. Rule: ${entry.reason ?? "Use the form from the topic."} Showing the answer does not mark this item correct.`,
       },
     }));
   }
 
   return (
     <section className="card mt-7">
-      <p className="eyebrow">Public local review</p>
+      <p className="eyebrow">Review on this device</p>
       <h2 className="mt-2 text-2xl font-black">
-        {reviewCount ? `${reviewCount} review target${reviewCount === 1 ? "" : "s"} ready` : "Nothing local to repair yet"}
+        {reviewCount ? `${reviewCount} item${reviewCount === 1 ? "" : "s"} ready to review` : "Nothing to review yet"}
       </h2>
       <p className="mt-3 text-ink/75">
-        Local review is based on mistakes made in this browser. {nextAction.reason}
+        Review is based on mistakes made in this browser. {nextAction.reason}
       </p>
 
       {recentlyRepaired.length > 0 && (
         <div className="status-success mt-5" role="status">
-          <p className="font-black">Repaired in this review session.</p>
+          <p className="font-black">Completed in this review session.</p>
           <ul className="mt-2 space-y-1 text-sm">
             {recentlyRepaired.map((prompt) => (
               <li key={prompt}>{prompt}</li>
@@ -449,36 +477,22 @@ export function PublicLocalReviewPanel() {
             {previewReviewChecks.map((entry) => {
               const key = `${entry.topicSlug}-${entry.prompt}`;
               const message = messages[key];
-              const teachingConcepts = entry.checkIndex >= 0
-                ? getConceptDefinitionsForActivity(`preview:${entry.topicSlug}:${entry.checkIndex}`)
-                : [];
-              const started = startedReviewKeys.includes(key);
-
               return (
               <article key={`${entry.topicSlug}-${entry.prompt}`} className="rounded-2xl bg-cream p-4">
                 <p className="text-xs font-black uppercase tracking-wide text-coral">{entry.topicSlug.replaceAll("-", " ")}</p>
                 <h3 className="mt-2 font-black">{entry.prompt}</h3>
-                {!started ? (
-                  teachingConcepts.length > 0 ? (
-                    <div className="mt-4">
-                      <ActivityTeachingGate
-                        concepts={teachingConcepts}
-                        actionLabel="Start repair check"
-                        onComplete={() => setStartedReviewKeys((current) => [...current, key])}
-                      />
-                    </div>
-                  ) : (
-                    <p className="status-error mt-4">This repair is unavailable until its teaching concept is published.</p>
-                  )
-                ) : <>
                 <p className="mt-2 text-sm text-ink/70">
-                  Type the phrase from memory. If it matches a reviewed accepted answer, it leaves local review.
+                  Type the phrase from memory. A correct answer removes it from Review.
                 </p>
+
+                {entry.acceptedAnswers.length === 0 && (
+                  <p className="status-error mt-4">This review item is not available yet. Choose another activity.</p>
+                )}
 
                 {entry.acceptedAnswers.length > 0 && !message && (
                   <form className="mt-4 space-y-3" onSubmit={(event) => checkPreviewReview(event, entry)}>
                     <label className="block font-bold">
-                      Repair answer
+                      Your answer
                       <input
                         className="field"
                         value={answers[key] ?? ""}
@@ -493,7 +507,7 @@ export function PublicLocalReviewPanel() {
                       />
                     </label>
                     <button className="button-primary" type="submit" disabled={!(answers[key] ?? "").trim()}>
-                      Check repair answer
+                      Check answer
                     </button>
                   </form>
                 )}
@@ -528,7 +542,6 @@ export function PublicLocalReviewPanel() {
                     Revisit topic
                   </Link>
                 </div>
-                </>}
               </article>
               );
             })}
@@ -538,17 +551,15 @@ export function PublicLocalReviewPanel() {
 
       {reviewCount === 0 && (
         <div className="mt-5 rounded-2xl bg-cream p-4 font-bold text-ink/70">
-          Make a mistake in the local learner mode or mark a topic preview as needs review, and it will appear here as a repair target.
+          Miss an answer in a lesson or mark a topic preview for review, and it will appear here for another try.
         </div>
       )}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link className="button-primary" href="/demo">
-          Start repair session
+          Start review
         </Link>
-        <button className="button-secondary" onClick={reset}>
-          Reset local review
-        </button>
+        <ConfirmedLocalReset onReset={reset} />
       </div>
     </section>
   );

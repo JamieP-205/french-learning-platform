@@ -3,8 +3,8 @@ import { expect, test } from "./fixtures";
 test("public tutor gives source-bound help without account chat", async ({ page }) => {
   await page.goto("/tutor");
 
-  await expect(page.getByRole("heading", { name: /grounded when it matters/i })).toBeVisible();
-  await expect(page.getByText("Public safe tutor")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ask why an answer was right or wrong." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This tutor works inside your lesson." })).toBeVisible();
 
   await page.getByText(/Why is .*Je suis 20 ans.* wrong/).click();
   await expect(page.getByRole("heading", { name: "French uses avoir for age." })).toBeVisible();

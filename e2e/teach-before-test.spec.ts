@@ -42,6 +42,10 @@ test("a fresh learner sees one just-in-time concept before each scored question"
   await expect(page.getByRole("heading", { name: "J'ai 20 ans.", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: /fill the gap/i })).toHaveCount(0);
   await expect(page.getByLabel("Your answer")).toHaveCount(0);
+  const ageWordBreakdown = page.getByText("Word by word", { exact: true }).locator("..");
+  await expect(ageWordBreakdown).toContainText("ai");
+  await expect(ageWordBreakdown).toContainText("have");
+  await expect(ageWordBreakdown).not.toContainText("suis");
 
   await page.getByRole("button", { name: "Try this question", exact: true }).click();
   await expect(page.getByRole("heading", { name: /fill the gap/i })).toBeVisible();

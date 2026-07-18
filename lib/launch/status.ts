@@ -1,5 +1,5 @@
 import { topicPreviews } from "@/lib/content/topic-previews";
-import { isAccountSyncReady } from "@/lib/auth/readiness";
+import { isServerAccountSyncReady } from "@/lib/auth/readiness";
 
 export { isAccountSyncReady } from "@/lib/auth/readiness";
 
@@ -22,14 +22,14 @@ export function buildLaunchStatus(environment: LaunchEnvironment = process.env):
     .filter((topic) => topic.status === "practice_preview")
     .map((topic) => ({ slug: topic.slug, title: topic.title, level: topic.level }));
 
-  const publicSignupEnabled = isAccountSyncReady(environment);
+  const publicSignupEnabled = isServerAccountSyncReady(environment);
   const blockers = reviewStageTopics.length > 0
-    ? ["Practice-preview topics stay unscored until their accepted answers and feedback are fully reviewed."]
+    ? ["More topics are available as extra practice while their full lessons receive a final language review."]
     : [];
 
   if (!publicSignupEnabled) {
     blockers.push(
-      "Account sync stays unavailable until production SMTP and a real email-confirmation round trip have been verified.",
+      "Accounts are temporarily unavailable while email confirmation is being tested.",
     );
   }
 

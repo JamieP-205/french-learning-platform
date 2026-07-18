@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityRenderer, type SubmissionMetadata } from "@/components/lesson/activity-renderer";
 import { ActivityTaskGuide } from "@/components/lesson/activity-task-guide";
 import { ActivityTeachingGate } from "@/components/lesson/activity-teaching-gate";
@@ -21,38 +21,26 @@ import {
 } from "@/lib/local-learning/progress";
 import { validateActivityAnswer } from "@/lib/learning/answer-validation";
 import { selfCorrectionPrompt } from "@/lib/learning/feedback-sequence";
-import { inferEvidenceKind } from "@/lib/learning/response-transition";
-
-const baseActivityIds = [
-  "act-name-meaning-v1",
-  "act-age-fill-v1",
-  "act-age-typing-v1",
-  "act-origin-builder-v1",
-  "act-dictation-v1",
-  "act-speak-repeat-v1",
-  "act-register-v1",
-];
+import { hasSessionCompletionCredit, inferEvidenceKind } from "@/lib/learning/response-transition";
+import {
+  buildPublicDemoActivities,
+  publicDemoMinutes,
+  type PublicDemoMode,
+} from "@/lib/local-learning/demo-plan";
 
 type DemoAttempt = {
   activity: ActivityDefinition;
   result: ValidationResultV1;
   evidenceKind: AttemptEvidenceKind;
+  completed: boolean;
 };
 
-function orderActivities(mission: Mission, weakActivityIds: string[]) {
-  const activitiesById = new Map(mission.activities.map((activity) => [activity.id, activity]));
-  const weakFirst = weakActivityIds.filter((id) => baseActivityIds.includes(id));
-  const orderedIds = [...weakFirst, ...baseActivityIds.filter((id) => !weakFirst.includes(id))];
-  return orderedIds
-    .map((id) => activitiesById.get(id))
-    .filter((activity): activity is ActivityDefinition => Boolean(activity));
-}
-
-export function PublicDemoLesson({ mission }: { mission: Mission }) {
-  const [progress, setProgress] = useState<LocalLearningProgress>(() => loadLocalLearningProgress());
+export function PublicDemoLesson({ mission, mode = "full" }: { mission: Mission; mode?: PublicDemoMode }) {
+  const [progress, setProgress] = useState<LocalLearningProgress>(emptyLocalLearningProgress);
   const [activities, setActivities] = useState<ActivityDefinition[]>(() =>
-    orderActivities(mission, progress.weakActivityIds),
+    buildPublicDemoActivities(mission, emptyLocalLearningProgress.weakActivityIds, mode),
   );
+  const [localProgressReady, setLocalProgressReady] = useState(false);
 
   const [index, setIndex] = useState(0);
   const [attempts, setAttempts] = useState<DemoAttempt[]>([]);
@@ -61,14 +49,29 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
   const [firstMissAnswer, setFirstMissAnswer] = useState("");
   const [missCount, setMissCount] = useState(0);
   const [taughtConceptIds, setTaughtConceptIds] = useState<string[]>([]);
-  const [resultEvidenceKind, setResultEvidenceKind] = useState<AttemptEvidenceKind>();
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const stepRef = useRef<HTMLElement | null>(null);
 
   const currentActivity = activities[index];
   const completed = index >= activities.length;
-  const sessionMistakes = attempts.filter((attempt) => !attempt.result.isCorrect);
+  const sessionMistakes = [
+    ...new Map(
+      attempts
+        .filter((attempt) => !attempt.result.isCorrect)
+        .map((attempt) => [attempt.activity.id, attempt]),
+    ).values(),
+  ];
   const sessionCorrectCount = attempts.filter((attempt) => attempt.result.isCorrect).length;
+  const checkedAttempts = attempts.filter((attempt) => attempt.evidenceKind !== "self-report");
+  const earnsSessionCompletion = hasSessionCompletionCredit({
+    attempts: attempts.map((attempt) => ({
+      activityId: attempt.activity.id,
+      completed: attempt.completed,
+      evidenceKind: attempt.evidenceKind,
+    })),
+    totalActivities: activities.length,
+  });
   const currentConcepts = useMemo(
     () => currentActivity ? getConceptDefinitionsForActivity(currentActivity.id) : [],
     [currentActivity],
@@ -77,6 +80,24 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
   const needsTeaching = currentConcepts.length === 0 || untaughtConcepts.length > 0;
   const lessonStage = needsTeaching && !result ? "learn" : result ? "feedback" : "answer";
   const activityRule = currentConcepts.at(-1)?.teachingStep.metalinguisticRule;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSavedProgress() {
+      await Promise.resolve();
+      if (cancelled) return;
+      const savedProgress = loadLocalLearningProgress();
+      setProgress(savedProgress);
+      setActivities(buildPublicDemoActivities(mission, savedProgress.weakActivityIds, mode));
+      setLocalProgressReady(true);
+    }
+
+    void loadSavedProgress();
+    return () => {
+      cancelled = true;
+    };
+  }, [mission, mode]);
 
   function updateProgress(nextProgress: LocalLearningProgress) {
     setProgress(nextProgress);
@@ -95,9 +116,32 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
     if (!currentActivity || result) return;
     const validatedResult = validateActivityAnswer(currentActivity, answer);
     if (!metadata && !validatedResult.isCorrect && missCount === 0) {
+      const evidenceKind = inferEvidenceKind(currentActivity.type);
       setFirstMiss(validatedResult);
       setFirstMissAnswer(answer);
       setMissCount(1);
+      setAttempts((current) => [...current, { activity: currentActivity, result: validatedResult, evidenceKind, completed: false }]);
+
+      const nextWeakIds = [
+        currentActivity.id,
+        ...progress.weakActivityIds.filter((id) => id !== currentActivity.id),
+      ].slice(0, 4);
+      const nextMistakePrompts = [
+        currentActivity.prompt,
+        ...progress.mistakePrompts.filter((prompt) => prompt !== currentActivity.prompt),
+      ].slice(0, 4);
+      const progressWithMiss = recordLocalSkillAttempt({
+        progress: {
+          ...progress,
+          attemptsCount: progress.attemptsCount + 1,
+          mistakesCaptured: progress.mistakesCaptured + 1,
+          weakActivityIds: nextWeakIds,
+          mistakePrompts: nextMistakePrompts,
+        },
+        skill: skillForLocalActivity(currentActivity),
+        correct: false,
+      });
+      updateProgress(progressWithMiss);
       return;
     }
 
@@ -132,23 +176,26 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
 
     setFirstMiss(undefined);
     setResult(nextResult);
-    setResultEvidenceKind(evidenceKind);
     window.setTimeout(() => feedbackRef.current?.focus(), 0);
 
     if (evidenceKind === "self-report") return;
 
-    setAttempts((current) => [...current, { activity: currentActivity, result: nextResult, evidenceKind }]);
+    setAttempts((current) => [...current, { activity: currentActivity, result: nextResult, evidenceKind, completed: true }]);
     const nextWeakIds = nextResult.isCorrect
       ? progress.weakActivityIds.filter((id) => id !== currentActivity.id)
       : [currentActivity.id, ...progress.weakActivityIds.filter((id) => id !== currentActivity.id)].slice(0, 4);
     const nextMistakePrompts = nextResult.isCorrect
-      ? progress.mistakePrompts
+      ? progress.mistakePrompts.filter((prompt) => prompt !== currentActivity.prompt)
       : [currentActivity.prompt, ...progress.mistakePrompts.filter((prompt) => prompt !== currentActivity.prompt)].slice(0, 4);
     const progressWithAttempt = recordLocalSkillAttempt({
       progress: {
         ...progress,
         attemptsCount: progress.attemptsCount + 1,
         correctCount: progress.correctCount + (nextResult.isCorrect ? 1 : 0),
+        mistakesCaptured: progress.mistakesCaptured + (nextResult.isCorrect ? 0 : 1),
+        repairsCompleted: progress.repairsCompleted + (
+          nextResult.isCorrect && progress.weakActivityIds.includes(currentActivity.id) ? 1 : 0
+        ),
         weakActivityIds: nextWeakIds,
         mistakePrompts: nextMistakePrompts,
       },
@@ -164,11 +211,10 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
     setFirstMiss(undefined);
     setFirstMissAnswer("");
     setMissCount(0);
-    setResultEvidenceKind(undefined);
     setIndex((current) => current + 1);
     window.setTimeout(() => stepRef.current?.focus(), 0);
 
-    if (index === activities.length - 1 && resultEvidenceKind !== "self-report") {
+    if (index === activities.length - 1 && earnsSessionCompletion) {
       updateProgress({
         ...recordLocalActiveDate(loadLocalLearningProgress()),
         sessionsCompleted: progress.sessionsCompleted + 1,
@@ -178,21 +224,29 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
   }
 
   function restartDemo() {
-    setActivities(orderActivities(mission, loadLocalLearningProgress().weakActivityIds));
+    setActivities(buildPublicDemoActivities(mission, loadLocalLearningProgress().weakActivityIds, mode));
     setIndex(0);
     setAttempts([]);
     setResult(undefined);
     setFirstMiss(undefined);
     setFirstMissAnswer("");
     setMissCount(0);
-    setResultEvidenceKind(undefined);
   }
 
   function resetLocalProgress() {
     resetLocalLearningProgress();
     setProgress(emptyLocalLearningProgress);
     setTaughtConceptIds([]);
+    setConfirmingReset(false);
     restartDemo();
+  }
+
+  if (!localProgressReady) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div className="card animate-pulse" role="status">Loading this device’s lesson progress…</div>
+      </div>
+    );
   }
 
   return (
@@ -202,9 +256,11 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
           <Link className="text-ink/75 underline decoration-2 underline-offset-4 hover:text-coral" href="/">
             ← French for Life
           </Link>
-          <span className="text-ink/75">About {mission.estimatedMinutes} minutes</span>
+          <span className="text-ink/75">
+            About {publicDemoMinutes(mission, mode)} minutes · {activities.length} steps
+          </span>
         </div>
-        <p className="eyebrow mt-8">Lesson 1</p>
+        <p className="eyebrow mt-8">{mode === "short" ? "Quick practice" : "Lesson 1"}</p>
         <h1 className="mt-3 text-4xl font-black leading-tight">Introduce yourself</h1>
         <p className="mt-3 max-w-xl text-lg leading-7 text-ink/75">
           Learn one useful phrase, then try it straight away.
@@ -294,8 +350,9 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
           <p className="eyebrow">Lesson complete</p>
           <h2 className="mt-2 text-3xl font-black">Lesson finished</h2>
           <p className="mt-3 text-ink/75">
-            You practised a short introduction and answered {sessionCorrectCount} of {attempts.length} checked questions
-            correctly. Checked mistakes are saved on this device and move nearer the start when you practise again.
+            {earnsSessionCompletion
+              ? `You made ${checkedAttempts.length} checked attempt${checkedAttempts.length === 1 ? "" : "s"} and got ${sessionCorrectCount} right. Checked mistakes are saved on this device and move nearer the start when you practise again.`
+              : "You reached the end, but too many answers were shown for this to count as a completed practice session. Try it again when you are ready."}
           </p>
           {sessionMistakes.length > 0 && (
             <div className="mt-5 rounded-2xl bg-white p-4">
@@ -311,9 +368,25 @@ export function PublicDemoLesson({ mission }: { mission: Mission }) {
             <button className="button-primary" onClick={restartDemo}>Practise again</button>
             <Link className="button-secondary" href="/learn">Choose another lesson</Link>
           </div>
-          <button className="mt-5 text-sm font-bold text-ink/75 underline" onClick={resetLocalProgress}>
-            Reset progress on this device
-          </button>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {confirmingReset ? (
+              <>
+                <p className="status-coaching w-full" role="alert">
+                  This clears every lesson attempt, review reminder, and preference saved in this browser. It cannot be undone.
+                </p>
+                <button className="button-secondary border-coral/60" type="button" onClick={resetLocalProgress}>
+                  Yes, reset browser progress
+                </button>
+                <button className="button-secondary" type="button" onClick={() => setConfirmingReset(false)}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button className="text-sm font-bold text-ink/75 underline" type="button" onClick={() => setConfirmingReset(true)}>
+                Reset progress on this device
+              </button>
+            )}
+          </div>
         </section>
       )}
     </div>

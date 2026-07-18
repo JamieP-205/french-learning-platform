@@ -1,9 +1,15 @@
 import { expect, test } from "./fixtures";
 
 test("practice preview self-checks feed the local adaptive path", async ({ page }) => {
+  const browserErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+
   await page.goto("/learn/cafe-food");
   await expect(page.getByRole("heading", { name: /cafe and food/i })).toBeVisible();
-  await expect(page.getByText("Preview practice")).toBeVisible();
+  await expect(page.getByText("Preview practice", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Learn this first" })).toBeVisible();
   await expect(page.getByLabel("Your answer")).toHaveCount(0);
   await page.getByRole("button", { name: "Start preview check" }).click();
@@ -20,9 +26,13 @@ test("practice preview self-checks feed the local adaptive path", async ({ page 
   await page.getByRole("button", { name: "Try again" }).click();
   await page.getByLabel("Your answer").fill("Je veux un café");
   await page.getByRole("button", { name: "Check preview answer" }).click();
-  await expect(page.getByText("Good one to repair.")).toBeVisible();
+  await expect(page.getByText("Added to Review.")).toBeVisible();
   await expect(page.getByTestId("preview-practice-answer")).toContainText("Je voudrais");
   await expect(page.getByTestId("preview-practice-review-count")).toHaveText("1");
+
+  await page.reload();
+  await expect(page.getByTestId("preview-practice-review-count")).toHaveText("1");
+  expect(browserErrors.filter((error) => /hydration|server rendered HTML/i.test(error))).toEqual([]);
 
   await page.goto("/progress");
   await expect(page.getByText("Preview practice")).toBeVisible();
@@ -31,16 +41,16 @@ test("practice preview self-checks feed the local adaptive path", async ({ page 
   await expect(page.getByText("Preview recall")).toBeVisible();
 
   await page.goto("/review");
-  await expect(page.getByRole("heading", { name: /1 review target ready/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /1 item ready to review/i })).toBeVisible();
   await expect(page.getByText("Preview phrases to revisit")).toBeVisible();
-  await expect(page.getByLabel("Repair answer")).toHaveCount(0);
-  await page.getByRole("button", { name: "Start repair check" }).click();
-  await expect(page.getByLabel("Repair answer")).toBeVisible();
-  await expect(page.getByText(/Safer caf/i)).toBeVisible();
-  await page.getByLabel("Repair answer").fill("Je voudrais un café, s'il vous plaît.");
-  await page.getByRole("button", { name: "Check repair answer" }).click();
-  await expect(page.getByText(/Repaired/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Learn this first" })).toHaveCount(0);
+  await expect(page.getByText(/Je voudrais un café, s'il vous plaît\./i)).toHaveCount(0);
+  await expect(page.getByLabel("Your answer")).toBeVisible();
+  await page.getByLabel("Your answer").fill("Je voudrais un café, s'il vous plaît.");
+  await page.getByRole("button", { name: "Check answer" }).click();
+  await expect(page.getByRole("status")).toContainText(/completed in this review session/i);
+  await expect(page.getByRole("status")).toContainText(/safer café phrase/i);
 
   await page.goto("/today");
-  await expect(page.getByText(/Keep the foundation warm|Begin with the verified intro mission/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Begin with the introduction lesson." })).toBeVisible();
 });

@@ -2,12 +2,47 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { friendlyAuthError } from "../lib/auth/messages";
-import { isAccountSyncReady } from "../lib/auth/readiness";
+import {
+  isAccountSyncReady,
+  isServerAccountSyncReady,
+  isServerPrivacyAccessReady,
+} from "../lib/auth/readiness";
+import { hasRecentAuthenticationMethod } from "../lib/auth/server";
 import { buildLaunchStatus } from "../lib/launch/status";
 
 const root = process.cwd();
 
 describe("account-sync release gate", () => {
+  it("requires a recent method timestamp from the requesting session for destructive actions", () => {
+    const now = Date.parse("2026-07-16T15:00:00.000Z");
+
+    expect(hasRecentAuthenticationMethod({
+      amr: [{ method: "password", timestamp: (now - 5 * 60 * 1000) / 1000 }],
+    }, now)).toBe(true);
+    expect(hasRecentAuthenticationMethod({
+      amr: [{ method: "password", timestamp: (now - 16 * 60 * 1000) / 1000 }],
+    }, now)).toBe(false);
+    expect(hasRecentAuthenticationMethod({ amr: ["password"] }, now)).toBe(false);
+    expect(hasRecentAuthenticationMethod({
+      amr: [{ timestamp: (now - 5 * 60 * 1000) / 1000 }],
+    }, now)).toBe(false);
+    expect(hasRecentAuthenticationMethod({
+      amr: [{ method: "token_refresh", timestamp: (now - 5 * 60 * 1000) / 1000 }],
+    }, now)).toBe(false);
+    expect(hasRecentAuthenticationMethod({
+      amr: [{ method: "otp", timestamp: (now - 5 * 60 * 1000) / 1000 }],
+    }, now)).toBe(false);
+    expect(hasRecentAuthenticationMethod({
+      amr: [
+        { method: "password", timestamp: (now - 24 * 60 * 60 * 1000) / 1000 },
+        { method: "token_refresh", timestamp: (now - 60 * 1000) / 1000 },
+      ],
+    }, now)).toBe(false);
+    expect(hasRecentAuthenticationMethod({
+      amr: [{ method: "password", timestamp: (now + 2 * 60 * 1000) / 1000 }],
+    }, now)).toBe(false);
+  });
+
   it("fails closed unless the explicit readiness flag and both public Supabase values are present", () => {
     expect(isAccountSyncReady({})).toBe(false);
     expect(
@@ -46,7 +81,7 @@ describe("account-sync release gate", () => {
 
     expect(status.publicSignupEnabled).toBe(false);
     expect(status.blockers).toContain(
-      "Account sync stays unavailable until production SMTP and a real email-confirmation round trip have been verified.",
+      "Accounts are temporarily unavailable while email confirmation is being tested.",
     );
   });
 
@@ -60,9 +95,40 @@ describe("account-sync release gate", () => {
     expect(isAccountSyncReady(configuredButUnverified)).toBe(false);
 
     const signInPage = readFileSync(join(root, "app/auth/sign-in/page.tsx"), "utf8");
+    const signInForm = readFileSync(join(root, "app/auth/sign-in/sign-in-form.tsx"), "utf8");
     const callbackRoute = readFileSync(join(root, "app/auth/callback/route.ts"), "utf8");
-    expect(signInPage).toContain("{accountSyncReady ? (");
-    expect(callbackRoute).toContain("if (!isAccountSyncReady()");
+    const serverAuth = readFileSync(join(root, "lib/auth/server.ts"), "utf8");
+    expect(signInPage).toContain("accountSyncReady={isServerAccountSyncReady()}");
+    expect(signInPage).toContain("privacySignInReady={isServerPrivacyAccessReady()}");
+    expect(signInForm).toContain(
+      "const showAccountForm = accountSyncReady || (reauthRequested && privacySignInReady)",
+    );
+    expect(signInForm).toContain("{showAccountForm ? (");
+    expect(callbackRoute).toContain("if (!isServerAccountSyncReady()");
+    expect(serverAuth).toContain("if (requireAccountSyncReady && !isServerAccountSyncReady()) return null");
+    expect(serverAuth).toContain("data.user.email_confirmed_at");
+    expect(serverAuth).toContain("RECENT_AUTHENTICATION_WINDOW_MS");
+    const deleteRoute = readFileSync(join(root, "app/api/privacy/delete/route.ts"), "utf8");
+    const exportRoute = readFileSync(join(root, "app/api/privacy/export/route.ts"), "utf8");
+    expect(serverAuth).toContain("return resolveCurrentUserAuthContext(false)");
+    expect(deleteRoute).toContain("getCurrentPrivacyUserAuthContext");
+    expect(exportRoute).toContain("getCurrentPrivacyUserAuthContext");
+    expect(deleteRoute).toContain("auth.recentlyAuthenticated");
+    expect(exportRoute).toContain("auth.recentlyAuthenticated");
+  });
+
+  it("keeps server account routes closed without durable storage credentials", () => {
+    const publicConfiguration = {
+      NEXT_PUBLIC_ACCOUNT_SYNC_READY: "true",
+      NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+    };
+
+    expect(isAccountSyncReady(publicConfiguration)).toBe(true);
+    expect(isServerPrivacyAccessReady(publicConfiguration)).toBe(false);
+    expect(isServerAccountSyncReady(publicConfiguration)).toBe(false);
+    expect(isServerPrivacyAccessReady({ ...publicConfiguration, SUPABASE_SERVICE_ROLE_KEY: "service-key" })).toBe(true);
+    expect(isServerAccountSyncReady({ ...publicConfiguration, SUPABASE_SERVICE_ROLE_KEY: "service-key" })).toBe(true);
   });
 
   it("allowlists exact production and local callback routes", () => {

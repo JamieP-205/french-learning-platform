@@ -307,9 +307,9 @@ const CAFE_CONCEPTS: ConceptDefinition[] = [
     prerequisiteConceptIds: ["concept-cafe-polite-order"],
     teachingStep: {
       form: "L'addition, s'il vous plaît.",
-      metalinguisticRule: "Le elides to l' before a vowel: le addition becomes l'addition.",
+      metalinguisticRule: "The feminine article la elides before a vowel: la addition becomes l'addition.",
       positiveExamples: ["L'addition, s'il vous plaît.", "Un café, s'il vous plaît."],
-      contrastExamples: ["Le addition… ✗", "L'addition… ✓"],
+      contrastExamples: ["La addition… ✗", "L'addition… ✓"],
       function: "Use it to ask for the bill in a restaurant.",
       registerNote: "Neutral and polite.",
       inputSegment: {
@@ -325,6 +325,8 @@ const CAFE_CONCEPTS: ConceptDefinition[] = [
       },
     },
     vocabulary: [
+      // FLELex indexes the definite article under the generic lemma "le";
+      // the teaching rule above carries the feminine form required here.
       vocabulary("L'", "le", "DET:ART", "A1", "the"),
       vocabulary("addition", "addition", "NOM", "A2", "bill"),
       vocabulary("s'", "si", "KON", "A1", "if"),

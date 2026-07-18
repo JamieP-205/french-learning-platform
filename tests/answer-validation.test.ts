@@ -14,7 +14,13 @@ describe("deterministic French answer validation", () => {
   it("accepts a configured casual alternative only where the activity allows it", () => {
     const registerActivity = activity("act-register-v1");
     expect(validateActivityAnswer(registerActivity, "b").isCorrect).toBe(true);
-    expect(validateActivityAnswer(registerActivity, "a").isCorrect).toBe(false);
+    const incorrect = validateActivityAnswer(registerActivity, "a");
+    expect(incorrect.isCorrect).toBe(false);
+    expect(incorrect.correctAnswer).toBe(
+      registerActivity.type === "multiple_choice"
+        ? registerActivity.choices.find((choice) => choice.id === "b")?.label
+        : undefined,
+    );
   });
 
   it("allows the configured accent-tolerant answer but does not fuzzy-match spelling", () => {

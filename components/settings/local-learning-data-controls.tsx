@@ -83,23 +83,23 @@ export function LocalLearningDataControls() {
   function resetProgress() {
     if (!confirmingReset) {
       setConfirmingReset(true);
-      setMessage("Click reset once more to clear browser-only progress.");
+      setMessage("This clears every lesson attempt, review reminder, and preference saved in this browser. It cannot be undone.");
       return;
     }
 
     resetLocalLearningProgress();
     window.dispatchEvent(new Event(localProgressUpdatedEvent));
     setConfirmingReset(false);
-    setMessage("Browser-only progress has been reset.");
+    setMessage("Data saved only on this device has been reset.");
   }
 
   return (
     <section className="card">
-      <p className="eyebrow">Browser progress</p>
-      <h2 className="mt-2 text-2xl font-black">Export or reset this device.</h2>
+      <p className="eyebrow">Data on this device</p>
+      <h2 className="mt-2 text-2xl font-black">Export or reset browser-only progress.</h2>
       <p className="mt-3 text-ink/75">
-        Public learning progress is stored only in this browser. Export a copy for yourself or reset this device when
-        you want a fresh start.
+        Lessons used without an account can leave progress in this browser. It stays separate from your account and is
+        never merged into it. Export a copy or clear it from this device whenever you want.
       </p>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -122,15 +122,30 @@ export function LocalLearningDataControls() {
 
       <div className="mt-6 flex flex-wrap gap-3">
         <button className="button-primary" type="button" onClick={exportProgress}>
-          Export browser progress
+          Export data on this device
         </button>
         <button className="button-secondary" type="button" onClick={resetProgress}>
-          {confirmingReset ? "Confirm reset browser progress" : "Reset browser progress"}
+          {confirmingReset ? "Confirm reset device data" : "Reset data on this device"}
         </button>
+        {confirmingReset && (
+          <button
+            className="button-secondary"
+            type="button"
+            onClick={() => {
+              setConfirmingReset(false);
+              setMessage(undefined);
+            }}
+          >
+            Cancel
+          </button>
+        )}
       </div>
 
       {message && (
-        <p className="status-success mt-4" role="status">
+        <p
+          className={`${confirmingReset ? "status-coaching" : "status-success"} mt-4`}
+          role={confirmingReset ? "alert" : "status"}
+        >
           {message}
         </p>
       )}

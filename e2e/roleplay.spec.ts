@@ -2,7 +2,8 @@ import { expect, test } from "./fixtures";
 
 test("roleplay gives deterministic register feedback", async ({ page }) => {
   await page.goto("/roleplay");
-  await expect(page.getByRole("heading", { name: /practise the social judgement/i })).toBeVisible();
+  await expect(page.locator("h1")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Choose French that fits the situation." })).toBeVisible();
   const firstScoredChoice = page.getByRole("button", { name: /Bonjour, je voudrais un café/i });
   await expect(page.getByRole("heading", { name: "Learn this first" })).toBeVisible();
   await expect(firstScoredChoice).toHaveCount(0);
@@ -41,8 +42,8 @@ test("roleplay keeps recast and self-report escape visible until the learner con
 
   await page.getByRole("button", { name: "Combien café ?" }).click();
   await page.getByRole("button", { name: "Show me the answer" }).click();
-  await expect(page.getByText(/shown as self-report evidence with no score credit/i)).toBeVisible();
+  await expect(page.getByText(/showing the answer does not add to your score/i)).toBeVisible();
   await page.waitForTimeout(1_600);
-  await expect(page.getByText(/shown as self-report evidence with no score credit/i)).toBeVisible();
+  await expect(page.getByText(/showing the answer does not add to your score/i)).toBeVisible();
   await expect(page.getByRole("button", { name: "Continue roleplay" })).toBeVisible();
 });

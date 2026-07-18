@@ -6,16 +6,16 @@ const STORAGE_KEY = "bonjour:first-run-tour";
 
 const tourSteps = [
   {
-    title: "This is Today — your one next step",
-    body: "Every day the app builds one session around what you need: due review first, then new mission work, then a confident finish. You never have to choose from a menu of lessons.",
+    title: "Today gives you a clear next step",
+    body: "Your recommended session puts due review first, then useful lesson work. You can follow it immediately or browse another topic from Learn.",
   },
   {
-    title: "Mistakes are the engine",
-    body: "When you get something wrong, it is saved with an explanation and comes back as varied practice at the right time. The Review tab shows what is due.",
+    title: "Wrong answers become focused practice",
+    body: "A checked mistake is saved with an explanation and scheduled to return. The Review tab shows exactly what is ready and why.",
   },
   {
-    title: "Progress shows real evidence",
-    body: "No empty XP. Progress tracks sessions, recalled phrases, fixed mistakes, and your skill mix, so you can see improvement you can trust.",
+    title: "Progress shows what you actually practised",
+    body: "See completed sessions, phrases recalled from memory, repaired mistakes, and the skills you have practised.",
   },
   {
     title: "Start small",
