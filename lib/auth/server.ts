@@ -46,7 +46,10 @@ export function hasRecentAuthenticationMethod(claims: unknown, now = Date.now())
   return age >= -60_000 && age <= RECENT_AUTHENTICATION_WINDOW_MS;
 }
 
-async function resolveCurrentUserAuthContext(requireAccountSyncReady: boolean): Promise<CurrentUserAuthContext | null> {
+async function resolveCurrentUserAuthContext(
+  requireAccountSyncReady: boolean,
+  requireRecentAuthentication: boolean,
+): Promise<CurrentUserAuthContext | null> {
   if (!hasSupabaseAuthConfiguration) {
     if (!isDevelopmentDemoMode()) return null;
     const cookieStore = await cookies();
@@ -82,30 +85,41 @@ async function resolveCurrentUserAuthContext(requireAccountSyncReady: boolean): 
     },
   );
 
+  async function buildAuthContext(userId: string, accessToken?: string): Promise<CurrentUserAuthContext> {
+    if (!requireRecentAuthentication) {
+      return { userId, recentlyAuthenticated: false };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.getClaims(accessToken);
+      return {
+        userId,
+        recentlyAuthenticated: !error &&
+          data?.claims.sub === userId &&
+          hasRecentAuthenticationMethod(data.claims),
+      };
+    } catch {
+      // High-assurance actions fail closed if local JWT verification or the
+      // signing-key lookup is unavailable. Routine learning never depends on
+      // this extra check.
+      return { userId, recentlyAuthenticated: false };
+    }
+  }
+
   if (bearerToken) {
     const { data } = await supabase.auth.getUser(bearerToken);
     if (data.user?.id && data.user.email_confirmed_at) {
-      const claims = await supabase.auth.getClaims(bearerToken);
-      return {
-        userId: data.user.id,
-        recentlyAuthenticated: claims.data?.claims.sub === data.user.id &&
-          hasRecentAuthenticationMethod(claims.data.claims),
-      };
+      return buildAuthContext(data.user.id, bearerToken);
     }
   }
 
   const { data } = await supabase.auth.getUser();
   if (!data.user?.email_confirmed_at) return null;
-  const claims = await supabase.auth.getClaims();
-  return {
-    userId: data.user.id,
-    recentlyAuthenticated: claims.data?.claims.sub === data.user.id &&
-      hasRecentAuthenticationMethod(claims.data.claims),
-  };
+  return buildAuthContext(data.user.id);
 }
 
 export function getCurrentUserAuthContext(): Promise<CurrentUserAuthContext | null> {
-  return resolveCurrentUserAuthContext(true);
+  return resolveCurrentUserAuthContext(true, false);
 }
 
 /**
@@ -113,7 +127,7 @@ export function getCurrentUserAuthContext(): Promise<CurrentUserAuthContext | nu
  * account learning is paused by the launch gate.
  */
 export function getCurrentPrivacyUserAuthContext(): Promise<CurrentUserAuthContext | null> {
-  return resolveCurrentUserAuthContext(false);
+  return resolveCurrentUserAuthContext(false, true);
 }
 
 export async function getCurrentUserId(): Promise<string | null> {
