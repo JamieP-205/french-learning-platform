@@ -108,9 +108,12 @@ describe("account-sync release gate", () => {
     expect(serverAuth).toContain("if (requireAccountSyncReady && !isServerAccountSyncReady()) return null");
     expect(serverAuth).toContain("data.user.email_confirmed_at");
     expect(serverAuth).toContain("RECENT_AUTHENTICATION_WINDOW_MS");
+    expect(serverAuth).toContain("resolveCurrentUserAuthContext(true, false)");
+    expect(serverAuth).toContain("resolveCurrentUserAuthContext(false, true)");
+    expect(serverAuth).toContain("if (!requireRecentAuthentication)");
+    expect(serverAuth).toContain("Routine learning never depends on");
     const deleteRoute = readFileSync(join(root, "app/api/privacy/delete/route.ts"), "utf8");
     const exportRoute = readFileSync(join(root, "app/api/privacy/export/route.ts"), "utf8");
-    expect(serverAuth).toContain("return resolveCurrentUserAuthContext(false)");
     expect(deleteRoute).toContain("getCurrentPrivacyUserAuthContext");
     expect(exportRoute).toContain("getCurrentPrivacyUserAuthContext");
     expect(deleteRoute).toContain("auth.recentlyAuthenticated");
