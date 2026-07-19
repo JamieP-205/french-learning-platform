@@ -103,6 +103,18 @@ describe("learner-facing learning responses", () => {
     });
   });
 
+  it("keeps legacy stored sessions usable when prompt language metadata is absent", () => {
+    const activity = INTRO_MISSION.activities[0];
+    const legacyActivity = { ...activity } as Partial<typeof activity>;
+    delete legacyActivity.promptFrenchSegments;
+
+    expect(
+      presentActivityForLearner(
+        legacyActivity as typeof activity,
+      ).promptFrenchSegments,
+    ).toEqual([]);
+  });
+
   it("fails closed when a dictation has no bundled audio", () => {
     const dictation = INTRO_MISSION.activities.find((activity) => activity.type === "dictation");
     expect(dictation?.type).toBe("dictation");

@@ -19,7 +19,11 @@ function presentBaseActivity(activity: ActivityDefinition): LearnerActivityBase 
   return {
     id: activity.id,
     prompt: activity.prompt,
-    promptFrenchSegments: [...activity.promptFrenchSegments],
+    // Sessions can outlive a curriculum deployment. Keep an older stored plan
+    // usable while the publishing migration brings canonical rows up to date.
+    promptFrenchSegments: Array.isArray(activity.promptFrenchSegments)
+      ? [...activity.promptFrenchSegments]
+      : [],
     helperText: activity.helperText,
     contentItemIds: [...activity.contentItemIds],
     grammarRuleIds: [...activity.grammarRuleIds],
