@@ -129,7 +129,7 @@ export const INTRO_MISSION: Mission = {
           correctedAnswer: "J'ai 20 ans.",
         },
       ],
-      feedbackCorrect: "Yes—J'ai 20 ans is the standard pattern.",
+      feedbackCorrect: "Yes. J'ai 20 ans is the standard pattern.",
       feedbackIncorrect: "For age, French uses avoir: J'ai 20 ans.",
     },
     {
@@ -203,7 +203,7 @@ export const INTRO_MISSION: Mission = {
       type: "multiple_choice",
       prompt: "Which version is more casual in a relaxed spoken introduction?",
       promptFrenchSegments: [],
-      helperText: "Both can be useful—choose the relaxed spoken option.",
+      helperText: "Both can be useful. Choose the relaxed spoken option.",
       contentItemIds: ["phrase-je-mappelle-v1", "phrase-moi-cest-v1"],
       grammarRuleIds: [],
       estimatedSeconds: 25,

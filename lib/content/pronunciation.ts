@@ -30,7 +30,7 @@ export const MINIMAL_PAIRS: MinimalPair[] = [
   {
     id: "pair-nasal-an-on",
     focus: "nasal an vs on",
-    note: "Both are nasal, but « on » is rounder — lips push forward. Air goes through the nose, and the n is not pronounced as a consonant.",
+    note: "Both are nasal, but « on » is rounder: lips push forward. Air goes through the nose, and the n is not pronounced as a consonant.",
     left: { french: "blanc", english: "white" },
     right: { french: "blond", english: "blond" },
   },
