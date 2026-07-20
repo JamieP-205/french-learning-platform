@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Modal } from "@/components/ui/modal";
 import {
   defaultLearningSchedule,
   learningScheduleCalendar,
@@ -9,6 +10,33 @@ import {
   normalizeLearningSchedule,
   type LearningSchedule,
 } from "@/lib/schedule/learning-schedule";
+
+const calendarImportSteps = [
+  {
+    platform: "Google Calendar",
+    steps: [
+      "Open calendar.google.com on a computer.",
+      "Click the gear icon, then Settings.",
+      "Choose Import and export, pick the downloaded file, and click Import.",
+    ],
+  },
+  {
+    platform: "Apple Calendar",
+    steps: [
+      "Find french-for-life-schedule.ics in your Downloads folder.",
+      "Double-click it, or drag it onto the Calendar app.",
+      "Confirm which calendar it should join.",
+    ],
+  },
+  {
+    platform: "Outlook",
+    steps: [
+      "In Outlook, go to File, then Open and Export, then Import/Export.",
+      "Choose to import an iCalendar (.ics) file and pick the downloaded file.",
+      "Or simply drag the file onto your Outlook calendar.",
+    ],
+  },
+];
 
 const days = [
   { value: 1, label: "Mon" },
@@ -38,11 +66,25 @@ function formatNext(date?: Date) {
   }).format(date);
 }
 
+function formatScheduleSummary(schedule: LearningSchedule) {
+  const mondayFirst = (value: number) => (value + 6) % 7;
+  const dayNames = [...schedule.days]
+    .sort((a, b) => mondayFirst(a) - mondayFirst(b))
+    .map((value) => days.find((day) => day.value === value)?.label)
+    .filter((label): label is (typeof days)[number]["label"] => Boolean(label));
+  const list =
+    dayNames.length > 1
+      ? `${dayNames.slice(0, -1).join(", ")} and ${dayNames[dayNames.length - 1]}`
+      : dayNames[0] ?? "your chosen days";
+  return `every ${list} at ${schedule.time}`;
+}
+
 export function LearningScheduleCard() {
   const [schedule, setSchedule] = useState<LearningSchedule>(defaultLearningSchedule);
   const [now, setNow] = useState(() => new Date());
   const [ready, setReady] = useState(false);
   const [notice, setNotice] = useState<string>();
+  const [importHelpOpen, setImportHelpOpen] = useState(false);
   const nextSession = useMemo(() => nextScheduledSession(schedule, now), [schedule, now]);
 
   useEffect(() => {
@@ -117,7 +159,8 @@ export function LearningScheduleCard() {
     link.download = "french-for-life-schedule.ics";
     link.click();
     URL.revokeObjectURL(url);
-    setNotice("Calendar file ready. Open it to add the repeating reminder to your calendar.");
+    setNotice("Calendar file downloaded. The steps for adding it to your calendar are on screen.");
+    setImportHelpOpen(true);
   }
 
   return (
@@ -192,6 +235,40 @@ export function LearningScheduleCard() {
         </button>
       </div>
       {notice && <p className="mt-4 text-sm font-bold text-ink/70" role="status">{notice}</p>}
+
+      <Modal labelledBy="calendar-import-help-title" onClose={() => setImportHelpOpen(false)} open={importHelpOpen}>
+        <p className="eyebrow">One more step</p>
+        <h2 className="mt-1 text-2xl font-black" id="calendar-import-help-title">
+          Your calendar file is downloaded.
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-ink/70">
+          It is called <strong>french-for-life-schedule.ics</strong> and it holds your repeating practice
+          reminder: {formatScheduleSummary(schedule)}, with an alert 10 minutes before. Add it to the
+          calendar you actually check:
+        </p>
+
+        <div className="mt-4 space-y-4">
+          {calendarImportSteps.map((guide) => (
+            <section key={guide.platform}>
+              <h3 className="font-black">{guide.platform}</h3>
+              <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm leading-6 text-ink/75">
+                {guide.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </section>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button className="button-primary" onClick={() => setImportHelpOpen(false)} type="button">
+            Got it
+          </button>
+          <button className="button-secondary" onClick={downloadCalendar} type="button">
+            Download the file again
+          </button>
+        </div>
+      </Modal>
     </section>
   );
 }
