@@ -297,8 +297,8 @@ export function OnboardingFlow() {
                     key={goal}
                     className={
                       selectedGoals.includes(goal)
-                        ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
-                        : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                        ? "rounded-xl bg-ink px-4 py-2 font-bold text-cream"
+                        : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold"
                     }
                     type="button"
                     aria-pressed={selectedGoals.includes(goal)}
@@ -391,8 +391,8 @@ export function OnboardingFlow() {
                     key={interest}
                     className={
                       selectedInterests.includes(interest)
-                        ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
-                        : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                        ? "rounded-xl bg-ink px-4 py-2 font-bold text-cream"
+                        : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold"
                     }
                     type="button"
                     aria-pressed={selectedInterests.includes(interest)}
@@ -475,8 +475,8 @@ export function OnboardingFlow() {
                       key={option.value}
                       className={
                         focusPreferences.includes(option.value)
-                          ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
-                          : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                          ? "rounded-xl bg-ink px-4 py-2 font-bold text-cream"
+                          : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold"
                       }
                       type="button"
                       aria-pressed={focusPreferences.includes(option.value)}

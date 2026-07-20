@@ -14,6 +14,10 @@ const config: Config = {
         coral: "rgb(var(--color-coral) / <alpha-value>)",
         moss: "rgb(var(--color-moss) / <alpha-value>)",
         amber: "rgb(var(--color-amber) / <alpha-value>)",
+        slate: "rgb(var(--color-slate) / <alpha-value>)",
+        danger: "rgb(var(--color-danger) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        raised: "rgb(var(--color-raised) / <alpha-value>)",
       },
       // Tighter radius scale than the Tailwind defaults so cards keep
       // defined corners instead of turning into soft blobs.

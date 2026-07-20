@@ -212,18 +212,18 @@ export default function ProgressPage() {
               </div>
             </section>
 
-            <section className="card mt-6 bg-ink text-white">
+            <section className="card mt-6 bg-ink text-cream">
               <p className="text-sm font-bold uppercase tracking-wide text-amber">Next up</p>
               <h2 className="mt-2 text-2xl font-black">{progress.nextAction.label}</h2>
-              <p className="mt-2 text-white/75">{progress.nextAction.reason}</p>
-              <p className="mt-3 text-sm text-white/60">
+              <p className="mt-2 text-cream/75">{progress.nextAction.reason}</p>
+              <p className="mt-3 text-sm text-cream/60">
                 Next scheduled review: {progress.reviewsDue > 0 ? `${progress.reviewsDue} due now` : formatReviewDate(progress.nextReviewAt)}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link href={progress.nextAction.href} className="button-primary bg-coral hover:bg-coral/90">
                   Continue
                 </Link>
-                <Link href="/learn" className="button-secondary border-white/20 bg-white/10 text-white hover:bg-white/20">
+                <Link href="/learn" className="button-secondary border-surface/20 bg-surface/10 text-cream hover:bg-surface/20">
                   Browse topics
                 </Link>
               </div>

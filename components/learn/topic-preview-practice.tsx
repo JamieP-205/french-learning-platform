@@ -197,7 +197,7 @@ export function TopicPreviewPractice({
         )}
 
         {revealed ? (
-          <div className="mt-5 rounded-2xl bg-white p-4" aria-live="polite">
+          <div className="mt-5 rounded-2xl bg-surface p-4" aria-live="polite">
             <p className="text-lg font-black" data-testid="preview-practice-answer" lang="fr">
               {activeCheck.answer}
             </p>

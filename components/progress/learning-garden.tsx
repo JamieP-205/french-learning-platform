@@ -165,7 +165,7 @@ export function LearningGarden({ progress }: { progress: GardenProgress }) {
       </div>
 
       {nextUnlock ? (
-        <div className="mt-5 rounded-2xl border border-ink/10 bg-white/80 p-4">
+        <div className="mt-5 rounded-2xl border border-ink/10 bg-surface/80 p-4">
           <div className="flex items-center justify-between gap-4 text-sm">
             <p>
               Next to grow: <strong>{nextUnlock.label}</strong>

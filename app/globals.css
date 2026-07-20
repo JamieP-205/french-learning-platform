@@ -4,13 +4,21 @@
 
 :root {
   color-scheme: light;
-  /* Palette as space-separated RGB channels so Tailwind opacity modifiers
-     like ink/75 keep working through rgb(var(--x) / <alpha-value>). */
-  --color-ink: 16 35 63;
-  --color-cream: 250 247 240;
-  --color-coral: 189 63 44;
-  --color-moss: 47 125 98;
-  --color-amber: 168 114 28;
+  /* The garden in daylight. Palette as space-separated RGB channels so
+     Tailwind opacity modifiers like ink/75 keep working through
+     rgb(var(--x) / <alpha-value>). Values from docs/DESIGN-DIRECTION.md;
+     every pair is AA-checked by docs/design-contrast.js. */
+  --color-ink: 31 44 64;
+  --color-cream: 248 242 228;
+  --color-coral: 168 74 48;
+  --color-moss: 72 105 60;
+  --color-amber: 138 97 22;
+  --color-slate: 68 99 141;
+  --color-danger: 168 50 38;
+  --color-surface: 255 253 246;
+  --color-raised: 255 255 255;
+  /* Backdrops stay dark in both themes. */
+  --color-shade: 31 44 64;
 }
 
 /* The garden by lantern light: deep blue night air, parchment text, accents
@@ -22,6 +30,11 @@
   --color-coral: 229 146 116;
   --color-moss: 163 196 145;
   --color-amber: 220 176 92;
+  --color-slate: 150 181 217;
+  --color-danger: 240 145 127;
+  --color-surface: 29 39 55;
+  --color-raised: 38 50 74;
+  --color-shade: 4 8 14;
 }
 
 * { box-sizing: border-box; }
@@ -69,14 +82,14 @@ summary:focus-visible {
     @apply mx-auto min-h-screen max-w-6xl px-4 pb-12 sm:px-6;
     min-height: 100dvh;
   }
-  .card { @apply rounded-3xl border border-ink/15 bg-white p-5 sm:p-7; }
+  .card { @apply rounded-3xl border border-ink/15 bg-surface p-5 sm:p-7; }
   .eyebrow { @apply text-sm font-semibold text-coral; }
   /* text-cream matches white in daylight and flips with the theme, so ink
      buttons stay readable by lantern light too. */
-  .button-primary { @apply inline-flex min-h-12 items-center justify-center rounded-2xl bg-ink px-5 py-3 font-bold text-cream transition hover:bg-ink/90 disabled:cursor-not-allowed disabled:bg-slate-400; }
-  .button-secondary { @apply inline-flex min-h-12 items-center justify-center rounded-2xl border border-ink/30 bg-white px-5 py-3 font-bold text-ink transition hover:bg-cream disabled:cursor-not-allowed disabled:opacity-60; }
-  .field { @apply mt-2 w-full rounded-xl border border-ink/35 bg-white px-3 py-3 text-ink placeholder:text-slate-600; }
-  .status-error { @apply rounded-2xl border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-ink; }
+  .button-primary { @apply inline-flex min-h-12 items-center justify-center rounded-2xl bg-ink px-5 py-3 font-bold text-cream transition hover:bg-ink/90 disabled:cursor-not-allowed disabled:bg-ink/35; }
+  .button-secondary { @apply inline-flex min-h-12 items-center justify-center rounded-2xl border border-ink/30 bg-surface px-5 py-3 font-bold text-ink transition hover:bg-cream disabled:cursor-not-allowed disabled:opacity-60; }
+  .field { @apply mt-2 w-full rounded-xl border border-ink/35 bg-raised px-3 py-3 text-ink placeholder:text-ink/55; }
+  .status-error { @apply rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-ink; }
   .status-coaching { @apply rounded-2xl border border-amber/40 bg-amber/20 px-4 py-3 text-sm text-ink; }
   .status-success { @apply rounded-2xl border border-moss/30 bg-moss/10 px-4 py-3 text-sm text-ink; }
   .focus-target:focus { outline: 3px solid rgb(var(--color-amber)); outline-offset: 3px; }
@@ -90,7 +103,7 @@ summary:focus-visible {
 
 .learning-schedule-card {
   background:
-    linear-gradient(120deg, rgb(255 255 255 / 94%), rgb(247 237 218 / 82%)),
+    linear-gradient(120deg, rgb(var(--color-surface) / 94%), rgb(var(--color-cream) / 82%)),
     url("/images/learning-garden-bg.webp") center 63% / cover;
 }
 
@@ -99,7 +112,7 @@ summary:focus-visible {
   min-width: 3.25rem;
   border: 1px solid rgb(var(--color-ink) / 18%);
   border-radius: 999px;
-  background: rgb(255 255 255 / 82%);
+  background: rgb(var(--color-surface) / 82%);
   padding: 0.65rem 0.9rem;
   color: rgb(var(--color-ink) / 65%);
   font-size: 0.8rem;
@@ -108,7 +121,7 @@ summary:focus-visible {
 }
 
 .schedule-day:hover { border-color: rgb(var(--color-moss)); transform: translateY(-1px); }
-.schedule-day-selected { border-color: rgb(var(--color-moss)); background: rgb(var(--color-moss)); color: white; }
+.schedule-day-selected { border-color: rgb(var(--color-moss)); background: rgb(var(--color-moss)); color: rgb(var(--color-cream)); }
 
 .remy-dock {
   position: fixed;
@@ -123,16 +136,16 @@ summary:focus-visible {
   width: 4.5rem;
   height: 4.5rem;
   overflow: hidden;
-  border: 3px solid white;
+  border: 3px solid rgb(var(--color-surface));
   border-radius: 1.4rem;
-  background: #e8f1f8;
-  box-shadow: 0 12px 30px rgb(var(--color-ink) / 22%);
+  background: rgb(var(--color-slate) / 18%);
+  box-shadow: 0 12px 30px rgb(var(--color-shade) / 22%);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .remy-button:hover {
   transform: translateY(-3px) rotate(-1deg);
-  box-shadow: 0 16px 34px rgb(var(--color-ink) / 28%);
+  box-shadow: 0 16px 34px rgb(var(--color-shade) / 28%);
 }
 
 .remy-status {
@@ -141,13 +154,13 @@ summary:focus-visible {
   bottom: 0.22rem;
   width: 0.9rem;
   height: 0.9rem;
-  border: 2px solid white;
+  border: 2px solid rgb(var(--color-surface));
   border-radius: 50%;
   background: rgb(var(--color-moss));
 }
 
-.remy-dock[data-mood="proud"] .remy-status { background: #d39a24; animation: remy-pulse 1.8s ease-in-out infinite; }
-.remy-dock[data-mood="cosy"] .remy-status { background: #7194b0; }
+.remy-dock[data-mood="proud"] .remy-status { background: rgb(var(--color-amber)); animation: remy-pulse 1.8s ease-in-out infinite; }
+.remy-dock[data-mood="cosy"] .remy-status { background: rgb(var(--color-slate)); }
 .remy-dock[data-mood="focused"] .remy-status { background: rgb(var(--color-coral)); }
 
 .remy-panel {
@@ -157,9 +170,9 @@ summary:focus-visible {
   width: min(22rem, calc(100vw - 1.5rem));
   border: 1px solid rgb(var(--color-ink) / 14%);
   border-radius: 1rem;
-  background: white;
+  background: rgb(var(--color-surface));
   padding: 1rem;
-  box-shadow: 0 22px 60px rgb(var(--color-ink) / 22%);
+  box-shadow: 0 22px 60px rgb(var(--color-shade) / 22%);
   animation: remy-arrive 180ms ease-out both;
 }
 
@@ -184,8 +197,19 @@ summary:focus-visible {
   border: 1px solid rgb(var(--color-ink) / 10%);
   border-radius: 1.25rem;
   background: #dfe9e8 url("/images/learning-garden-bg.webp") center / cover no-repeat;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 40%);
+  box-shadow: inset 0 0 0 1px rgb(var(--color-surface) / 40%);
   isolation: isolate;
+}
+
+/* Dusk grade for the painted garden until the night art arrives. */
+:root[data-theme="dark"] .garden-scene { filter: brightness(0.78) saturate(0.85); }
+:root[data-theme="dark"] .garden-scene::after {
+  background: linear-gradient(to top, rgb(var(--color-shade) / 45%), transparent);
+}
+:root[data-theme="dark"] .learning-schedule-card {
+  background:
+    linear-gradient(120deg, rgb(var(--color-cream) / 93%), rgb(var(--color-cream) / 82%)),
+    url("/images/learning-garden-bg.webp") center 63% / cover;
 }
 
 .garden-scene::after {
@@ -198,6 +222,7 @@ summary:focus-visible {
 }
 
 .garden-away { filter: saturate(0.72) brightness(0.9); }
+:root[data-theme="dark"] .garden-scene.garden-away { filter: brightness(0.68) saturate(0.6); }
 .garden-growth { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; }
 .garden-grow { transform-box: fill-box; transform-origin: center bottom; animation: garden-grow 620ms cubic-bezier(.2,.9,.25,1.2) both; }
 .garden-rise { animation: garden-rise 520ms ease-out both; }
@@ -212,7 +237,7 @@ summary:focus-visible {
   border-radius: 999px;
   background: rgb(var(--color-ink) / 5%);
   padding: 0.4rem 0.7rem;
-  color: rgb(var(--color-ink) / 48%);
+  color: rgb(var(--color-ink) / 62%);
   font-size: 0.72rem;
   font-weight: 800;
 }
@@ -226,7 +251,7 @@ summary:focus-visible {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: rgb(var(--color-ink) / 66%);
+  background: rgb(var(--color-shade) / 66%);
   padding: 1rem;
   backdrop-filter: blur(7px);
 }
@@ -235,11 +260,11 @@ summary:focus-visible {
   position: relative;
   width: min(37rem, 100%);
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 55%);
+  border: 1px solid rgb(var(--color-surface) / 55%);
   border-radius: 1.25rem;
   background:
-    radial-gradient(circle at 50% 0%, rgb(244 201 93 / 28%), transparent 38%),
-    #fffdf7;
+    radial-gradient(circle at 50% 0%, rgb(var(--color-amber) / 24%), transparent 38%),
+    rgb(var(--color-surface));
   padding: 2rem;
   text-align: center;
   box-shadow: 0 28px 90px rgb(0 0 0 / 30%);
@@ -261,14 +286,14 @@ summary:focus-visible {
 }
 
 .celebration-burst i:nth-child(3n + 1) { background: rgb(var(--color-moss)); }
-.celebration-burst i:nth-child(3n + 2) { background: #e2ad35; }
+.celebration-burst i:nth-child(3n + 2) { background: rgb(var(--color-amber)); }
 
 .modal {
   width: min(34rem, calc(100vw - 2rem));
   border: 1px solid rgb(var(--color-ink) / 15%);
   border-radius: 1.25rem;
   padding: 0;
-  background: #fffdf7;
+  background: rgb(var(--color-surface));
   color: rgb(var(--color-ink));
   box-shadow: 0 28px 90px rgb(0 0 0 / 30%);
 }
@@ -276,7 +301,7 @@ summary:focus-visible {
 .modal[open] { animation: celebration-arrive 300ms cubic-bezier(.2,.9,.25,1.1) both; }
 
 .modal::backdrop {
-  background: rgb(var(--color-ink) / 66%);
+  background: rgb(var(--color-shade) / 66%);
   backdrop-filter: blur(7px);
 }
 
@@ -310,7 +335,7 @@ summary:focus-visible {
 }
 
 @keyframes remy-pulse {
-  50% { transform: scale(1.18); box-shadow: 0 0 0 5px rgb(211 154 36 / 18%); }
+  50% { transform: scale(1.18); box-shadow: 0 0 0 5px rgb(var(--color-amber) / 18%); }
 }
 
 @keyframes garden-grow {

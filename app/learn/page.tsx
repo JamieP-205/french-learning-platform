@@ -69,20 +69,20 @@ export default function LearnPage() {
           </Link>
         </section>
 
-        <section className="card mt-8 bg-ink text-white">
+        <section className="card mt-8 bg-ink text-cream">
           <p className="text-sm font-bold uppercase tracking-wide text-amber">Public path</p>
           <h2 className="mt-2 text-3xl font-black">A learner always has a next useful step.</h2>
-          <p className="mt-3 max-w-2xl text-white/75">
+          <p className="mt-3 max-w-2xl text-cream/75">
             Start with the foundations, revisit anything you miss, then expand into practical situations.
           </p>
           <div className="mt-6 grid gap-3 md:grid-cols-4">
             {pathSteps.map((step, index) => (
-              <Link key={step.title} href={step.href} className="rounded-2xl bg-white/10 p-4 transition hover:bg-white/20">
+              <Link key={step.title} href={step.href} className="rounded-2xl bg-surface/10 p-4 transition hover:bg-surface/20">
                 <p className="text-xs font-black uppercase tracking-wide text-amber">
                   {String(index + 1).padStart(2, "0")} · {step.detail}
                 </p>
                 <h3 className="mt-2 font-black">{step.title}</h3>
-                <p className="mt-2 text-sm text-white/70">{step.description}</p>
+                <p className="mt-2 text-sm text-cream/70">{step.description}</p>
               </Link>
             ))}
           </div>

@@ -90,7 +90,7 @@ function AuthAction({
   if (authState === "error") {
     return (
       <div className="flex flex-wrap items-center justify-end gap-2 text-sm" role="alert">
-        <span className="font-bold text-red-700">Account check failed.</span>
+        <span className="font-bold text-danger">Account check failed.</span>
         <Link href="/auth/sign-in" className="rounded-xl border border-ink/20 px-3 py-1.5 font-bold hover:border-coral hover:text-coral">
           Sign in
         </Link>
@@ -177,7 +177,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <nav
         aria-label="Primary"
-        className="mobile-primary-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-ink/10 bg-white/95 px-2 pt-2 backdrop-blur md:hidden"
+        className="mobile-primary-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-ink/10 bg-surface/95 px-2 pt-2 backdrop-blur md:hidden"
       >
         {mobilePrimaryLinks.map(([label, href]) => (
           <Link
@@ -195,7 +195,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             More
           </summary>
-          <div className="absolute bottom-[calc(100%+0.75rem)] right-0 grid w-44 gap-1 rounded-2xl border border-ink/15 bg-white p-2 shadow-xl">
+          <div className="absolute bottom-[calc(100%+0.75rem)] right-0 grid w-44 gap-1 rounded-2xl border border-ink/15 bg-surface p-2 shadow-xl">
             {mobileMoreLinks.map(([label, href]) => (
               <Link
                 key={href}

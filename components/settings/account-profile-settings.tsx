@@ -245,7 +245,7 @@ export function AccountProfileSettings() {
                 key={goal}
                 type="button"
                 aria-pressed={selected}
-                className={selected ? "rounded-xl bg-ink px-4 py-2 font-bold capitalize text-white" : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold capitalize"}
+                className={selected ? "rounded-xl bg-ink px-4 py-2 font-bold capitalize text-cream" : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold capitalize"}
                 onClick={() => setProfile({
                   ...profile,
                   learningGoals: selected
@@ -287,8 +287,8 @@ export function AccountProfileSettings() {
                 aria-pressed={selected}
                 className={
                   selected
-                    ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
-                    : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                    ? "rounded-xl bg-ink px-4 py-2 font-bold text-cream"
+                    : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold"
                 }
                 onClick={() =>
                   setProfile({

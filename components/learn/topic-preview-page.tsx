@@ -52,7 +52,7 @@ export function TopicPreviewPage({ topic }: { topic: TopicPreview }) {
                   <p className="mt-3 text-sm text-ink/70">{phrase.note}</p>
                   <p className="mt-2 text-xs font-black uppercase tracking-wide text-coral">{phrase.register}</p>
                   {phrase.commonTrap && (
-                    <p className="mt-3 rounded-xl bg-white p-3 text-sm text-ink/70">
+                    <p className="mt-3 rounded-xl bg-surface p-3 text-sm text-ink/70">
                       Avoid as a default: <span className="font-black" lang="fr">{phrase.commonTrap}</span>
                     </p>
                   )}

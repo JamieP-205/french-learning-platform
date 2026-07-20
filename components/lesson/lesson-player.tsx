@@ -311,19 +311,19 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
             </p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white/70 p-3">
+              <div className="rounded-2xl bg-surface/70 p-3">
                 <p className="text-xs font-black uppercase text-ink/70">Answers checked</p>
                 <p className="mt-1 text-xl font-black">
                   {sessionStats.total > 0 ? `${sessionStats.correct}/${sessionStats.total}` : "None"}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/70 p-3">
+              <div className="rounded-2xl bg-surface/70 p-3">
                 <p className="text-xs font-black uppercase text-ink/70">Accuracy</p>
                 <p className="mt-1 text-xl font-black">
                   {completionAccuracy === undefined ? "Not measured" : `${completionAccuracy}%`}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/70 p-3">
+              <div className="rounded-2xl bg-surface/70 p-3">
                 <p className="text-xs font-black uppercase text-ink/70">Fastest answer</p>
                 <p className="mt-1 text-xl font-black">{fastestAnswer ?? "Not measured"}</p>
               </div>
@@ -468,19 +468,19 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
                 Progress records what you answered here; it does not claim a level or ability from completion alone.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl bg-white/70 p-3">
+                <div className="rounded-2xl bg-surface/70 p-3">
                   <p className="text-xs font-black uppercase text-ink/70">Answers checked</p>
                   <p className="mt-1 text-xl font-black">
                     {sessionStats.correct}/{sessionStats.total}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-white/70 p-3">
+                <div className="rounded-2xl bg-surface/70 p-3">
                   <p className="text-xs font-black uppercase text-ink/70">Accuracy</p>
                   <p className="mt-1 text-xl font-black">
                     {completionAccuracy === undefined ? "Not measured" : `${completionAccuracy}%`}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-white/70 p-3">
+                <div className="rounded-2xl bg-surface/70 p-3">
                   <p className="text-xs font-black uppercase text-ink/70">Fastest answer</p>
                   <p className="mt-1 text-xl font-black">{fastestAnswer ?? "Not measured"}</p>
                 </div>

@@ -66,7 +66,7 @@ export function SpeakCheck({
 
   return (
     <div>
-      <div className="rounded-2xl border border-ink/10 bg-white p-4">
+      <div className="rounded-2xl border border-ink/10 bg-surface p-4">
         <p className="text-xs font-black uppercase tracking-[0.14em] text-ink/55">1 · Listen</p>
         <p className="mt-2 text-xl font-black" lang="fr">{targetText}</p>
       </div>
