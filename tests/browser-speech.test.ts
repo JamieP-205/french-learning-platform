@@ -6,6 +6,7 @@ import {
   stopSpeaking,
   type SpeechPlaybackOutcome,
 } from "../lib/speech/browser-speech";
+import { FRENCH_RATE_NORMAL } from "../lib/speech/speech-rates";
 
 class MockUtterance {
   lang = "";
@@ -66,6 +67,16 @@ describe("browser speech playback", () => {
     expect(outcome).toBeUndefined();
     expect(utterances).toHaveLength(1);
     expect(utterances[0]).toMatchObject({ text: "Bonjour", lang: "fr-FR", rate: 0.8, voice: frenchVoice });
+
+    utterances[0].onend?.();
+    await expect(playback).resolves.toEqual({ status: "completed" });
+  });
+
+  it("speaks French at the learner-friendly default rate", async () => {
+    const { utterances } = speechEnvironment();
+    const playback = speakFrench("Bonjour");
+
+    expect(utterances[0]).toMatchObject({ text: "Bonjour", lang: "fr-FR", rate: FRENCH_RATE_NORMAL });
 
     utterances[0].onend?.();
     await expect(playback).resolves.toEqual({ status: "completed" });

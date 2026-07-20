@@ -3,6 +3,7 @@ import {
   playTextAudio,
   stopTextAudio,
 } from "../lib/speech/audio-playback";
+import { FRENCH_RATE_NORMAL } from "../lib/speech/speech-rates";
 
 class MockUtterance {
   lang = "";
@@ -81,6 +82,24 @@ describe("bundled audio playback", () => {
       preservesPitch: true,
     });
     expect(synthesis.speak).not.toHaveBeenCalled();
+
+    MockAudio.instances[0].onended?.();
+    await expect(playback).resolves.toEqual({ status: "completed" });
+  });
+
+  it("plays bundled audio at the learner-friendly default rate", async () => {
+    playbackEnvironment();
+    const playback = playTextAudio({
+      text: "Bonjour",
+      language: "fr-FR",
+      audioSource: "/audio/french/bonjour.mp3",
+      owner: Symbol("test"),
+    });
+
+    expect(MockAudio.instances[0]).toMatchObject({
+      playbackRate: FRENCH_RATE_NORMAL,
+      defaultPlaybackRate: FRENCH_RATE_NORMAL,
+    });
 
     MockAudio.instances[0].onended?.();
     await expect(playback).resolves.toEqual({ status: "completed" });

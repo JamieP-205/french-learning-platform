@@ -9,6 +9,7 @@ import { SHADOWING_PHRASES } from "@/lib/content/pronunciation";
 import { normalizeFrenchAnswer } from "@/lib/learning/answer-validation";
 import { playTextAudio, stopTextAudio } from "@/lib/speech/audio-playback";
 import { speechSupport } from "@/lib/speech/browser-speech";
+import { ENGLISH_RATE, FRENCH_RATE_NORMAL, FRENCH_RATE_SLOW } from "@/lib/speech/speech-rates";
 
 const DICTATION_PHRASES = SHADOWING_PHRASES;
 
@@ -73,7 +74,7 @@ export default function ListenPage() {
       const promptOutcome = await playTextAudio({
         text: `Say in French: ${item.english}`,
         language: "en-GB",
-        rate: 1,
+        rate: ENGLISH_RATE,
         owner: walkingAudioOwner.current,
       });
       if (promptOutcome.status === "failed" || promptOutcome.status === "unavailable") {
@@ -92,7 +93,7 @@ export default function ListenPage() {
       const answerOutcome = await playTextAudio({
         text: item.french,
         language: "fr-FR",
-        rate: 0.8,
+        rate: FRENCH_RATE_SLOW,
         audioSource: item.audioSource,
         owner: walkingAudioOwner.current,
       });
@@ -148,14 +149,14 @@ export default function ListenPage() {
                 key={`${phrase.id}-normal`}
                 text={phrase.french}
                 audioSource={phrase.audioSource}
-                rate={1}
+                rate={FRENCH_RATE_NORMAL}
                 label="Play"
               />
               <SpeechPlaybackButton
                 key={`${phrase.id}-slow`}
                 text={phrase.french}
                 audioSource={phrase.audioSource}
-                rate={0.8}
+                rate={FRENCH_RATE_SLOW}
                 label="Play slowly"
                 replayLabel="Play slowly again"
                 showUnavailableMessage={false}

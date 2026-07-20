@@ -7,13 +7,14 @@ import {
   stopTextAudio,
 } from "@/lib/speech/audio-playback";
 import type { SpeechPlaybackOutcome } from "@/lib/speech/browser-speech";
+import { FRENCH_RATE_NORMAL } from "@/lib/speech/speech-rates";
 
 type PlaybackState = "checking" | "idle" | "playing" | "completed" | "error";
 
 export function SpeechPlaybackButton({
   text,
   language = "fr-FR",
-  rate = 1,
+  rate = FRENCH_RATE_NORMAL,
   label,
   replayLabel = "Play again",
   audioSource,

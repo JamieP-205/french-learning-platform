@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { SpeakCheck } from "@/components/speech/speak-check";
 import { SpeechPlaybackButton } from "@/components/speech/speech-playback-button";
 import { audioSourceForFrench } from "@/lib/content/french-audio";
+import { FRENCH_RATE_NORMAL, FRENCH_RATE_SLOW } from "@/lib/speech/speech-rates";
 import type {
   ActivityDefinition,
   AttemptEvidenceKind,
@@ -162,14 +163,14 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
             <SpeechPlaybackButton
               text=""
               audioSource={dictationAudioSource}
-              rate={1}
+              rate={FRENCH_RATE_NORMAL}
               label="Play the phrase"
               disabled={controlsDisabled}
             />
             <SpeechPlaybackButton
               text=""
               audioSource={dictationAudioSource}
-              rate={0.8}
+              rate={FRENCH_RATE_SLOW}
               label="Play slowly"
               replayLabel="Play slowly again"
               className="text-sm font-black text-coral underline decoration-2 underline-offset-4 disabled:opacity-60"
