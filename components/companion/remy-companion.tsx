@@ -77,7 +77,7 @@ export function RemyCompanion() {
       setReply(progress?.nextAction
         ? `${progress.nextAction.label}. ${progress.nextAction.reason}`
         : pathname.startsWith("/lesson")
-          ? "Stay with this one step. Read, answer, notice the feedback—then the next step will feel lighter."
+          ? "Stay with this one step. Read, answer, notice the feedback, and the next step will feel lighter."
           : "Try one short lesson. You do not need to feel ready before you begin.");
       return;
     }
@@ -94,13 +94,13 @@ export function RemyCompanion() {
     if (choice === "streak") {
       setReply(progress
         ? progress.currentStreak > 0
-          ? `Your thread is ${progress.currentStreak} day${progress.currentStreak === 1 ? "" : "s"} long. It is proof you returned—not a reason to panic.`
+          ? `Your thread is ${progress.currentStreak} day${progress.currentStreak === 1 ? "" : "s"} long. It is proof you returned, not a reason to panic.`
           : "Your streak starts after one completed lesson. We are building a thread, not a trap."
         : "Sign in and finish a lesson to grow a saved streak. No-account practice still counts for you, just on this device.");
       return;
     }
     const phrase = routePhrase(pathname);
-    setReply(`${phrase.french} — ${phrase.english} Keep it in your pocket for today.`);
+    setReply(`${phrase.french} It means: ${phrase.english} Keep it in your pocket for today.`);
   }
 
   const greetingName = profile?.displayName?.trim().split(/\s+/)[0];

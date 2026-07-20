@@ -166,7 +166,7 @@ export default function ListenPage() {
           {revealed && (
             <p className="mt-4 rounded-2xl bg-cream p-4 font-bold">
               <span lang="fr">{phrase.french}</span>{" "}
-              <span className="font-normal text-ink/60">— {phrase.english}</span>
+              <span className="font-normal text-ink/60">· {phrase.english}</span>
             </p>
           )}
 
@@ -187,9 +187,9 @@ export default function ListenPage() {
               {result === "correct"
                 ? "Exact, including accents. Excellent ear."
                 : result === "close"
-                  ? `So close — only accents differ. It is written: ${phrase.french}`
+                  ? `So close. Only the accents differ. It is written: ${phrase.french}`
                   : result === "prompt"
-                    ? "Almost — try once more. Listen again and self-correct before seeing the text."
+                    ? "Almost. Try once more: listen again and self-correct before seeing the text."
                     : result === "revealed"
                       ? "Here is the written phrase. Revealing it does not count as a listening answer."
                       : `Not this time. It was: ${phrase.french} (${phrase.english}). Rule: ${getListeningTeachingStep(phrase.id)?.metalinguisticRule ?? "Match each sound to the written phrase."}`}

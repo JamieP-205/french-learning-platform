@@ -202,7 +202,7 @@ export default function TodayPage() {
       <main className="py-10">
         <p className="eyebrow">Today</p>
         <h1 className="mt-2 text-4xl font-black">{firstName ? `${greeting}, ${firstName}.` : "Your French for today."}</h1>
-        {firstName && <p className="mt-3 text-lg text-ink/70">Here is the smallest useful step for your French today.</p>}
+        {firstName && <p className="mt-3 text-lg text-ink/70">One small step today keeps the thread going.</p>}
         <FirstRunTour />
 
         {learningMode === "loading" && (

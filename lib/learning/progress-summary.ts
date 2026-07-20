@@ -285,7 +285,7 @@ export function buildProgressSnapshot({
       title: "Two phrases recalled",
       description: "Recall two different lesson items through productive practice.",
       earned: recalledContentItems.size >= 2,
-      detail: "Recall — not recognition — is the score that transfers to real conversation.",
+      detail: "Recall, not recognition, is the score that transfers to real conversation.",
     },
   ];
 

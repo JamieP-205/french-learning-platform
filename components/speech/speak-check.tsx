@@ -13,7 +13,7 @@ export type SpeechAttemptOutcome = {
 };
 
 // Microphone-backed repeat-after-me check. Recognition quality varies by
-// browser and accent, so feedback stays gentle and never blocks progress —
+// browser and accent, so feedback stays gentle and never blocks progress;
 // the learner can always mark the attempt done.
 export function SpeakCheck({
   targetText,
@@ -21,7 +21,7 @@ export function SpeakCheck({
   acceptedPhrases,
   disabled,
   onDone,
-  doneLabel = "I said it — continue",
+  doneLabel = "I said it, continue",
 }: {
   targetText: string;
   audioSource?: string;
@@ -88,7 +88,7 @@ export function SpeakCheck({
         />
         {support.canListen && (
           <button type="button" className="button-secondary" disabled={disabled || listening} onClick={record}>
-            {listening ? "Listening…" : feedback || notice ? "Try again" : "Say it — check the words"}
+            {listening ? "Listening…" : feedback || notice ? "Try again" : "Say it and check the words"}
           </button>
         )}
         {onDone && (

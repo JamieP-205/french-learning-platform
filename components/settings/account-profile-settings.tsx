@@ -198,9 +198,9 @@ export function AccountProfileSettings() {
               setProfile({ ...profile, speakingConfidence: event.target.value as "low" | "medium" | "high" })
             }
           >
-            <option value="low">Nervous — ease me in</option>
-            <option value="medium">Okay — normal pace</option>
-            <option value="high">Confident — push me</option>
+            <option value="low">Nervous, ease me in</option>
+            <option value="medium">Okay, normal pace</option>
+            <option value="high">Confident, push me</option>
           </select>
         </label>
 

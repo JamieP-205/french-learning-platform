@@ -22,7 +22,7 @@ function celebrationCopy(progress?: ProgressSnapshot) {
   if ((progress?.sessionsCompleted ?? 0) === 5) {
     return {
       eyebrow: "Garden milestone",
-      title: "Five sessions—and the garden has somewhere to gather.",
+      title: "Five sessions, and the garden has somewhere to gather.",
       detail: "You have returned often enough for your learning space to feel lived in.",
     };
   }

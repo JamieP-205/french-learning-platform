@@ -205,7 +205,7 @@ export async function getReviewPlan(userId: string) {
     activities: focused.length > 0 ? focused : plan.activities.slice(0, 2),
     estimatedMinutes: Math.max(2, Math.min(plan.estimatedMinutes, focused.length * 2)),
     weakFocus: "Just the phrases that are due, so recall stays cheap to keep.",
-    completionReward: "Due review cleared — the fastest kind of progress.",
+    completionReward: "Due review cleared. The fastest kind of progress.",
   };
 }
 

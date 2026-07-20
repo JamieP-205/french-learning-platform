@@ -28,7 +28,7 @@ test("roleplay keeps recast and self-report escape visible until the learner con
   await page.getByRole("button", { name: "Start roleplay" }).click();
 
   await page.getByRole("button", { name: "Je veux un café." }).click();
-  await expect(page.getByText("Almost — try once more", { exact: true })).toBeVisible();
+  await expect(page.getByText("Almost, try once more", { exact: true })).toBeVisible();
   await expect(page.getByText(/Bonjour, je voudrais un café, s'il vous plaît\./i)).toHaveCount(0);
   await expect(page.getByText("Je voudrais un café, s'il vous plaît.", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Try again" }).click();

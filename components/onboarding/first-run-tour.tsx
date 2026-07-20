@@ -19,11 +19,11 @@ const tourSteps = [
   },
   {
     title: "Start small",
-    body: "Two minutes still counts — there is always a short session option. Ready? Start your first session below.",
+    body: "Two minutes still counts. There is always a short session option. Ready? Start your first session below.",
   },
 ];
 
-// Lightweight coach-marks shown when explicitly requested with ?tour=1 —
+// Lightweight coach-marks shown when explicitly requested with ?tour=1;
 // onboarding links here after a new learner finishes setup. Completion is
 // remembered locally so a stale ?tour=1 URL does not repeat it.
 export function FirstRunTour() {

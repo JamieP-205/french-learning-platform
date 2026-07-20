@@ -202,7 +202,7 @@ export function PublicLocalProgressPanel() {
           Missed answers can return at the right time without creating an account or sending this progress to our server.
         </p>
         <p className="mt-4 rounded-2xl bg-surface/70 p-4 text-sm font-bold text-ink/75">
-          {preferenceSummary.headline} — {preferenceSummary.detail}
+          {preferenceSummary.headline}. {preferenceSummary.detail}
         </p>
       </div>
 
@@ -424,7 +424,7 @@ export function PublicLocalReviewPanel() {
         [key]: {
           correct: false,
           stage: "prompt",
-          text: "Almost — try once more. Which taught form fits this meaning and situation?",
+          text: "Almost. Try once more: which taught form fits this meaning and situation?",
         },
       }));
       return;

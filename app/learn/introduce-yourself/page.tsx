@@ -34,7 +34,7 @@ export default function MissionOverviewPage() {
         <section className="card mt-5">
           <p className="eyebrow">Real French note</p>
           <p className="mt-2">
-            <strong>{"Je m'appelle…"}</strong> is a neutral everyday default. <strong>{"Moi, c'est…"}</strong> is more relaxed and spoken—useful with peers, less suited to formal writing.
+            <strong>{"Je m'appelle…"}</strong> is a neutral everyday default. <strong>{"Moi, c'est…"}</strong> is more relaxed and spoken. Use it with peers rather than in formal writing.
           </p>
         </section>
       </main>

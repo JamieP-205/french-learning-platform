@@ -188,7 +188,7 @@ export default function ProgressPage() {
             <section className="card mt-6">
               <h2 className="text-2xl font-black">Skills practised</h2>
               <p className="mt-2 text-ink/70">
-                These scores combine your accuracy and number of checked attempts in this course. They are not CEFR levels or overall proficiency grades.
+                These numbers reflect what you actually answered, and how often you got it right. They are honest practice scores, not French levels.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {progress.skills.map((skill) => (
@@ -230,10 +230,10 @@ export default function ProgressPage() {
             </section>
 
             <section className="card mt-6">
-              <p className="eyebrow">Recommendations</p>
-              <h2 className="mt-2 text-2xl font-black">Practice chosen from your recent work.</h2>
+              <p className="eyebrow">Worth a look next</p>
+              <h2 className="mt-2 text-2xl font-black">Picked from your recent work.</h2>
               <p className="mt-2 text-ink/70">
-                Recommendations use your level, completed sessions, mistakes, and reviews to keep the next step useful.
+                These come from what you have practised and where you slipped, so the next step actually helps.
               </p>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {progress.recommendations.map((recommendation) => (

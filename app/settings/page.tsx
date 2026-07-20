@@ -73,8 +73,9 @@ export default function SettingsPage() {
                   : "Data controls will appear after the app confirms whether this is an account or device-only session."}
             </p>
             <p className="mt-3 text-sm text-ink/65">
-              Rate-limit and abuse-prevention events may remain for up to eight days. Limited safety blocks and reports
-              may be retained after learner-data deletion. Restricted editorial attribution follows the separate content-history policy.
+              A short technical log that protects the service from abuse clears itself within eight days. If a safety
+              report or block involved your account, that record can outlive a data deletion. Credits for reviewed
+              course content are kept under their own policy.
             </p>
             <Link className="button-secondary mt-6" href="/privacy">
               Open privacy centre

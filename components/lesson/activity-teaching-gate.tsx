@@ -102,7 +102,7 @@ export function ActivityTeachingGate({
                     {words.map((item, index) => (
                       <div key={`${item.form}-${item.meaning}-${index}`} className="flex gap-2">
                         <dt lang="fr" className="font-black">{item.form}</dt>
-                        <dd className="text-ink/70">— {item.meaning}</dd>
+                        <dd className="text-ink/70">{item.meaning}</dd>
                       </div>
                     ))}
                   </dl>

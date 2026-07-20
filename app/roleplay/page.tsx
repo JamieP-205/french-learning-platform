@@ -40,7 +40,7 @@ export default function RoleplayPage() {
     if (result.choice.outcome === "repair" && missCount === 0) {
       setMissCount(1);
       setFeedback({
-        text: "Almost — try once more. Which option fits the situation and register better?",
+        text: "Almost. Try once more: which option fits the situation and register better?",
         outcome: "prompt",
       });
       return;
@@ -152,7 +152,7 @@ export default function RoleplayPage() {
 
             {feedback && (
               <div className={`${outcomeTone(feedback.outcome)} mt-5`} aria-live="polite">
-                <p className="font-black">{feedback.outcome === "strong" ? "Best choice" : feedback.outcome === "safe" ? "Safe choice" : feedback.outcome === "prompt" ? "Almost — try once more" : "Repair this"}</p>
+                <p className="font-black">{feedback.outcome === "strong" ? "Best choice" : feedback.outcome === "safe" ? "Safe choice" : feedback.outcome === "prompt" ? "Almost, try once more" : "Repair this"}</p>
                 <p className="mt-2">{feedback.text}</p>
                 {feedback.nextTurnIndex !== undefined && (
                   <button className="button-primary mt-4" type="button" onClick={continueRoleplay}>Continue roleplay</button>
