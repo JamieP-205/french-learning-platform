@@ -241,6 +241,47 @@ summary:focus-visible {
 .celebration-burst i:nth-child(3n + 1) { background: #2f7d62; }
 .celebration-burst i:nth-child(3n + 2) { background: #e2ad35; }
 
+.modal {
+  width: min(34rem, calc(100vw - 2rem));
+  border: 1px solid rgb(16 35 63 / 15%);
+  border-radius: 1.25rem;
+  padding: 0;
+  background: #fffdf7;
+  color: #10233f;
+  box-shadow: 0 28px 90px rgb(0 0 0 / 30%);
+}
+
+.modal[open] { animation: celebration-arrive 300ms cubic-bezier(.2,.9,.25,1.1) both; }
+
+.modal::backdrop {
+  background: rgb(16 35 63 / 66%);
+  backdrop-filter: blur(7px);
+}
+
+.modal-body {
+  position: relative;
+  max-height: min(82vh, 46rem);
+  overflow-y: auto;
+  padding: 1.75rem;
+  outline: none;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: rgb(16 35 63 / 70%);
+}
+
+.modal-close:hover { background: #faf7f0; color: #10233f; }
+
 @keyframes remy-arrive {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
