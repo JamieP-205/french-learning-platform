@@ -227,7 +227,7 @@ summary:focus-visible {
 .garden-grow { transform-box: fill-box; transform-origin: center bottom; animation: garden-grow 620ms cubic-bezier(.2,.9,.25,1.2) both; }
 .garden-rise { animation: garden-rise 520ms ease-out both; }
 .garden-sun { transform-origin: 554px 50px; animation: garden-sun 8s ease-in-out infinite; }
-.garden-lanterns circle { animation: lantern-glow 2.4s ease-in-out infinite alternate; }
+.garden-lanterns circle { transform-box: fill-box; transform-origin: center; animation: lantern-glow 2.4s ease-in-out infinite alternate; }
 
 .garden-badge {
   display: inline-flex;
