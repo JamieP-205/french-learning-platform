@@ -45,6 +45,7 @@ export type ProfilePreferenceChanges = Partial<Pick<
   | "timeZone"
   | "focusPreferences"
   | "speakingConfidence"
+  | "speechSpeed"
 >>;
 
 export type SessionCreationOptions = {

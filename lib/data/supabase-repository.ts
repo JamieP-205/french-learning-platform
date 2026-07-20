@@ -137,6 +137,7 @@ export class SupabaseLearningRepository implements LearningRepository {
       timeZone: normalizeIanaTimeZone(row.time_zone as string | undefined),
       focusPreferences: (row.focus_preferences as string[]) ?? [],
       speakingConfidence: ((row.speaking_confidence as "low" | "medium" | "high") ?? "medium"),
+      speechSpeed: ((row.speech_speed as "normal" | "slow") ?? "normal"),
       ageConfirmed: Boolean(row.age_confirmed),
       country: (row.country as string) ?? "",
       birthDate: (row.birth_date as string) ?? undefined,
@@ -162,6 +163,7 @@ export class SupabaseLearningRepository implements LearningRepository {
       time_zone: normalizeIanaTimeZone(profile.timeZone),
       focus_preferences: profile.focusPreferences ?? [],
       speaking_confidence: profile.speakingConfidence ?? "medium",
+      speech_speed: profile.speechSpeed ?? "normal",
       age_confirmed: profile.ageConfirmed ?? false,
       country: profile.country ?? null,
       birth_date: profile.birthDate ?? null,
@@ -186,6 +188,7 @@ export class SupabaseLearningRepository implements LearningRepository {
     if (changes.timeZone !== undefined) update.time_zone = normalizeIanaTimeZone(changes.timeZone);
     if (changes.focusPreferences !== undefined) update.focus_preferences = changes.focusPreferences;
     if (changes.speakingConfidence !== undefined) update.speaking_confidence = changes.speakingConfidence;
+    if (changes.speechSpeed !== undefined) update.speech_speed = changes.speechSpeed;
     if (Object.keys(update).length === 0) return this.getProfile(userId);
 
     const { error } = await this.client.from("profiles").update(update).eq("id", userId);

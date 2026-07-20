@@ -9,7 +9,7 @@ import { SHADOWING_PHRASES } from "@/lib/content/pronunciation";
 import { normalizeFrenchAnswer } from "@/lib/learning/answer-validation";
 import { playTextAudio, stopTextAudio } from "@/lib/speech/audio-playback";
 import { speechSupport } from "@/lib/speech/browser-speech";
-import { ENGLISH_RATE, FRENCH_RATE_NORMAL, FRENCH_RATE_SLOW } from "@/lib/speech/speech-rates";
+import { ENGLISH_RATE, FRENCH_RATE_SLOW } from "@/lib/speech/speech-rates";
 
 const DICTATION_PHRASES = SHADOWING_PHRASES;
 
@@ -149,7 +149,6 @@ export default function ListenPage() {
                 key={`${phrase.id}-normal`}
                 text={phrase.french}
                 audioSource={phrase.audioSource}
-                rate={FRENCH_RATE_NORMAL}
                 label="Play"
               />
               <SpeechPlaybackButton

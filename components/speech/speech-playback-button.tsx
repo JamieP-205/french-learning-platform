@@ -7,14 +7,16 @@ import {
   stopTextAudio,
 } from "@/lib/speech/audio-playback";
 import type { SpeechPlaybackOutcome } from "@/lib/speech/browser-speech";
-import { FRENCH_RATE_NORMAL } from "@/lib/speech/speech-rates";
+import { frenchRateForSpeed, useSpeechSpeed } from "@/lib/speech/speed-preference";
 
 type PlaybackState = "checking" | "idle" | "playing" | "completed" | "error";
 
+// Without an explicit rate the button follows the learner's saved audio-speed
+// preference; slow-play buttons pass FRENCH_RATE_SLOW themselves.
 export function SpeechPlaybackButton({
   text,
   language = "fr-FR",
-  rate = FRENCH_RATE_NORMAL,
+  rate,
   label,
   replayLabel = "Play again",
   audioSource,
@@ -41,6 +43,8 @@ export function SpeechPlaybackButton({
   const [error, setError] = useState<string>();
   const owner = useRef(Symbol("speech-playback-button"));
   const mounted = useRef(false);
+  const speechSpeed = useSpeechSpeed();
+  const effectiveRate = rate ?? frenchRateForSpeed(speechSpeed);
 
   useEffect(() => {
     const playbackOwner = owner.current;
@@ -63,7 +67,7 @@ export function SpeechPlaybackButton({
     const outcome = await playTextAudio({
       text,
       language,
-      rate,
+      rate: effectiveRate,
       audioSource,
       owner: owner.current,
     });
