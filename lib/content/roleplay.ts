@@ -274,7 +274,7 @@ export const roleplayScenarios: RoleplayScenario[] = [
     turns: [
       {
         id: "order",
-        npcLine: "Bonjour ! Qu'est-ce que je vous sers ?",
+        npcLine: "Bonjour ! Vous désirez ?",
         npcLineLanguage: "fr",
         task: "Order a baguette politely.",
         choices: [
@@ -319,12 +319,12 @@ export const roleplayScenarios: RoleplayScenario[] = [
             feedback: "Exactly the everyday phrase. Short, warm, complete.",
           },
           {
-            id: "ce-sera-tout",
-            text: "Ce sera tout, merci.",
+            id: "cest-tout-short",
+            text: "C'est tout.",
             language: "fr",
-            register: "formal",
+            register: "neutral",
             outcome: "safe",
-            feedback: "Also correct, a touch more formal than most counters need.",
+            feedback: "Correct and clear. Adding merci makes it warmer.",
           },
           {
             id: "bare-non",
@@ -338,17 +338,17 @@ export const roleplayScenarios: RoleplayScenario[] = [
       },
       {
         id: "pay-close",
-        npcLine: "Un euro vingt, s'il vous plaît.",
+        npcLine: "Deux euros, s'il vous plaît.",
         npcLineLanguage: "fr",
         task: "Pay and close the exchange.",
         choices: [
           {
             id: "merci-journee",
-            text: "Voilà. Merci, bonne journée !",
+            text: "Merci, bonne journée !",
             language: "fr",
             register: "neutral",
             outcome: "strong",
-            feedback: "Lovely close. Voilà as you hand over, then the warm goodbye.",
+            feedback: "Lovely close. The warm goodbye is part of the purchase.",
           },
           {
             id: "merci-aurevoir",
@@ -412,7 +412,7 @@ export const roleplayScenarios: RoleplayScenario[] = [
       },
       {
         id: "origin",
-        npcLine: "Enchantée, moi c'est Claire. Vous venez d'où ?",
+        npcLine: "Moi, c'est Claire. Vous venez d'où ?",
         npcLineLanguage: "fr",
         task: "Say where you are from.",
         choices: [
@@ -444,9 +444,9 @@ export const roleplayScenarios: RoleplayScenario[] = [
       },
       {
         id: "welcome",
-        npcLine: "Bienvenue ! Bonne journée.",
+        npcLine: "Bonne journée !",
         npcLineLanguage: "fr",
-        task: "Accept the welcome warmly.",
+        task: "Return the wish warmly.",
         choices: [
           {
             id: "merci-vous-aussi",

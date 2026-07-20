@@ -555,6 +555,7 @@ const TRAVEL_ACTIVITIES: ActivityCurriculumRequirement[] = [
     scoredSegments: [
       scored("target", "Je voudrais un billet pour Paris."),
       scored("accepted-answer", "Je voudrais un billet pour Paris."),
+      scored("accepted-answer", "Je voudrais un billet pour Paris"),
     ],
   },
   {
@@ -805,6 +806,170 @@ export const ROLEPLAY_CONCEPTS: ConceptDefinition[] = [
       vocabulary("Quoi", "quoi", "PRO", "A1", "what"),
     ],
   },
+  {
+    id: "concept-roleplay-bakery-order",
+    prerequisiteConceptIds: ["concept-roleplay-cafe-greeting"],
+    teachingStep: {
+      form: "Je voudrais une baguette, s'il vous plaît.",
+      metalinguisticRule:
+        "The polite counter order is one reusable chunk: je voudrais + the item + s'il vous plaît. Swap the item and the same sentence works in any shop.",
+      positiveExamples: ["Je voudrais une baguette, s'il vous plaît.", "Je voudrais un croissant, s'il vous plaît."],
+      contrastExamples: ["Donne-moi une baguette. (a command, and tu with a stranger)"],
+      function: "Order at a bakery or any shop counter.",
+      registerNote: "Use vous with staff. Donne-moi is a tu command and lands rudely.",
+      inputSegment: {
+        text: "Bonjour ! Vous désirez ? — Je voudrais une baguette, s'il vous plaît.",
+        inlineGlosses: [
+          gloss("Bonjour", "hello"),
+          gloss("Vous", "you"),
+          gloss("désirez", "would like/want"),
+          gloss("Je", "I"),
+          gloss("voudrais", "would like"),
+          gloss("une", "a"),
+          gloss("baguette", "baguette"),
+          gloss("s'", "if"),
+          gloss("il", "it"),
+          gloss("vous", "you"),
+          gloss("plaît", "pleases"),
+        ],
+      },
+    },
+    vocabulary: [
+      vocabulary("une", "un", "DET:ART", "A1", "a"),
+      vocabulary("baguette", "baguette", "NOM", "A2", "baguette"),
+      vocabulary("Donne", "donner", "VER", "A1", "give"),
+      vocabulary("moi", "moi", "PRO", "A1", "me"),
+    ],
+  },
+  {
+    id: "concept-roleplay-bakery-close",
+    prerequisiteConceptIds: ["concept-roleplay-bakery-order", "concept-roleplay-cafe-close"],
+    teachingStep: {
+      form: "C'est tout, merci.",
+      metalinguisticRule:
+        "Et avec ceci ? asks if you want anything else. C'est tout, merci answers it and closes politely; a bare non sounds cold.",
+      positiveExamples: ["C'est tout, merci.", "Merci, au revoir."],
+      contrastExamples: ["Non. (understandable, but cold in a service exchange)"],
+      function: "Answer the anything-else question and end a shop exchange.",
+      inputSegment: {
+        text: "Et avec ceci ? — C'est tout, merci.",
+        inlineGlosses: [
+          gloss("Et", "and"),
+          gloss("avec", "with"),
+          gloss("ceci", "this"),
+          gloss("C'", "it"),
+          gloss("est", "is"),
+          gloss("tout", "all"),
+          gloss("merci", "thank you"),
+        ],
+      },
+    },
+    vocabulary: [
+      vocabulary("Et", "et", "KON", "A1", "and"),
+      vocabulary("avec", "avec", "PRP", "A1", "with"),
+      vocabulary("ceci", "ceci", "PRO", "A2", "this"),
+      vocabulary("tout", "tout", "PRO", "A1", "all"),
+      vocabulary("Non", "non", "ADV", "A1", "no"),
+      vocabulary("au", "au", "PRP:det", "A1", "to the"),
+      vocabulary("revoir", "revoir", "VER", "A1", "see again"),
+    ],
+  },
+  {
+    id: "concept-roleplay-meet-intro",
+    prerequisiteConceptIds: ["concept-introduction-name", "concept-introduction-register"],
+    teachingStep: {
+      form: "Bonjour, oui. Je m'appelle Jamie.",
+      metalinguisticRule:
+        "Answer a yes-or-no welcome with more than oui: greet, confirm, and give your name so the conversation can continue.",
+      positiveExamples: ["Bonjour, oui. Je m'appelle Jamie.", "Salut, moi c'est Jamie."],
+      contrastExamples: ["Oui. (answers the question but closes the conversation)"],
+      function: "Introduce yourself when someone greets you first.",
+      registerNote: "Salut fits peers you already know. Bonjour is the safe first-day default.",
+      inputSegment: {
+        text: "Vous êtes nouveau ici ? — Bonjour, oui. Je m'appelle Jamie.",
+        inlineGlosses: [
+          gloss("Vous", "you"),
+          gloss("êtes", "are"),
+          gloss("nouveau", "new"),
+          gloss("ici", "here"),
+          gloss("Bonjour", "hello"),
+          gloss("oui", "yes"),
+          gloss("Je", "I"),
+          gloss("m'", "myself"),
+          gloss("appelle", "call"),
+          gloss("Jamie", "(a name)"),
+        ],
+      },
+    },
+    vocabulary: [
+      vocabulary("êtes", "être", "VER", "A1", "are"),
+      vocabulary("nouveau", "nouveau", "ADJ", "A1", "new"),
+      vocabulary("ici", "ici", "ADV", "A1", "here"),
+      vocabulary("oui", "oui", "INT", "A1", "yes"),
+      vocabulary("Salut", "salut", "NOM", "A1", "hi"),
+    ],
+  },
+  {
+    id: "concept-roleplay-meet-origin",
+    prerequisiteConceptIds: ["concept-introduction-origin", "concept-roleplay-meet-intro"],
+    teachingStep: {
+      form: "Vous venez d'où ?",
+      metalinguisticRule:
+        "Venez is the vous form of venir. Answer the d'où question with the practised pattern: je viens de + place.",
+      positiveExamples: ["Je viens de Belfast.", "Je viens de Paris."],
+      contrastExamples: ["Belfast. (one word answers the question but drops the conversation)"],
+      function: "Say where you are from when someone new asks.",
+      inputSegment: {
+        text: "Moi, c'est Claire. Vous venez d'où ? — Je viens de Belfast.",
+        inlineGlosses: [
+          gloss("Moi", "me"),
+          gloss("c'", "it"),
+          gloss("est", "is"),
+          gloss("Claire", "(a name)"),
+          gloss("Vous", "you"),
+          gloss("venez", "come"),
+          gloss("d'", "from"),
+          gloss("où", "where"),
+          gloss("Je", "I"),
+          gloss("viens", "come"),
+          gloss("de", "from"),
+          gloss("Belfast", "(a city)"),
+        ],
+      },
+    },
+    vocabulary: [
+      vocabulary("venez", "venir", "VER", "A1", "come"),
+      vocabulary("où", "où", "ADV", "A1", "where"),
+      vocabulary("suis", "être", "VER", "A1", "am"),
+    ],
+  },
+  {
+    id: "concept-roleplay-meet-close",
+    prerequisiteConceptIds: ["concept-roleplay-cafe-close", "concept-roleplay-meet-intro"],
+    teachingStep: {
+      form: "Merci, bonne journée à vous aussi !",
+      metalinguisticRule:
+        "Returning the wish with à vous aussi turns a goodbye into a warm exchange instead of a one-way close.",
+      positiveExamples: ["Merci, bonne journée à vous aussi !", "Merci !"],
+      contrastExamples: ["(A silent nod.) (reads as cold when someone wishes you well)"],
+      function: "Accept a good-day wish and return it.",
+      inputSegment: {
+        text: "Bonne journée ! — Merci, bonne journée à vous aussi !",
+        inlineGlosses: [
+          gloss("Bonne", "good"),
+          gloss("journée", "day"),
+          gloss("Merci", "thank you"),
+          gloss("à", "to"),
+          gloss("vous", "you"),
+          gloss("aussi", "too"),
+        ],
+      },
+    },
+    vocabulary: [
+      vocabulary("à", "à", "PRP", "A1", "to"),
+      vocabulary("aussi", "aussi", "ADV", "A1", "too"),
+    ],
+  },
 ];
 
 const ROLEPLAY_ACTIVITIES: ActivityCurriculumRequirement[] = [
@@ -854,6 +1019,64 @@ const ROLEPLAY_ACTIVITIES: ActivityCurriculumRequirement[] = [
       scored("choice", "Pouvez-vous répéter, s'il vous plaît ?"),
       scored("choice", "Pouvez-vous parler plus lentement ?"),
       scored("choice", "Quoi ?"),
+    ],
+  },
+  {
+    activityId: "roleplay:bakery-counter:order",
+    requiredConceptIds: ["concept-roleplay-bakery-order"],
+    scoredSegments: [
+      scored("prompt", "Bonjour ! Vous désirez ?"),
+      scored("choice", "Bonjour, je voudrais une baguette, s'il vous plaît."),
+      scored("choice", "Une baguette, s'il vous plaît."),
+      scored("choice", "Donne-moi une baguette."),
+    ],
+  },
+  {
+    activityId: "roleplay:bakery-counter:anything-else",
+    requiredConceptIds: ["concept-roleplay-bakery-close"],
+    scoredSegments: [
+      scored("prompt", "Et avec ceci ?"),
+      scored("choice", "C'est tout, merci."),
+      scored("choice", "C'est tout."),
+      scored("choice", "Non."),
+    ],
+  },
+  {
+    activityId: "roleplay:bakery-counter:pay-close",
+    requiredConceptIds: ["concept-roleplay-bakery-close"],
+    scoredSegments: [
+      scored("prompt", "Deux euros, s'il vous plaît."),
+      scored("choice", "Merci, bonne journée !"),
+      scored("choice", "Merci, au revoir."),
+    ],
+  },
+  {
+    activityId: "roleplay:meeting-colleague:introduce",
+    requiredConceptIds: ["concept-roleplay-meet-intro"],
+    scoredSegments: [
+      scored("prompt", "Bonjour ! Vous êtes nouveau ici ?"),
+      scored("choice", "Bonjour, oui. Je m'appelle Jamie."),
+      scored("choice", "Salut, moi c'est Jamie."),
+      scored("choice", "Oui."),
+    ],
+  },
+  {
+    activityId: "roleplay:meeting-colleague:origin",
+    requiredConceptIds: ["concept-roleplay-meet-origin"],
+    scoredSegments: [
+      scored("prompt", "Moi, c'est Claire. Vous venez d'où ?"),
+      scored("choice", "Je viens de Belfast."),
+      scored("choice", "Je suis de Belfast."),
+      scored("choice", "Belfast."),
+    ],
+  },
+  {
+    activityId: "roleplay:meeting-colleague:welcome",
+    requiredConceptIds: ["concept-roleplay-meet-close"],
+    scoredSegments: [
+      scored("prompt", "Bonne journée !"),
+      scored("choice", "Merci, bonne journée à vous aussi !"),
+      scored("choice", "Merci !"),
     ],
   },
 ];
