@@ -28,9 +28,10 @@ const mobileMoreLinks = [
   ["Settings", "/settings"],
 ] as const;
 
-function AuthAction() {
-  const router = useRouter();
-  const [authState, setAuthState] = useState<"loading" | "signed-in" | "signed-out" | "error">("loading");
+type AuthState = "loading" | "signed-in" | "signed-out" | "error";
+
+function useAuthState() {
+  const [authState, setAuthState] = useState<AuthState>("loading");
   const [authCheckAttempt, setAuthCheckAttempt] = useState(0);
   const supabaseConfigured = Boolean(getBrowserSupabase());
 
@@ -61,6 +62,24 @@ function AuthAction() {
     };
   }, [authCheckAttempt]);
 
+  return {
+    authState,
+    supabaseConfigured,
+    retry: () => setAuthCheckAttempt((attempt) => attempt + 1),
+  };
+}
+
+function AuthAction({
+  authState,
+  supabaseConfigured,
+  retry,
+}: {
+  authState: AuthState;
+  supabaseConfigured: boolean;
+  retry: () => void;
+}) {
+  const router = useRouter();
+
   if (!supabaseConfigured) return null;
 
   if (authState === "loading") {
@@ -77,7 +96,7 @@ function AuthAction() {
         <button
           type="button"
           className="rounded-xl border border-ink/20 px-3 py-1.5 font-bold hover:border-coral hover:text-coral"
-          onClick={() => setAuthCheckAttempt((attempt) => attempt + 1)}
+          onClick={retry}
         >
           Retry
         </button>
@@ -109,11 +128,15 @@ function AuthAction() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const auth = useAuthState();
 
   return (
     <div className="page-shell app-shell">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-ink/10 py-5">
-        <Link href="/" className="font-black tracking-tight text-ink">
+        <Link
+          href={auth.authState === "signed-in" ? "/today" : "/"}
+          className="font-black tracking-tight text-ink"
+        >
           French for Life
         </Link>
         <nav aria-label="Main navigation" className="hidden gap-x-1 text-sm font-bold text-ink/80 md:flex">
@@ -135,7 +158,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Settings
           </Link>
         </nav>
-        <AuthAction />
+        <AuthAction authState={auth.authState} supabaseConfigured={auth.supabaseConfigured} retry={auth.retry} />
       </header>
       <div id="main-content" className="focus-target" tabIndex={-1}>
         {children}

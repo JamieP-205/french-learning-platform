@@ -1,6 +1,20 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { E2E_LEARNER_COOKIE } from "@/lib/auth/development-user";
 import { isServerAccountSyncReady } from "@/lib/auth/readiness";
+import { getCurrentUserId, isDevelopmentDemoMode } from "@/lib/auth/server";
 import { getSeedMission } from "@/lib/content/seed";
+
+// Development demo mode resolves every request to a learner id, which would
+// make the public landing page greet every local visitor as signed in. There,
+// only an explicit dev-learner cookie counts. Production checks the session.
+async function getSignedInUserId() {
+  if (isDevelopmentDemoMode()) {
+    const cookieStore = await cookies();
+    if (!cookieStore.get(E2E_LEARNER_COOKIE)?.value) return null;
+  }
+  return getCurrentUserId();
+}
 
 const firstLessonSteps = [
   {
@@ -17,9 +31,10 @@ const firstLessonSteps = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
   const firstLessonMinutes = getSeedMission().estimatedMinutes;
   const accountSyncReady = isServerAccountSyncReady();
+  const signedIn = Boolean(await getSignedInUserId());
 
   return (
     <main id="main-content" className="page-shell flex min-h-screen flex-col">
@@ -27,12 +42,21 @@ export default function LandingPage() {
         <Link href="/" className="text-lg font-black tracking-tight text-ink" aria-label="French for Life home">
           French for Life
         </Link>
-        <Link
-          href={accountSyncReady ? "/auth/sign-in" : "/status"}
-          className="inline-flex min-h-12 items-center rounded-xl px-3 font-semibold text-ink/70 underline decoration-ink/25 underline-offset-4 hover:text-ink"
-        >
-          {accountSyncReady ? "Sign in" : "Account availability"}
-        </Link>
+        {signedIn ? (
+          <Link
+            href="/today"
+            className="inline-flex min-h-12 items-center rounded-xl px-3 font-semibold text-ink/70 underline decoration-ink/25 underline-offset-4 hover:text-ink"
+          >
+            Continue to Today
+          </Link>
+        ) : (
+          <Link
+            href={accountSyncReady ? "/auth/sign-in" : "/status"}
+            className="inline-flex min-h-12 items-center rounded-xl px-3 font-semibold text-ink/70 underline decoration-ink/25 underline-offset-4 hover:text-ink"
+          >
+            {accountSyncReady ? "Sign in" : "Account availability"}
+          </Link>
+        )}
       </header>
 
       <section className="flex flex-1 items-center py-14 sm:py-20">
@@ -46,14 +70,27 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-8">
-            <Link href="/demo" className="button-primary w-full sm:w-auto">
-              Start a free {firstLessonMinutes}-minute lesson
-            </Link>
-            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-ink/70" aria-label="First lesson details">
-              <li>{firstLessonMinutes} minutes</li>
-              <li>No account</li>
-              <li>Beginner friendly</li>
-            </ul>
+            {signedIn ? (
+              <>
+                <Link href="/today" className="button-primary w-full sm:w-auto">
+                  Pick up where you left off
+                </Link>
+                <p className="mt-4 text-sm font-semibold text-ink/70">
+                  You are signed in, and your progress is saved to your account.
+                </p>
+              </>
+            ) : (
+              <>
+                <Link href="/demo" className="button-primary w-full sm:w-auto">
+                  Start a free {firstLessonMinutes}-minute lesson
+                </Link>
+                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-ink/70" aria-label="First lesson details">
+                  <li>{firstLessonMinutes} minutes</li>
+                  <li>No account</li>
+                  <li>Beginner friendly</li>
+                </ul>
+              </>
+            )}
           </div>
         </div>
       </section>

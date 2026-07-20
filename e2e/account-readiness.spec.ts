@@ -1,4 +1,6 @@
-import { expect, test } from "./fixtures";
+// No dev-learner cookie here: these assertions cover what a signed-out
+// visitor sees while the account launch gate is closed.
+import { expect, test } from "@playwright/test";
 
 test("account sync fails closed while production email delivery is unverified", async ({ page }) => {
   await page.goto("/status");
