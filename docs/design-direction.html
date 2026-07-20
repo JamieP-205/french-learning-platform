@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>French for Life: design direction</title>
+<style>
+  :root {
+    --paper: #f8f2e4; --surface: #fffdf6; --ink: #1f2c40; --ink-soft: #4c576b;
+    --terracotta: #a84a30; --slate: #44638d; --garden: #48693c; --amber: #8a6116;
+    --danger: #a83226;
+    --d-paper: #151d2b; --d-surface: #1d2737; --d-raised: #26324a; --d-text: #ece5d3;
+    --d-text-soft: #b4af9f; --d-terracotta: #e59274; --d-slate: #96b5d9;
+    --d-garden: #a3c491; --d-amber: #dcb05c; --d-danger: #f0917f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  .shell { max-width: 74rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+  h1 { font-size: 2.4rem; letter-spacing: -0.02em; margin: 0.4rem 0 0; }
+  h2 { font-size: 1.5rem; margin: 3rem 0 0.4rem; }
+  h3 { font-size: 1.05rem; margin: 1.4rem 0 0.4rem; }
+  p { max-width: 62ch; }
+  .eyebrow { color: var(--terracotta); font-weight: 600; font-size: 0.9rem; letter-spacing: 0.02em; margin: 0; }
+  .lede { font-size: 1.1rem; color: var(--ink-soft); }
+  .fr { font-family: Charter, "Iowan Old Style", Cambria, Georgia, serif; }
+  .grid { display: grid; gap: 1rem; }
+  .swatches { grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); }
+  .swatch { border-radius: 12px; overflow: hidden; border: 1px solid rgb(31 44 64 / 15%); background: var(--surface); }
+  .swatch .chip { height: 4.2rem; }
+  .swatch .meta { padding: 0.6rem 0.75rem; font-size: 0.82rem; }
+  .swatch .meta strong { display: block; }
+  .swatch .meta code { color: var(--ink-soft); font-size: 0.78rem; }
+  .panes { grid-template-columns: 1fr; }
+  @media (min-width: 56rem) { .panes { grid-template-columns: 1fr 1fr; } }
+  .pane { border-radius: 14px; padding: 1.4rem; border: 1px solid rgb(31 44 64 / 15%); }
+  .pane.light { background: var(--paper); }
+  .pane.dark { background: var(--d-paper); color: var(--d-text); border-color: rgb(236 229 211 / 14%); }
+  .pane h3 { margin-top: 0; }
+  .card-demo { border-radius: 12px; padding: 1.1rem 1.2rem; margin-top: 0.9rem; }
+  .light .card-demo { background: var(--surface); border: 1px solid rgb(31 44 64 / 15%); }
+  .dark .card-demo { background: var(--d-surface); border: 1px solid rgb(236 229 211 / 12%); }
+  .btn { display: inline-block; border-radius: 10px; padding: 0.65rem 1.1rem; font-weight: 700; font-size: 0.95rem; border: none; margin: 0.25rem 0.35rem 0.25rem 0; cursor: pointer; }
+  .light .btn-primary { background: var(--ink); color: var(--paper); }
+  .light .btn-accent { background: var(--terracotta); color: #fff; }
+  .light .btn-secondary { background: var(--surface); color: var(--ink); border: 1px solid rgb(31 44 64 / 30%); }
+  .light .btn-disabled { background: #b8b4a8; color: #f4f0e4; cursor: not-allowed; }
+  .dark .btn-primary { background: var(--d-text); color: var(--d-paper); }
+  .dark .btn-accent { background: var(--d-terracotta); color: var(--d-paper); }
+  .dark .btn-secondary { background: var(--d-surface); color: var(--d-text); border: 1px solid rgb(236 229 211 / 30%); }
+  .dark .btn-disabled { background: #3a4457; color: #8b93a4; cursor: not-allowed; }
+  .field-demo { display: block; width: 100%; max-width: 20rem; border-radius: 10px; padding: 0.65rem 0.8rem; font: inherit; margin-top: 0.35rem; }
+  .light .field-demo { border: 1px solid rgb(31 44 64 / 35%); background: var(--surface); color: var(--ink); }
+  .dark .field-demo { border: 1px solid rgb(236 229 211 / 30%); background: var(--d-raised); color: var(--d-text); }
+  .focus-demo { outline: 3px solid var(--amber); outline-offset: 3px; }
+  .dark .focus-demo { outline-color: var(--d-amber); }
+  .status { border-radius: 10px; padding: 0.6rem 0.85rem; font-size: 0.9rem; margin-top: 0.6rem; }
+  .light .status.ok { background: #e7edd9; color: var(--garden); border: 1px solid rgb(72 105 60 / 30%); }
+  .light .status.warn { background: #f5e7c8; color: var(--amber); border: 1px solid rgb(138 97 22 / 30%); }
+  .light .status.err { background: #f7e3dc; color: var(--danger); border: 1px solid rgb(168 50 38 / 30%); }
+  .dark .status.ok { background: rgb(163 196 145 / 12%); color: var(--d-garden); border: 1px solid rgb(163 196 145 / 35%); }
+  .dark .status.warn { background: rgb(220 176 92 / 12%); color: var(--d-amber); border: 1px solid rgb(220 176 92 / 35%); }
+  .dark .status.err { background: rgb(240 145 127 / 12%); color: var(--d-danger); border: 1px solid rgb(240 145 127 / 35%); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.86rem; background: var(--surface); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid rgb(31 44 64 / 12%); }
+  th { background: rgb(31 44 64 / 6%); }
+  td.num { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--garden); }
+  .table-scroll { overflow-x: auto; border-radius: 12px; border: 1px solid rgb(31 44 64 / 15%); }
+  .pill { display: inline-block; border-radius: 999px; padding: 0.28rem 0.8rem; font-size: 0.82rem; font-weight: 700; margin: 0.15rem 0.25rem 0.15rem 0; }
+  .light .pill.earned { background: rgb(72 105 60 / 12%); color: var(--garden); border: 1px solid rgb(72 105 60 / 28%); }
+  .light .pill.locked { background: var(--surface); color: var(--ink-soft); border: 1px solid rgb(31 44 64 / 18%); }
+  .dark .pill.earned { background: rgb(163 196 145 / 14%); color: var(--d-garden); border: 1px solid rgb(163 196 145 / 32%); }
+  .dark .pill.locked { background: var(--d-surface); color: var(--d-text-soft); border: 1px solid rgb(236 229 211 / 16%); }
+  .art-note { font-size: 0.86rem; color: var(--ink-soft); max-width: none; }
+  .compare { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 56rem) { .compare { grid-template-columns: 1fr 1fr; } }
+  .art-box { background: linear-gradient(180deg, #ddeaf0, #f2ead2 55%, #e6d9b8); border-radius: 12px; padding: 0.6rem; border: 1px solid rgb(31 44 64 / 15%); }
+  .ia { border-left: 3px solid var(--terracotta); padding-left: 1rem; }
+  .ia p { margin: 0.45rem 0; }
+  ul { max-width: 62ch; }
+  .footer-note { margin-top: 3.5rem; color: var(--ink-soft); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <p class="eyebrow">Design direction for sign-off</p>
+  <h1>The learning garden, drawn by hand.</h1>
+  <p class="lede">
+    One idea holds the whole app together: your French grows like the walled garden in the progress
+    painting. Warm limestone paper, that slate blue door, olive greens and dusty terracotta blooms.
+    Daytime garden in light mode, the same garden by lantern light in dark mode. Nothing neon,
+    nothing corporate, everything looking like it was chosen by a person.
+  </p>
+
+  <h2>1. Palette, daylight</h2>
+  <p>Every colour is sampled from or tuned to the garden painting. The current app colours survive
+  as warmer, softer versions of themselves, and the door finally gets its say: slate blue becomes
+  the secondary colour for links and quiet structure.</p>
+  <div class="grid swatches">
+    <div class="swatch"><div class="chip" style="background:#f8f2e4"></div><div class="meta"><strong>Paper</strong><code>#f8f2e4</code> page background, warm parchment</div></div>
+    <div class="swatch"><div class="chip" style="background:#fffdf6"></div><div class="meta"><strong>Surface</strong><code>#fffdf6</code> cards and panels</div></div>
+    <div class="swatch"><div class="chip" style="background:#1f2c40"></div><div class="meta"><strong>Ink</strong><code>#1f2c40</code> text, primary buttons, roof slate</div></div>
+    <div class="swatch"><div class="chip" style="background:#a84a30"></div><div class="meta"><strong>Terracotta</strong><code>#a84a30</code> accent, calls to action, the climbing roses</div></div>
+    <div class="swatch"><div class="chip" style="background:#44638d"></div><div class="meta"><strong>Slate</strong><code>#44638d</code> secondary, links, the garden door</div></div>
+    <div class="swatch"><div class="chip" style="background:#48693c"></div><div class="meta"><strong>Garden green</strong><code>#48693c</code> success, growth, streaks</div></div>
+    <div class="swatch"><div class="chip" style="background:#8a6116"></div><div class="meta"><strong>Amber</strong><code>#8a6116</code> focus rings, sunlit highlights</div></div>
+    <div class="swatch"><div class="chip" style="background:#a83226"></div><div class="meta"><strong>Danger</strong><code>#a83226</code> errors only, never decoration</div></div>
+  </div>
+
+  <h2>2. Palette, lantern light</h2>
+  <p>Dark mode is the same garden after dusk: deep blue night air, parchment text like candlelit
+  paper, and the accents glowing a step brighter so they stay readable. It is never plain grey.</p>
+  <div class="grid swatches">
+    <div class="swatch"><div class="chip" style="background:#151d2b"></div><div class="meta"><strong>Night paper</strong><code>#151d2b</code> page background</div></div>
+    <div class="swatch"><div class="chip" style="background:#1d2737"></div><div class="meta"><strong>Night surface</strong><code>#1d2737</code> cards</div></div>
+    <div class="swatch"><div class="chip" style="background:#26324a"></div><div class="meta"><strong>Raised</strong><code>#26324a</code> inputs, hover, layering</div></div>
+    <div class="swatch"><div class="chip" style="background:#ece5d3"></div><div class="meta"><strong>Parchment text</strong><code>#ece5d3</code> body text</div></div>
+    <div class="swatch"><div class="chip" style="background:#e59274"></div><div class="meta"><strong>Terracotta bright</strong><code>#e59274</code> accent</div></div>
+    <div class="swatch"><div class="chip" style="background:#96b5d9"></div><div class="meta"><strong>Slate bright</strong><code>#96b5d9</code> secondary, links</div></div>
+    <div class="swatch"><div class="chip" style="background:#a3c491"></div><div class="meta"><strong>Garden bright</strong><code>#a3c491</code> success, growth</div></div>
+    <div class="swatch"><div class="chip" style="background:#dcb05c"></div><div class="meta"><strong>Lantern amber</strong><code>#dcb05c</code> focus rings, celebration</div></div>
+  </div>
+
+  <h2>3. Contrast, computed</h2>
+  <p>Every pair below was checked with the WCAG relative-luminance formula. Text pairs need 4.5 to 1,
+  interface pairs need 3 to 1. All pass with room to spare; the same script joins the repo so future
+  tweaks stay honest.</p>
+  <div class="table-scroll"><table>
+    <tr><th>Pair</th><th>Colours</th><th>Ratio</th><th>Needs</th></tr>
+    <tr><td>Light body text on paper</td><td>#1f2c40 on #f8f2e4</td><td class="num">12.60</td><td>4.5</td></tr>
+    <tr><td>Light body text on card</td><td>#1f2c40 on #fffdf6</td><td class="num">13.82</td><td>4.5</td></tr>
+    <tr><td>Light soft text on paper</td><td>#4c576b on #f8f2e4</td><td class="num">6.53</td><td>4.5</td></tr>
+    <tr><td>Light terracotta text on paper</td><td>#a84a30 on #f8f2e4</td><td class="num">5.10</td><td>4.5</td></tr>
+    <tr><td>Light slate text on paper</td><td>#44638d on #f8f2e4</td><td class="num">5.51</td><td>4.5</td></tr>
+    <tr><td>Light garden text on card</td><td>#48693c on #fffdf6</td><td class="num">6.14</td><td>4.5</td></tr>
+    <tr><td>Light amber text on card</td><td>#8a6116 on #fffdf6</td><td class="num">5.43</td><td>4.5</td></tr>
+    <tr><td>Light danger text on its banner</td><td>#a83226 on #f7e3dc</td><td class="num">5.39</td><td>4.5</td></tr>
+    <tr><td>White label on terracotta button</td><td>#ffffff on #a84a30</td><td class="num">5.70</td><td>4.5</td></tr>
+    <tr><td>Light focus ring against paper</td><td>#8a6116 on #f8f2e4</td><td class="num">4.95</td><td>3.0</td></tr>
+    <tr><td>Dark body text on night paper</td><td>#ece5d3 on #151d2b</td><td class="num">13.45</td><td>4.5</td></tr>
+    <tr><td>Dark body text on card</td><td>#ece5d3 on #1d2737</td><td class="num">11.96</td><td>4.5</td></tr>
+    <tr><td>Dark soft text on card</td><td>#b4af9f on #1d2737</td><td class="num">6.85</td><td>4.5</td></tr>
+    <tr><td>Dark terracotta text on card</td><td>#e59274 on #1d2737</td><td class="num">6.22</td><td>4.5</td></tr>
+    <tr><td>Dark slate text on card</td><td>#96b5d9 on #1d2737</td><td class="num">7.09</td><td>4.5</td></tr>
+    <tr><td>Dark garden text on card</td><td>#a3c491 on #1d2737</td><td class="num">7.77</td><td>4.5</td></tr>
+    <tr><td>Dark lantern amber on card</td><td>#dcb05c on #1d2737</td><td class="num">7.45</td><td>4.5</td></tr>
+    <tr><td>Dark danger text on card</td><td>#f0917f on #1d2737</td><td class="num">6.48</td><td>4.5</td></tr>
+    <tr><td>Night paper label on bright terracotta</td><td>#151d2b on #e59274</td><td class="num">7.00</td><td>4.5</td></tr>
+    <tr><td>Dark focus ring against night paper</td><td>#dcb05c on #151d2b</td><td class="num">8.38</td><td>3.0</td></tr>
+  </table></div>
+
+  <h2>4. Type</h2>
+  <p>No webfonts, no layout shift, nothing to download. The system sans keeps the interface quick
+  and familiar. French gets the serif, always, so the language you are learning is typographically
+  special:</p>
+  <div class="card-demo" style="background: var(--surface); border: 1px solid rgb(31 44 64 / 15%);">
+    <p class="eyebrow" style="margin:0">Interface</p>
+    <p style="margin:0.3rem 0 0; font-weight:700; font-size:1.3rem;">Weights stop at 700. Sizes stay on a small scale.</p>
+    <p style="margin:0.8rem 0 0; color: var(--ink-soft);">Body text is the system sans at a comfortable size, soft ink for supporting lines.</p>
+    <p class="fr" style="margin:1rem 0 0; font-size:1.6rem; font-weight:700;" lang="fr">Le français est toujours en serif. <span style="color: var(--terracotta)">Je m&rsquo;appelle Jamie.</span></p>
+  </div>
+
+  <h2>5. Illustration style</h2>
+  <p>The rule for every drawn thing in the app: it must look like it belongs inside the garden
+  painting. Layered translucent shapes, sampled colours, soft irregular edges. No flat circles, no
+  perfect geometry, no clip art.</p>
+  <div class="compare">
+    <div>
+      <h3>Garden pieces today</h3>
+      <div class="art-box">
+        <svg viewBox="0 0 300 120" role="img" aria-label="Current flat flower style">
+          <g>
+            <path d="M60 108c0-22 2-36 5-52" fill="none" stroke="#3f7856" stroke-width="4"/>
+            <g fill="#d75e4c"><circle cx="59" cy="50" r="9"/><circle cx="71" cy="50" r="9"/><circle cx="65" cy="41" r="9"/><circle cx="65" cy="59" r="9"/></g>
+            <circle cx="65" cy="50" fill="#f3c45b" r="5"/>
+            <g fill="#d98ea0"><circle cx="129" cy="54" r="9"/><circle cx="141" cy="54" r="9"/><circle cx="135" cy="45" r="9"/><circle cx="135" cy="63" r="9"/></g>
+            <path d="M135 108c0-20 1-32 0-45" fill="none" stroke="#3f7856" stroke-width="4"/>
+            <circle cx="135" cy="54" fill="#f3c45b" r="5"/>
+            <path d="M205 108h56v9h-56zM211 90h44v9h-44z" fill="#8a5e42"/>
+            <path d="M212 116h6v-8h-6zM252 116h6v-8h-6z" fill="#60402f"/>
+          </g>
+        </svg>
+      </div>
+      <p class="art-note">Solid fills and perfect circles. Reads as stickers pasted onto a painting.</p>
+    </div>
+    <div>
+      <h3>Garden pieces proposed</h3>
+      <div class="art-box">
+        <svg viewBox="0 0 300 120" role="img" aria-label="Proposed painterly flower style">
+          <defs>
+            <radialGradient id="petalA" cx="50%" cy="38%" r="72%">
+              <stop offset="0%" stop-color="#e8a48e" stop-opacity="0.95"/>
+              <stop offset="62%" stop-color="#c76e5c" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#a84a30" stop-opacity="0.72"/>
+            </radialGradient>
+            <radialGradient id="petalB" cx="50%" cy="38%" r="72%">
+              <stop offset="0%" stop-color="#efc0b4" stop-opacity="0.95"/>
+              <stop offset="65%" stop-color="#d99a8a" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#b5705f" stop-opacity="0.66"/>
+            </radialGradient>
+            <linearGradient id="stemG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#6d7f4e"/><stop offset="100%" stop-color="#48693c"/>
+            </linearGradient>
+            <filter id="soften" x="-20%" y="-20%" width="140%" height="140%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" result="n"/>
+              <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/>
+            </filter>
+          </defs>
+          <g>
+            <path d="M62 110c-2-24 1-38 4-54" fill="none" stroke="url(#stemG)" stroke-width="3.4" stroke-linecap="round"/>
+            <path d="M64 84c-8-2-13-8-14-15 7-1 13 2 16 8z" fill="#5d7050" opacity="0.85"/>
+            <g>
+              <path filter="url(#soften)" d="M66 40c6-8 15-9 20-4 4 5 1 13-6 17 8 1 13 8 10 14-3 6-12 6-19 1-1 8-8 13-14 10-6-3-6-11-1-18-8 1-14-4-13-10 2-7 10-8 17-5-4-7-2-14 6-5z" fill="url(#petalA)"/>
+              <circle cx="66" cy="55" r="4.6" fill="#e9c46a" opacity="0.9"/>
+              <circle cx="63" cy="52" r="1.4" fill="#8a6116" opacity="0.75"/>
+              <circle cx="69" cy="56" r="1.2" fill="#8a6116" opacity="0.6"/>
+            </g>
+            <path d="M136 112c-1-20 0-34-2-48" fill="none" stroke="url(#stemG)" stroke-width="3" stroke-linecap="round"/>
+            <g>
+              <path filter="url(#soften)" d="M133 46c4-7 12-8 16-3 4 4 1 10-4 14 7 1 11 6 8 12-2 5-10 5-16 1-1 6-6 10-11 8-5-3-5-9-1-15-7 1-12-3-10-9 1-5 8-6 13-3-3-6-1-11 5-5z" fill="url(#petalB)"/>
+              <circle cx="135" cy="58" r="4" fill="#e9c46a" opacity="0.9"/>
+            </g>
+            <g>
+              <path d="M203 112c1-8 3-13 9-16h44c6 3 8 8 9 16z" fill="#7c5a40" opacity="0.9"/>
+              <path d="M210 96c8-4 40-4 46 0l-3 6c-12-3-28-3-40 0z" fill="#8f6b4c"/>
+              <path d="M206 112l3-22M262 112l-3-22" stroke="#5f4530" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <p class="art-note">Gradient washes, irregular petal silhouettes, a whisper of texture. Sits inside the painting instead of on top of it.</p>
+    </div>
+  </div>
+
+  <h3>Remy, redrawn</h3>
+  <div class="compare">
+    <div>
+      <div class="art-box" style="display:grid;place-items:center;padding:1.2rem;">
+        <svg viewBox="0 0 240 180" width="260" role="img" aria-label="Proposed hand-drawn fox style for Remy">
+          <defs>
+            <linearGradient id="foxBody" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#d47f4e"/><stop offset="100%" stop-color="#b05a32"/>
+            </linearGradient>
+            <linearGradient id="foxHead" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#dd8a58"/><stop offset="100%" stop-color="#c2683c"/>
+            </linearGradient>
+            <linearGradient id="foxTailG" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#b05a32"/><stop offset="70%" stop-color="#c96f42"/><stop offset="100%" stop-color="#f4ead6"/>
+            </linearGradient>
+          </defs>
+          <g>
+            <path d="M128 150c26 8 56 6 74-10 6-6 10-14 8-22-14 4-20-2-30 2-16 6-30 14-52 18z" fill="url(#foxTailG)"/>
+            <path d="M120 158c-22 0-36-12-36-30 0-14 8-26 20-34l32 0c12 8 20 20 20 34 0 18-14 30-36 30z" fill="url(#foxBody)"/>
+            <path d="M120 158c-10 0-17-5-17-13 0-7 5-12 11-14 2 2 4 3 6 3s4-1 6-3c6 2 11 7 11 14 0 8-7 13-17 13z" fill="#f4ead6"/>
+            <g>
+              <path d="M95 44l-3-26c10 2 17 9 21 18z" fill="#c2683c"/>
+              <path d="M96 40l-2-15c6 2 10 6 13 11z" fill="#3c2a20"/>
+              <path d="M145 44l3-26c-10 2-17 9-21 18z" fill="#c2683c"/>
+              <path d="M144 40l2-15c-6 2-10 6-13 11z" fill="#3c2a20"/>
+              <path d="M120 100c-16 0-30-8-34-22-3-11 1-24 10-32 7-6 16-9 24-9s17 3 24 9c9 8 13 21 10 32-4 14-18 22-34 22z" fill="url(#foxHead)"/>
+              <path d="M120 100c-7 0-13-2-18-6 2-11 8-20 18-24 10 4 16 13 18 24-5 4-11 6-18 6z" fill="#f4ead6"/>
+              <path d="M120 88c-2.6 0-4.2-1.5-4.2-3.6 1.6-1.4 6.8-1.4 8.4 0 0 2.1-1.6 3.6-4.2 3.6z" fill="#2a2018"/>
+              <path d="M120 92c0 3-2 4.6-5 5M120 92c0 3 2 4.6 5 5" stroke="#2a2018" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+              <ellipse cx="103" cy="66" rx="4.4" ry="5.2" fill="#2a2018"/>
+              <ellipse cx="137" cy="66" rx="4.4" ry="5.2" fill="#2a2018"/>
+              <circle cx="104.6" cy="64" r="1.4" fill="#fff" opacity="0.85"/>
+              <circle cx="138.6" cy="64" r="1.4" fill="#fff" opacity="0.85"/>
+            </g>
+            <path d="M97 103c6 6 14 9 23 9s17-3 23-9c2 3 3 6 3 9-7 6-16 9-26 9s-19-3-26-9c0-3 1-6 3-9z" fill="#44638d"/>
+            <path d="M130 116l10 22c3 7 13 5 12-2l-4-24c-5 3-12 4-18 4z" fill="#5a7ba6"/>
+            <path d="M92 146c-8 2-14 7-14 12h22c0-5-3-9-8-12zM148 146c8 2 14 7 14 12h-22c0-5 3-9 8-12z" fill="#8a4f2c"/>
+          </g>
+        </svg>
+      </div>
+      <p class="art-note">Same warm palette, soft edges, and a slate scarf borrowed from the garden door. Poses (waving, thinking, celebrating) are class-switched SVG groups; idle life is a blink and a slow tail sway in CSS, still under reduced motion.</p>
+    </div>
+    <div>
+      <h3 style="margin-top:0">Principles</h3>
+      <ul>
+        <li>Colours come from the painting, never from a default palette.</li>
+        <li>Gradient washes and turbulence give a watercolour edge at under 2 KB per piece.</li>
+        <li>Decorative SVG stays aria-hidden; text always carries the meaning.</li>
+        <li>Every animation has a still version for reduced motion.</li>
+        <li>Raster images only where paint genuinely beats vectors (the garden background stays).</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>6. Components, both themes</h2>
+  <div class="grid panes">
+    <div class="pane light">
+      <h3>Daylight</h3>
+      <p class="eyebrow">Lesson three</p>
+      <div class="card-demo">
+        <strong>Order at the counter.</strong>
+        <p style="margin:0.4rem 0 0; color: var(--ink-soft); font-size:0.92rem;">Ten minutes, teaching before every question.</p>
+        <p class="fr" lang="fr" style="margin:0.6rem 0 0; font-size:1.2rem; font-weight:700;">Un caf&eacute;, s&rsquo;il vous pla&icirc;t.</p>
+      </div>
+      <div style="margin-top:0.9rem">
+        <button class="btn btn-primary">Start the lesson</button>
+        <button class="btn btn-accent">Continue</button>
+        <button class="btn btn-secondary">Not today</button>
+        <button class="btn btn-disabled" disabled>Loading</button>
+      </div>
+      <label style="display:block; margin-top:0.9rem; font-weight:700; font-size:0.9rem;">Your answer
+        <input class="field-demo focus-demo" value="J&rsquo;ai 20 ans" />
+      </label>
+      <div class="status ok">Correct. J&rsquo;ai is the right verb for age.</div>
+      <div class="status warn">Almost. What happens to je before a vowel?</div>
+      <div class="status err">We could not save that answer. Try again.</div>
+      <div style="margin-top:0.8rem">
+        <span class="pill earned">First sprout</span>
+        <span class="pill earned">Wildflower bed</span>
+        <span class="pill locked">Garden bench</span>
+      </div>
+    </div>
+    <div class="pane dark">
+      <h3>Lantern light</h3>
+      <p style="color: var(--d-terracotta); font-weight:600; font-size:0.9rem; margin:0;">Lesson three</p>
+      <div class="card-demo">
+        <strong>Order at the counter.</strong>
+        <p style="margin:0.4rem 0 0; color: var(--d-text-soft); font-size:0.92rem;">Ten minutes, teaching before every question.</p>
+        <p class="fr" lang="fr" style="margin:0.6rem 0 0; font-size:1.2rem; font-weight:700;">Un caf&eacute;, s&rsquo;il vous pla&icirc;t.</p>
+      </div>
+      <div style="margin-top:0.9rem">
+        <button class="btn btn-primary">Start the lesson</button>
+        <button class="btn btn-accent">Continue</button>
+        <button class="btn btn-secondary">Not today</button>
+        <button class="btn btn-disabled" disabled>Loading</button>
+      </div>
+      <label style="display:block; margin-top:0.9rem; font-weight:700; font-size:0.9rem;">Your answer
+        <input class="field-demo focus-demo" value="J&rsquo;ai 20 ans" />
+      </label>
+      <div class="status ok">Correct. J&rsquo;ai is the right verb for age.</div>
+      <div class="status warn">Almost. What happens to je before a vowel?</div>
+      <div class="status err">We could not save that answer. Try again.</div>
+      <div style="margin-top:0.8rem">
+        <span class="pill earned">First sprout</span>
+        <span class="pill earned">Wildflower bed</span>
+        <span class="pill locked">Garden bench</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>7. Navigation and homepage, the one-page map</h2>
+  <div class="ia">
+    <p><strong>Homepage.</strong> A real front door: the garden world above the fold, one clear start
+    button, an honest three-step explanation of teach before test, a peek at the first lesson, and a
+    short honest line about what the course covers today. Signed-in visitors get taken straight back
+    to their day.</p>
+    <p><strong>Top navigation (desktop).</strong> Today, Learn, Review, Progress, Friends, Tutor,
+    Settings, unchanged in order, restyled. The wordmark gains a small fox mark and goes to Today
+    when signed in.</p>
+    <p><strong>Mobile bar.</strong> Five labelled icon tabs: Today, Learn, Review, Progress, More.
+    Review gets promoted because spaced review is the heart of the product. The More menu closes on
+    outside taps and returns focus properly.</p>
+    <p><strong>Lesson screen.</strong> Gains a minimal header: the wordmark plus Save and exit, so
+    nobody is ever stranded mid-lesson without navigation. Remy joins the lesson later, in the
+    garden-and-mascot batch.</p>
+    <p><strong>Footer.</strong> Privacy, Terms, Service status, Try a lesson, unchanged.</p>
+  </div>
+
+  <h2>8. What happens after sign-off</h2>
+  <ul>
+    <li>Colours become CSS variables with today&rsquo;s values first, a pixel-identical refactor.</li>
+    <li>Dark mode arrives behind a header sun and moon toggle plus a settings control, defaulting to your device, saved per account.</li>
+    <li>The refreshed palette, brand marks (favicon, social image), and the new navigation land page by page.</li>
+    <li>The copy pass rewrites every corporate line in a warm human voice and a release-gate check keeps em dashes out for good.</li>
+  </ul>
+
+  <p class="footer-note">Everything on this page is self-contained: no webfonts, no external images,
+  no scripts. The contrast numbers were computed, not eyeballed, and the checking script ships with
+  the repo.</p>
+</div>
+</body>
+</html>
