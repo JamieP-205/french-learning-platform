@@ -2,14 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light; }
+:root {
+  color-scheme: light;
+  /* Palette as space-separated RGB channels so Tailwind opacity modifiers
+     like ink/75 keep working through rgb(var(--x) / <alpha-value>). */
+  --color-ink: 16 35 63;
+  --color-cream: 250 247 240;
+  --color-coral: 189 63 44;
+  --color-moss: 47 125 98;
+  --color-amber: 168 114 28;
+}
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: #faf7f0;
-  color: #10233f;
+  background: rgb(var(--color-cream));
+  color: rgb(var(--color-ink));
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
@@ -23,7 +32,7 @@ select:focus-visible,
 textarea:focus-visible,
 a:focus-visible,
 summary:focus-visible {
-  outline: 3px solid #a8721c;
+  outline: 3px solid rgb(var(--color-amber));
   outline-offset: 3px;
 }
 
@@ -34,7 +43,7 @@ summary:focus-visible {
   z-index: 100;
   transform: translateY(calc(-100% - 1rem));
   border-radius: 0.75rem;
-  background: #10233f;
+  background: rgb(var(--color-ink));
   color: #fff;
   padding: 0.75rem 1rem;
   font-weight: 800;
@@ -57,7 +66,7 @@ summary:focus-visible {
   .status-error { @apply rounded-2xl border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-ink; }
   .status-coaching { @apply rounded-2xl border border-amber/40 bg-amber/20 px-4 py-3 text-sm text-ink; }
   .status-success { @apply rounded-2xl border border-moss/30 bg-moss/10 px-4 py-3 text-sm text-ink; }
-  .focus-target:focus { outline: 3px solid #a8721c; outline-offset: 3px; }
+  .focus-target:focus { outline: 3px solid rgb(var(--color-amber)); outline-offset: 3px; }
   .app-shell { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
   .mobile-primary-nav { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
 }
@@ -75,18 +84,18 @@ summary:focus-visible {
 .schedule-day {
   min-height: 2.75rem;
   min-width: 3.25rem;
-  border: 1px solid rgb(16 35 63 / 18%);
+  border: 1px solid rgb(var(--color-ink) / 18%);
   border-radius: 999px;
   background: rgb(255 255 255 / 82%);
   padding: 0.65rem 0.9rem;
-  color: rgb(16 35 63 / 65%);
+  color: rgb(var(--color-ink) / 65%);
   font-size: 0.8rem;
   font-weight: 800;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
-.schedule-day:hover { border-color: #2f7d62; transform: translateY(-1px); }
-.schedule-day-selected { border-color: #2f7d62; background: #2f7d62; color: white; }
+.schedule-day:hover { border-color: rgb(var(--color-moss)); transform: translateY(-1px); }
+.schedule-day-selected { border-color: rgb(var(--color-moss)); background: rgb(var(--color-moss)); color: white; }
 
 .remy-dock {
   position: fixed;
@@ -104,13 +113,13 @@ summary:focus-visible {
   border: 3px solid white;
   border-radius: 1.4rem;
   background: #e8f1f8;
-  box-shadow: 0 12px 30px rgb(16 35 63 / 22%);
+  box-shadow: 0 12px 30px rgb(var(--color-ink) / 22%);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .remy-button:hover {
   transform: translateY(-3px) rotate(-1deg);
-  box-shadow: 0 16px 34px rgb(16 35 63 / 28%);
+  box-shadow: 0 16px 34px rgb(var(--color-ink) / 28%);
 }
 
 .remy-status {
@@ -121,45 +130,45 @@ summary:focus-visible {
   height: 0.9rem;
   border: 2px solid white;
   border-radius: 50%;
-  background: #2f7d62;
+  background: rgb(var(--color-moss));
 }
 
 .remy-dock[data-mood="proud"] .remy-status { background: #d39a24; animation: remy-pulse 1.8s ease-in-out infinite; }
 .remy-dock[data-mood="cosy"] .remy-status { background: #7194b0; }
-.remy-dock[data-mood="focused"] .remy-status { background: #bd3f2c; }
+.remy-dock[data-mood="focused"] .remy-status { background: rgb(var(--color-coral)); }
 
 .remy-panel {
   position: absolute;
   right: 0;
   bottom: calc(100% + 0.8rem);
   width: min(22rem, calc(100vw - 1.5rem));
-  border: 1px solid rgb(16 35 63 / 14%);
+  border: 1px solid rgb(var(--color-ink) / 14%);
   border-radius: 1rem;
   background: white;
   padding: 1rem;
-  box-shadow: 0 22px 60px rgb(16 35 63 / 22%);
+  box-shadow: 0 22px 60px rgb(var(--color-ink) / 22%);
   animation: remy-arrive 180ms ease-out both;
 }
 
 .remy-choice {
   min-height: 2.75rem;
-  border: 1px solid rgb(16 35 63 / 12%);
+  border: 1px solid rgb(var(--color-ink) / 12%);
   border-radius: 0.75rem;
-  background: #faf7f0;
+  background: rgb(var(--color-cream));
   padding: 0.6rem 0.75rem;
-  color: #10233f;
+  color: rgb(var(--color-ink));
   font-size: 0.8rem;
   font-weight: 800;
   text-align: left;
 }
 
-.remy-choice:hover { border-color: #2f7d62; background: rgb(47 125 98 / 8%); }
+.remy-choice:hover { border-color: rgb(var(--color-moss)); background: rgb(var(--color-moss) / 8%); }
 
 .garden-scene {
   position: relative;
   min-height: 20rem;
   overflow: hidden;
-  border: 1px solid rgb(16 35 63 / 10%);
+  border: 1px solid rgb(var(--color-ink) / 10%);
   border-radius: 1.25rem;
   background: #dfe9e8 url("/images/learning-garden-bg.webp") center / cover no-repeat;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 40%);
@@ -170,7 +179,7 @@ summary:focus-visible {
   position: absolute;
   inset: auto 0 0;
   height: 34%;
-  background: linear-gradient(to top, rgb(16 35 63 / 10%), transparent);
+  background: linear-gradient(to top, rgb(var(--color-ink) / 10%), transparent);
   content: "";
   pointer-events: none;
 }
@@ -186,16 +195,16 @@ summary:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  border: 1px solid rgb(16 35 63 / 10%);
+  border: 1px solid rgb(var(--color-ink) / 10%);
   border-radius: 999px;
-  background: rgb(16 35 63 / 5%);
+  background: rgb(var(--color-ink) / 5%);
   padding: 0.4rem 0.7rem;
-  color: rgb(16 35 63 / 48%);
+  color: rgb(var(--color-ink) / 48%);
   font-size: 0.72rem;
   font-weight: 800;
 }
 
-.garden-badge-earned { border-color: rgb(47 125 98 / 25%); background: rgb(47 125 98 / 10%); color: #10233f; }
+.garden-badge-earned { border-color: rgb(var(--color-moss) / 25%); background: rgb(var(--color-moss) / 10%); color: rgb(var(--color-ink)); }
 
 .celebration-backdrop {
   position: fixed;
@@ -204,7 +213,7 @@ summary:focus-visible {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: rgb(16 35 63 / 66%);
+  background: rgb(var(--color-ink) / 66%);
   padding: 1rem;
   backdrop-filter: blur(7px);
 }
@@ -233,28 +242,28 @@ summary:focus-visible {
   width: 0.45rem;
   height: 0.8rem;
   border-radius: 0.12rem;
-  background: #bd3f2c;
+  background: rgb(var(--color-coral));
   animation: celebration-piece 900ms cubic-bezier(.12,.75,.3,1) both;
   animation-delay: calc(var(--piece) * 12ms);
 }
 
-.celebration-burst i:nth-child(3n + 1) { background: #2f7d62; }
+.celebration-burst i:nth-child(3n + 1) { background: rgb(var(--color-moss)); }
 .celebration-burst i:nth-child(3n + 2) { background: #e2ad35; }
 
 .modal {
   width: min(34rem, calc(100vw - 2rem));
-  border: 1px solid rgb(16 35 63 / 15%);
+  border: 1px solid rgb(var(--color-ink) / 15%);
   border-radius: 1.25rem;
   padding: 0;
   background: #fffdf7;
-  color: #10233f;
+  color: rgb(var(--color-ink));
   box-shadow: 0 28px 90px rgb(0 0 0 / 30%);
 }
 
 .modal[open] { animation: celebration-arrive 300ms cubic-bezier(.2,.9,.25,1.1) both; }
 
 .modal::backdrop {
-  background: rgb(16 35 63 / 66%);
+  background: rgb(var(--color-ink) / 66%);
   backdrop-filter: blur(7px);
 }
 
@@ -277,10 +286,10 @@ summary:focus-visible {
   border-radius: 0.75rem;
   font-size: 1.35rem;
   line-height: 1;
-  color: rgb(16 35 63 / 70%);
+  color: rgb(var(--color-ink) / 70%);
 }
 
-.modal-close:hover { background: #faf7f0; color: #10233f; }
+.modal-close:hover { background: rgb(var(--color-cream)); color: rgb(var(--color-ink)); }
 
 @keyframes remy-arrive {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }

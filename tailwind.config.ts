@@ -4,12 +4,14 @@ const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Values live as CSS variables in globals.css so themes can swap them.
+      // The rgb(var()) form keeps every ink/75-style opacity modifier working.
       colors: {
-        ink: "#10233f",
-        cream: "#faf7f0",
-        coral: "#bd3f2c",
-        moss: "#2f7d62",
-        amber: "#a8721c",
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        cream: "rgb(var(--color-cream) / <alpha-value>)",
+        coral: "rgb(var(--color-coral) / <alpha-value>)",
+        moss: "rgb(var(--color-moss) / <alpha-value>)",
+        amber: "rgb(var(--color-amber) / <alpha-value>)",
       },
       // Tighter radius scale than the Tailwind defaults so cards keep
       // defined corners instead of turning into soft blobs.
