@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { E2E_LEARNER_COOKIE } from "@/lib/auth/development-user";
 import { isServerAccountSyncReady } from "@/lib/auth/readiness";
 import { getCurrentUserId, isDevelopmentDemoMode } from "@/lib/auth/server";
+import { Wordmark } from "@/components/brand/wordmark";
 import { getSeedMission } from "@/lib/content/seed";
 
 // Development demo mode resolves every request to a learner id, which would
@@ -39,8 +40,8 @@ export default async function LandingPage() {
   return (
     <main id="main-content" className="page-shell flex min-h-screen flex-col">
       <header className="flex min-h-20 items-center justify-between gap-4 border-b border-ink/10 py-4">
-        <Link href="/" className="text-lg font-black tracking-tight text-ink" aria-label="French for Life home">
-          French for Life
+        <Link href="/" className="text-lg" aria-label="French for Life home">
+          <Wordmark />
         </Link>
         {signedIn ? (
           <Link

@@ -3,8 +3,12 @@ import { themeBootstrapScript } from "@/lib/theme/theme-constants";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "French, for real life",
-  description: "Practical French lessons, helpful review, and carefully grounded tutor support.",
+  title: {
+    default: "French for Life",
+    template: "%s · French for Life",
+  },
+  description:
+    "Practical French for everyday life. Learn a phrase first, then use it, ten minutes at a time.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

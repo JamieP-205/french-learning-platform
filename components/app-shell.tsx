@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/auth/browser";
+import { Wordmark } from "@/components/brand/wordmark";
 import { RemyCompanion } from "@/components/companion/remy-companion";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
@@ -134,11 +135,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="page-shell app-shell">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-ink/10 py-5">
-        <Link
-          href={auth.authState === "signed-in" ? "/today" : "/"}
-          className="font-black tracking-tight text-ink"
-        >
-          French for Life
+        <Link href={auth.authState === "signed-in" ? "/today" : "/"}>
+          <Wordmark />
         </Link>
         <nav aria-label="Main navigation" className="hidden gap-x-1 text-sm font-bold text-ink/80 md:flex">
           {primaryLinks.map(([label, href]) => (
