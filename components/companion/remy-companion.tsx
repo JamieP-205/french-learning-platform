@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { ProgressSnapshot } from "@/lib/domain/types";
+import { RemyArt, type RemyPose } from "@/components/companion/remy-art";
 import { getBrowserAuthHeaders } from "@/lib/auth/browser";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
 import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
@@ -26,12 +26,12 @@ function routePhrase(pathname: string) {
   return { french: "On y va ?", english: "Shall we go?" };
 }
 
-function moodFor(progress?: ProgressSnapshot) {
-  if (!progress || progress.sessionsCompleted === 0) return { id: "curious", label: "Curious", opener: "We can start very small." };
-  if (progress.habit?.tone === "fresh") return { id: "proud", label: "Proud", opener: "You showed up today. I noticed." };
-  if (progress.habit?.tone === "comeback") return { id: "cosy", label: "Glad you’re here", opener: "No guilt. We just pick up one useful thread." };
-  if (progress.reviewsDue > 0) return { id: "focused", label: "Focused", opener: "There’s one useful thing ready to review." };
-  return { id: "ready", label: "Ready", opener: "A little French will travel further than you think." };
+function moodFor(progress?: ProgressSnapshot): { id: string; label: string; opener: string; pose: RemyPose } {
+  if (!progress || progress.sessionsCompleted === 0) return { id: "curious", label: "Curious", opener: "We can start very small.", pose: "wave" };
+  if (progress.habit?.tone === "fresh") return { id: "proud", label: "Proud", opener: "You showed up today. I noticed.", pose: "celebrating" };
+  if (progress.habit?.tone === "comeback") return { id: "cosy", label: "Glad you’re here", opener: "No guilt. We just pick up one useful thread.", pose: "idle" };
+  if (progress.reviewsDue > 0) return { id: "focused", label: "Focused", opener: "There’s one useful thing ready to review.", pose: "thinking" };
+  return { id: "ready", label: "Ready", opener: "A little French will travel further than you think.", pose: "idle" };
 }
 
 export function RemyCompanion() {
@@ -110,7 +110,9 @@ export function RemyCompanion() {
       {open && (
         <div aria-label="Chat with Remy" className="remy-panel" role="dialog">
           <div className="flex items-start gap-3">
-            <Image alt="" className="h-14 w-14 rounded-2xl object-cover" height={112} src="/images/remy-companion.webp" width={112} />
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-slate/15">
+              <RemyArt pose={mood.pose} size={52} />
+            </span>
             <div>
               <p className="text-xs font-black uppercase tracking-[0.12em] text-moss">Remy · {mood.label}</p>
               <p className="mt-1 font-black">{greetingName ? `Salut, ${greetingName}.` : "Salut."} {mood.opener}</p>
@@ -140,7 +142,9 @@ export function RemyCompanion() {
         onClick={() => setOpen((value) => !value)}
         type="button"
       >
-        <Image alt="" className="h-full w-full object-cover" height={160} priority={false} src="/images/remy-companion.webp" width={160} />
+        <span className="grid h-full w-full place-items-end justify-items-center">
+          <RemyArt pose={mood.pose} size={64} />
+        </span>
         <span className="remy-status" aria-hidden="true" />
       </button>
     </aside>

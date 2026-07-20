@@ -334,6 +334,31 @@ summary:focus-visible {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* Remy's idle life: a slow breath, a tail sway, and an occasional blink.
+   Poses swap by class; everything stops under reduced motion. */
+.remy-art .remy-eyes { transform-box: fill-box; transform-origin: center; animation: remy-blink 5.4s infinite; }
+.remy-art .remy-tail { transform-box: fill-box; transform-origin: 12% 78%; animation: remy-tail-sway 4.6s ease-in-out infinite alternate; }
+.remy-art .remy-breath { transform-box: fill-box; transform-origin: center bottom; animation: remy-breathe 4.2s ease-in-out infinite; }
+.remy-art .remy-paw-raised, .remy-art .remy-spark { display: none; }
+.remy-pose-wave .remy-paw-raised { display: block; }
+.remy-pose-celebrating .remy-spark { display: block; }
+.remy-pose-celebrating .remy-tail { animation-duration: 1.6s; }
+.remy-pose-thinking .remy-head-group { transform: rotate(-4deg); transform-box: fill-box; transform-origin: center 80%; }
+
+@keyframes remy-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  95%, 97% { transform: scaleY(0.08); }
+}
+
+@keyframes remy-tail-sway {
+  from { transform: rotate(-3deg); }
+  to { transform: rotate(4deg); }
+}
+
+@keyframes remy-breathe {
+  50% { transform: scaleY(1.015); }
+}
+
 @keyframes remy-pulse {
   50% { transform: scale(1.18); box-shadow: 0 0 0 5px rgb(var(--color-amber) / 18%); }
 }
