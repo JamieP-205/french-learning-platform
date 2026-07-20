@@ -139,6 +139,7 @@ export class SupabaseLearningRepository implements LearningRepository {
       speakingConfidence: ((row.speaking_confidence as "low" | "medium" | "high") ?? "medium"),
       speechSpeed: ((row.speech_speed as "normal" | "slow") ?? "normal"),
       themePreference: ((row.theme_preference as "light" | "dark" | "system") ?? "system"),
+      companionQuiet: Boolean(row.companion_quiet),
       ageConfirmed: Boolean(row.age_confirmed),
       country: (row.country as string) ?? "",
       birthDate: (row.birth_date as string) ?? undefined,
@@ -166,6 +167,7 @@ export class SupabaseLearningRepository implements LearningRepository {
       speaking_confidence: profile.speakingConfidence ?? "medium",
       speech_speed: profile.speechSpeed ?? "normal",
       theme_preference: profile.themePreference ?? "system",
+      companion_quiet: profile.companionQuiet ?? false,
       age_confirmed: profile.ageConfirmed ?? false,
       country: profile.country ?? null,
       birth_date: profile.birthDate ?? null,
@@ -192,6 +194,7 @@ export class SupabaseLearningRepository implements LearningRepository {
     if (changes.speakingConfidence !== undefined) update.speaking_confidence = changes.speakingConfidence;
     if (changes.speechSpeed !== undefined) update.speech_speed = changes.speechSpeed;
     if (changes.themePreference !== undefined) update.theme_preference = changes.themePreference;
+    if (changes.companionQuiet !== undefined) update.companion_quiet = changes.companionQuiet;
     if (Object.keys(update).length === 0) return this.getProfile(userId);
 
     const { error } = await this.client.from("profiles").update(update).eq("id", userId);

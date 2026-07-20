@@ -12,6 +12,7 @@ import type {
   ValidationResultV1,
 } from "@/lib/domain/types";
 import { Wordmark } from "@/components/brand/wordmark";
+import { LessonRemy } from "@/components/companion/lesson-remy";
 import { ActivityRenderer } from "@/components/lesson/activity-renderer";
 import { ActivityTaskGuide } from "@/components/lesson/activity-task-guide";
 import { ActivityTeachingGate } from "@/components/lesson/activity-teaching-gate";
@@ -19,6 +20,12 @@ import { LessonStageProgress } from "@/components/lesson/lesson-stage-progress";
 import { MilestoneCelebration } from "@/components/celebration/milestone-celebration";
 import { PromptLanguageText } from "@/components/lesson/prompt-language-text";
 import { getBrowserAuthHeaders } from "@/lib/auth/browser";
+import {
+  initialLessonRemyState,
+  LESSON_REMY_IDLE_MS,
+  reduceLessonRemy,
+  type LessonRemyEvent,
+} from "@/lib/companion/lesson-remy-triggers";
 import { getConceptDefinitionsForActivity } from "@/lib/content/curriculum";
 import type { SessionStats } from "@/lib/learning/session-stats";
 
@@ -103,6 +110,10 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     };
   }, [sessionId]);
 
+  const [remyState, setRemyState] = useState(initialLessonRemyState);
+  const remyDispatch = (event: LessonRemyEvent) =>
+    setRemyState((current) => reduceLessonRemy(current, event));
+
   const planned = session?.plan.activities[session.currentIndex];
   const displayActivity = answeredActivity ?? planned?.activity;
   const currentConcepts = useMemo(
@@ -118,6 +129,18 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
   const activityRule = displayActivity
     ? currentConcepts.at(-1)?.teachingStep.metalinguisticRule
     : undefined;
+
+  // A long, visible-tab pause while a question waits counts as struggling.
+  // Any answer, retry, or activity change resets the clock.
+  useEffect(() => {
+    if (!planned || result || needsTeaching || submitting) return;
+    const timer = window.setTimeout(() => {
+      if (document.visibilityState === "visible") {
+        setRemyState((current) => reduceLessonRemy(current, "idle"));
+      }
+    }, LESSON_REMY_IDLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [planned, result, needsTeaching, submitting, firstMiss]);
 
   function completeTeaching() {
     setTaughtConceptIds((current) => [
@@ -189,6 +212,7 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     if (!attemptCompleted && !nextResult.isCorrect) {
       setFirstMiss(nextResult);
       setFirstMissAnswer(answer);
+      if (attemptEvidenceKind !== "self-report") remyDispatch("scored-miss");
       return;
     }
     setAnsweredActivity(planned.activity);
@@ -244,6 +268,7 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
     setResultEvidenceKind(undefined);
     setTutor(undefined);
     setAnsweredActivity(undefined);
+    remyDispatch("activity-advanced");
     startedAt.current = Date.now();
     if (session?.completedAt) {
       router.push("/progress?complete=1");
@@ -376,6 +401,14 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
         open={showCelebration}
         progress={completedProgress}
       />
+      {planned && !needsTeaching && !result && (
+        <LessonRemy
+          activity={planned.activity}
+          celebrationOpen={showCelebration}
+          onNotNow={() => remyDispatch("not-now")}
+          state={remyState}
+        />
+      )}
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center justify-between gap-4 text-sm font-bold">
           <Link aria-label="Save your progress and return to Today" href="/today">

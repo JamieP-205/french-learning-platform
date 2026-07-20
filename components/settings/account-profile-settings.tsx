@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { LearnerProfile } from "@/lib/domain/types";
 import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from "@/lib/auth/browser";
+import { syncStoredCompanionQuiet } from "@/lib/companion/quiet-preference";
 import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
 import { syncStoredThemePreference } from "@/lib/theme/theme-preference";
 import { detectRuntimeTimeZone } from "@/lib/time/calendar-day";
@@ -49,6 +50,7 @@ export function AccountProfileSettings() {
         setInterestText((payload.profile.interests ?? []).join(", "));
         syncStoredSpeechSpeed(payload.profile.speechSpeed);
         syncStoredThemePreference(payload.profile.themePreference);
+        syncStoredCompanionQuiet(payload.profile.companionQuiet);
         setState("ready");
       } catch {
         if (!cancelled) {
@@ -91,6 +93,7 @@ export function AccountProfileSettings() {
           speakingConfidence: profile.speakingConfidence ?? "medium",
           speechSpeed: profile.speechSpeed ?? "normal",
           themePreference: profile.themePreference ?? "system",
+          companionQuiet: profile.companionQuiet ?? false,
         }),
       });
       const payload = await response.json();
@@ -102,6 +105,7 @@ export function AccountProfileSettings() {
       setInterestText((payload.profile.interests ?? []).join(", "));
       syncStoredSpeechSpeed(payload.profile.speechSpeed);
       syncStoredThemePreference(payload.profile.themePreference);
+      syncStoredCompanionQuiet(payload.profile.companionQuiet);
       setMessage("Saved. Your next session uses these straight away.");
     } catch {
       setError("Your settings could not be saved. Check your connection and try again.");
@@ -233,6 +237,17 @@ export function AccountProfileSettings() {
           </select>
         </label>
       </div>
+
+      <label className="mt-5 flex min-h-11 items-center gap-3 font-bold">
+        <input
+          checked={profile.companionQuiet ?? false}
+          className="h-5 w-5 accent-moss"
+          onChange={(event) => setProfile({ ...profile, companionQuiet: event.target.checked })}
+          type="checkbox"
+        />
+        Keep Remy quiet during lessons
+      </label>
+      <p className="mt-1 text-sm text-ink/60">He always asks before helping. This stops him from asking at all.</p>
 
       <fieldset className="mt-5">
         <legend className="font-bold">Goals</legend>

@@ -284,12 +284,15 @@ describe("repository response transition parity", () => {
       const updated = await repository.updateProfilePreferences(userId, {
         speechSpeed: "slow",
         themePreference: "dark",
+        companionQuiet: true,
       });
       expect(updated?.speechSpeed).toBe("slow");
       expect(updated?.themePreference).toBe("dark");
+      expect(updated?.companionQuiet).toBe(true);
       const reloaded = await repository.getProfile(userId);
       expect(reloaded?.speechSpeed).toBe("slow");
       expect(reloaded?.themePreference).toBe("dark");
+      expect(reloaded?.companionQuiet).toBe(true);
     }
   });
 

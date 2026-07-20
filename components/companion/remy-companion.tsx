@@ -6,6 +6,7 @@ import type { ProgressSnapshot } from "@/lib/domain/types";
 import { RemyArt, type RemyPose } from "@/components/companion/remy-art";
 import { getBrowserAuthHeaders } from "@/lib/auth/browser";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
+import { syncStoredCompanionQuiet } from "@/lib/companion/quiet-preference";
 import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
 import { syncStoredThemePreference } from "@/lib/theme/theme-preference";
 
@@ -14,6 +15,7 @@ type ProfileSummary = {
   displayName?: string;
   speechSpeed?: "normal" | "slow";
   themePreference?: "light" | "dark" | "system";
+  companionQuiet?: boolean;
 };
 
 function routePhrase(pathname: string) {
@@ -61,6 +63,7 @@ export function RemyCompanion() {
         // picks up the learner's saved audio speed and theme.
         syncStoredSpeechSpeed((nextProfile as ProfileSummary | undefined)?.speechSpeed);
         syncStoredThemePreference((nextProfile as ProfileSummary | undefined)?.themePreference);
+        syncStoredCompanionQuiet((nextProfile as ProfileSummary | undefined)?.companionQuiet);
       } catch {
         // Remy remains useful with route-aware local encouragement.
       }
