@@ -129,8 +129,16 @@ test("development learner completes the mission with guarded tutor feedback", as
   await page.getByRole("button", { name: "See your progress" }).click();
   await expect(page.getByRole("dialog", { name: /real step|real piece of progress/i })).toBeVisible();
   await page.getByRole("button", { name: "See what grew" }).click();
-  await expect(page).toHaveURL(/\/progress\?complete=1$/);
+  await expect(page).toHaveURL(/\/progress\?complete=1&grew=1$/);
   await expect(page.getByRole("heading", { name: "Your progress.", exact: true })).toBeVisible();
+
+  // The first session grows the sprout: the piece appears, announced once,
+  // and a reload leaves it settled without replaying the entrance.
+  await expect(page.locator('[data-piece="sprout"]')).toBeVisible();
+  await expect(page.getByText(/new in your garden/i)).toBeVisible();
+  await page.goto("/progress");
+  await expect(page.locator('[data-piece="sprout"]')).toBeVisible();
+  await expect(page.getByText(/new in your garden/i)).toHaveCount(0);
 
   await page.goto("/review");
   await expect(page.getByRole("heading", { name: "Nothing due right now" })).toBeVisible();

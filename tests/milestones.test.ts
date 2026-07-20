@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { freshMilestones } from "../lib/progress/milestone-memory";
 import { earnedMilestoneIds, gardenMilestones, type GardenProgress } from "../lib/progress/milestones";
 
 function progressWith(overrides: Partial<GardenProgress>): GardenProgress {
@@ -39,5 +40,11 @@ describe("garden milestones", () => {
   it("keeps streak pieces separate from session pieces", () => {
     const ids = earnedMilestoneIds(progressWith({ currentStreak: 3 }));
     expect(ids).toEqual(["sun"]);
+  });
+
+  it("only treats never-seen pieces as fresh growth", () => {
+    expect(freshMilestones(["sprout", "path"], ["sprout"])).toEqual(["path"]);
+    expect(freshMilestones(["sprout"], ["sprout", "path"])).toEqual([]);
+    expect(freshMilestones([], [])).toEqual([]);
   });
 });

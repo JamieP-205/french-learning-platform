@@ -72,8 +72,27 @@ function Wildflower({
   );
 }
 
-export function GardenScene({ earned, away }: { earned: Set<string>; away: boolean }) {
+export function GardenScene({
+  earned,
+  fresh,
+  away,
+}: {
+  earned: Set<string>;
+  fresh?: Set<string>;
+  away: boolean;
+}) {
   const treeCrowned = earned.has("canopy");
+  const newly = fresh ?? new Set<string>();
+  const freshOrder = [...newly];
+  // Only freshly earned pieces animate in; settled pieces stand still so the
+  // growth reads as an event rather than page noise.
+  const entrance = (id: GardenPieceId, kind: "grow" | "rise") =>
+    newly.has(id)
+      ? {
+          className: `garden-${kind}`,
+          style: { animationDelay: `${300 + freshOrder.indexOf(id) * 460}ms` },
+        }
+      : {};
   return (
     <div className={`garden-scene ${away ? "garden-away" : ""}`}>
       <svg
@@ -138,14 +157,16 @@ export function GardenScene({ earned, away }: { earned: Set<string>; away: boole
         </defs>
 
         {earned.has("sun") && (
-          <g className="garden-sun" data-piece="sun">
-            <circle cx="554" cy="48" fill="url(#gardenSunGlow)" r="40" />
-            <circle cx="554" cy="48" fill="#f3d68a" opacity="0.9" r="15" />
+          <g {...entrance("sun", "rise")} data-piece="sun">
+            <g className="garden-sun">
+              <circle cx="554" cy="48" fill="url(#gardenSunGlow)" r="40" />
+              <circle cx="554" cy="48" fill="#f3d68a" opacity="0.9" r="15" />
+            </g>
           </g>
         )}
 
         {earned.has("sprout") && (
-          <g className="garden-grow" data-piece="sprout">
+          <g {...entrance("sprout", "grow")} data-piece="sprout">
             <path d="M111 240c-1-14 1-24 6-36" fill="none" stroke="url(#gardenStem)" strokeLinecap="round" strokeWidth="4" />
             <path filter="url(#gardenSoften)" d="M114 214c-9-1-15-7-16-15 8-1 14 3 17 9z" fill="url(#gardenLeaf)" />
             <path filter="url(#gardenSoften)" d="M116 202c2-8 9-13 17-13 0 8-5 14-12 16z" fill="url(#gardenFoliageB)" />
@@ -153,7 +174,7 @@ export function GardenScene({ earned, away }: { earned: Set<string>; away: boole
         )}
 
         {earned.has("flowers") && (
-          <g className="garden-grow" data-piece="flowers">
+          <g {...entrance("flowers", "grow")} data-piece="flowers">
             <Wildflower baseY={241} height={32} tone="a" x={152} />
             <Wildflower baseY={242} height={27} size={0.85} tone="b" x={177} />
             <Wildflower baseY={240} height={33} tone="b" x={200} />
@@ -162,7 +183,7 @@ export function GardenScene({ earned, away }: { earned: Set<string>; away: boole
         )}
 
         {earned.has("path") && (
-          <g className="garden-rise" data-piece="path">
+          <g {...entrance("path", "rise")} data-piece="path">
             <path d="M262 254c8-4 22-4 30 0 3 2 3 6-1 8-9 3-20 3-28 0-4-2-4-6-1-8z" fill="url(#gardenStone)" opacity="0.95" />
             <path d="M310 233c7-3 18-3 25 0 3 2 3 5-1 7-7 2-16 2-23 0-3-2-4-5-1-7z" fill="url(#gardenStone)" opacity="0.9" />
             <path d="M352 215c6-3 15-3 21 0 3 1 2 5-1 6-6 2-13 2-19 0-3-1-3-4-1-6z" fill="url(#gardenStone)" opacity="0.85" />
@@ -170,7 +191,7 @@ export function GardenScene({ earned, away }: { earned: Set<string>; away: boole
         )}
 
         {earned.has("bench") && (
-          <g className="garden-rise" data-piece="bench">
+          <g {...entrance("bench", "rise")} data-piece="bench">
             <ellipse cx="336" cy="250" fill="#1f2c40" opacity="0.1" rx="42" ry="5" />
             <path d="M300 224c24-3 50-3 72 0 3 0 4 8 0 8-24 3-48 3-72 0-4 0-3-8 0-8z" fill="url(#gardenWood)" />
             <path d="M304 204c22-2 44-2 64 0 3 0 3 7 0 7-21 2-42 2-64 0-3 0-3-7 0-7z" fill="url(#gardenWood)" opacity="0.92" />
@@ -179,7 +200,7 @@ export function GardenScene({ earned, away }: { earned: Set<string>; away: boole
         )}
 
         {earned.has("cafe") && (
-          <g className="garden-rise" data-piece="cafe">
+          <g {...entrance("cafe", "rise")} data-piece="cafe">
             <ellipse cx="452" cy="254" fill="#1f2c40" opacity="0.1" rx="38" ry="4.5" />
             <path d="M424 246l-8 8M480 246l8 8" stroke="#5f4530" strokeLinecap="round" strokeWidth="3" />
             <path d="M422 220c20-2 40-2 60 0 2 0 3 2 3 4l-2 20c-20 2-42 2-62 0l-2-20c0-2 1-4 3-4z" fill="url(#gardenWood)" />
@@ -204,16 +225,18 @@ export function GardenScene({ earned, away }: { earned: Set<string>; away: boole
         )}
 
         {earned.has("lanterns") && (
-          <g className="garden-lanterns" data-piece="lanterns">
-            <Lantern baseY={246} x={66} />
-            <Lantern baseY={238} scale={0.92} x={250} />
-            <Lantern baseY={232} scale={0.85} x={488} />
-            <Lantern baseY={250} x={614} />
+          <g {...entrance("lanterns", "rise")} data-piece="lanterns">
+            <g className="garden-lanterns">
+              <Lantern baseY={246} x={66} />
+              <Lantern baseY={238} scale={0.92} x={250} />
+              <Lantern baseY={232} scale={0.85} x={488} />
+              <Lantern baseY={250} x={614} />
+            </g>
           </g>
         )}
 
         {earned.has("tree") && (
-          <g className="garden-grow" data-piece="tree">
+          <g {...entrance("tree", "grow")} data-piece="tree">
             <ellipse cx="568" cy="242" fill="#1f2c40" opacity="0.1" rx="26" ry="4.5" />
             <path d="M563 240c3-30 1-58 6-88 4 30 5 58 7 88z" fill="url(#gardenWood)" />
             {!treeCrowned && (
@@ -227,7 +250,7 @@ export function GardenScene({ earned, away }: { earned: Set<string>; away: boole
         )}
 
         {treeCrowned && (
-          <g className="garden-grow" data-piece="canopy">
+          <g {...entrance("canopy", "grow")} data-piece="canopy">
             <path filter="url(#gardenSoften)" d="M567 150c-26 0-42-15-40-36 2-19 20-32 40-32s38 13 40 32c2 21-14 36-40 36z" fill="url(#gardenFoliageA)" opacity="0.95" />
             <path filter="url(#gardenSoften)" d="M537 140c-13-3-20-13-17-24 2-10 12-16 22-15" fill="url(#gardenFoliageB)" opacity="0.9" />
             <path filter="url(#gardenSoften)" d="M597 140c13-3 20-13 17-24-2-10-12-16-22-15" fill="url(#gardenFoliageB)" opacity="0.9" />

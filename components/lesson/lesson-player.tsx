@@ -372,7 +372,7 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
   return (
     <main className="page-shell py-8">
       <MilestoneCelebration
-        onContinue={() => router.push("/progress?complete=1")}
+        onContinue={() => router.push("/progress?complete=1&grew=1")}
         open={showCelebration}
         progress={completedProgress}
       />
