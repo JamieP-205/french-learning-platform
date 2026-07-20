@@ -10,6 +10,11 @@ import {
   normalizeLearningSchedule,
   type LearningSchedule,
 } from "@/lib/schedule/learning-schedule";
+import {
+  noticeForCurrentPermission,
+  noticeForRequestOutcome,
+  type ReminderNotice,
+} from "@/lib/schedule/notification-permission";
 
 const calendarImportSteps = [
   {
@@ -83,7 +88,7 @@ export function LearningScheduleCard() {
   const [schedule, setSchedule] = useState<LearningSchedule>(defaultLearningSchedule);
   const [now, setNow] = useState(() => new Date());
   const [ready, setReady] = useState(false);
-  const [notice, setNotice] = useState<string>();
+  const [notice, setNotice] = useState<ReminderNotice>();
   const [importHelpOpen, setImportHelpOpen] = useState(false);
   const nextSession = useMemo(() => nextScheduledSession(schedule, now), [schedule, now]);
 
@@ -124,30 +129,55 @@ export function LearningScheduleCard() {
 
   function update(next: LearningSchedule) {
     setSchedule(normalizeLearningSchedule(next));
-    setNotice("Schedule saved on this device.");
+    setNotice({ tone: "info", message: "Schedule saved on this device." });
   }
 
   function toggleDay(day: number) {
     const selected = schedule.days.includes(day);
     const nextDays = selected ? schedule.days.filter((value) => value !== day) : [...schedule.days, day];
     if (nextDays.length === 0) {
-      setNotice("Keep at least one practice day.");
+      setNotice({ tone: "info", message: "Keep at least one practice day." });
       return;
     }
     update({ ...schedule, days: nextDays });
   }
 
+  function showReminderNotice(base: ReminderNotice) {
+    // A granted permission is only useful once the routine is on; say so
+    // rather than leaving the button feeling inert.
+    const needsRoutine = base.tone === "success" && !schedule.enabled;
+    setNotice(
+      needsRoutine
+        ? { ...base, message: `${base.message} Turn on Keep this routine to schedule your next reminder.` }
+        : base,
+    );
+  }
+
+  function fireTestNotification() {
+    try {
+      new Notification("Reminders are on", {
+        body: "This is what a French for Life nudge looks like.",
+        icon: "/images/remy-companion.webp",
+        tag: "french-for-life-session",
+      });
+    } catch {
+      // Some browsers only show notifications through a service worker; the
+      // notice text already explains the limits.
+    }
+  }
+
   async function enableBrowserReminder() {
-    if (typeof Notification === "undefined") {
-      setNotice("This browser does not support notifications. Add the schedule to your calendar instead.");
+    const state = typeof Notification === "undefined" ? ("unsupported" as const) : Notification.permission;
+    const current = noticeForCurrentPermission(state);
+    if (current) {
+      showReminderNotice(current);
+      if (state === "granted") fireTestNotification();
       return;
     }
-    const permission = await Notification.requestPermission();
-    setNotice(
-      permission === "granted"
-        ? "Browser reminders are on while this site is open. Add the calendar reminder for reliable alerts when it is closed."
-        : "Browser reminders were not enabled. Your calendar can still alert you.",
-    );
+
+    const outcome = await Notification.requestPermission();
+    showReminderNotice(noticeForRequestOutcome(outcome));
+    if (outcome === "granted") fireTestNotification();
   }
 
   function downloadCalendar() {
@@ -159,7 +189,7 @@ export function LearningScheduleCard() {
     link.download = "french-for-life-schedule.ics";
     link.click();
     URL.revokeObjectURL(url);
-    setNotice("Calendar file downloaded. The steps for adding it to your calendar are on screen.");
+    setNotice({ tone: "info", message: "Calendar file downloaded. The steps for adding it to your calendar are on screen." });
     setImportHelpOpen(true);
   }
 
@@ -230,11 +260,28 @@ export function LearningScheduleCard() {
         <button className="button-primary" disabled={!schedule.enabled} onClick={downloadCalendar} type="button">
           Add repeating calendar reminder
         </button>
-        <button className="button-secondary" disabled={!schedule.enabled} onClick={enableBrowserReminder} type="button">
+        <button className="button-secondary" onClick={enableBrowserReminder} type="button">
           Enable browser reminder
         </button>
       </div>
-      {notice && <p className="mt-4 text-sm font-bold text-ink/70" role="status">{notice}</p>}
+      <p className="mt-3 text-sm text-ink/70">
+        Browser reminders only appear while this site is open in a tab. The calendar file reminds you
+        even when it is not.
+      </p>
+      {notice && (
+        <p
+          className={
+            notice.tone === "success"
+              ? "status-success mt-4 text-sm font-bold"
+              : notice.tone === "blocked"
+              ? "status-coaching mt-4 text-sm font-bold"
+              : "mt-4 text-sm font-bold text-ink/70"
+          }
+          role="status"
+        >
+          {notice.message}
+        </p>
+      )}
 
       <Modal labelledBy="calendar-import-help-title" onClose={() => setImportHelpOpen(false)} open={importHelpOpen}>
         <p className="eyebrow">One more step</p>
