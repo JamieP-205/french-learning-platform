@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/auth/browser";
 import { Wordmark } from "@/components/brand/wordmark";
 import { RemyCompanion } from "@/components/companion/remy-companion";
+import { BookIcon, MoreIcon, ReviewIcon, SproutIcon, SunIcon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 const primaryLinks = [
@@ -17,14 +18,15 @@ const primaryLinks = [
   ["Tutor", "/tutor"],
 ] as const;
 
+// Review sits in the main bar because spaced review is the core loop.
 const mobilePrimaryLinks = [
-  ["Today", "/today"],
-  ["Learn", "/learn"],
-  ["Progress", "/progress"],
+  { label: "Today", href: "/today", Icon: SunIcon },
+  { label: "Learn", href: "/learn", Icon: BookIcon },
+  { label: "Review", href: "/review", Icon: ReviewIcon },
+  { label: "Progress", href: "/progress", Icon: SproutIcon },
 ] as const;
 
 const mobileMoreLinks = [
-  ["Review", "/review"],
   ["Friends", "/friends"],
   ["Tutor", "/tutor"],
   ["Settings", "/settings"],
@@ -127,6 +129,67 @@ function AuthAction({
   );
 }
 
+function MobileMore({ isActive }: { isActive: (href: string) => boolean }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const anyActive = mobileMoreLinks.some(([, href]) => isActive(href));
+
+  // Menu links close on click, and any tap outside (including other
+  // navigation) lands in the pointerdown listener below.
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={`flex min-h-12 w-full flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[0.68rem] font-black ${anyActive ? "bg-cream text-coral" : "text-ink/75"}`}
+        onClick={() => setOpen((value) => !value)}
+        ref={buttonRef}
+        type="button"
+      >
+        <MoreIcon />
+        More
+      </button>
+      {open && (
+        <div className="absolute bottom-[calc(100%+0.75rem)] right-0 grid w-44 gap-1 rounded-2xl border border-ink/15 bg-surface p-2 shadow-xl">
+          {mobileMoreLinks.map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isActive(href) ? "page" : undefined}
+              className={`min-h-12 content-center rounded-xl px-4 py-3 text-sm font-bold ${isActive(href) ? "bg-cream text-coral" : "text-ink hover:bg-cream"}`}
+              onClick={() => setOpen(false)}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -175,37 +238,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <nav
         aria-label="Primary"
-        className="mobile-primary-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-ink/10 bg-surface/95 px-2 pt-2 backdrop-blur md:hidden"
+        className="mobile-primary-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-ink/10 bg-surface/95 px-1 pt-1.5 backdrop-blur md:hidden"
       >
-        {mobilePrimaryLinks.map(([label, href]) => (
+        {mobilePrimaryLinks.map(({ label, href, Icon }) => (
           <Link
             key={href}
             href={href}
             aria-current={isActive(href) ? "page" : undefined}
-            className={`flex min-h-12 items-center justify-center rounded-lg px-2 py-2 text-xs font-black ${isActive(href) ? "bg-cream text-coral" : "text-ink/75"}`}
+            className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[0.68rem] font-black ${isActive(href) ? "bg-cream text-coral" : "text-ink/75"}`}
           >
+            <Icon />
             {label}
           </Link>
         ))}
-        <details className="group relative">
-          <summary
-            className={`flex min-h-12 cursor-pointer list-none items-center justify-center rounded-lg px-2 py-2 text-xs font-black [&::-webkit-details-marker]:hidden ${mobileMoreLinks.some(([, href]) => isActive(href)) ? "bg-cream text-coral" : "text-ink/75"}`}
-          >
-            More
-          </summary>
-          <div className="absolute bottom-[calc(100%+0.75rem)] right-0 grid w-44 gap-1 rounded-2xl border border-ink/15 bg-surface p-2 shadow-xl">
-            {mobileMoreLinks.map(([label, href]) => (
-              <Link
-                key={href}
-                href={href}
-                aria-current={isActive(href) ? "page" : undefined}
-                className={`min-h-12 rounded-xl px-4 py-3 text-sm font-bold ${isActive(href) ? "bg-cream text-coral" : "text-ink hover:bg-cream"}`}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-        </details>
+        <MobileMore isActive={isActive} />
       </nav>
     </div>
   );

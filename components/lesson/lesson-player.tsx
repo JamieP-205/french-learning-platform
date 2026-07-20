@@ -11,6 +11,7 @@ import type {
   TutorFeedbackV1,
   ValidationResultV1,
 } from "@/lib/domain/types";
+import { Wordmark } from "@/components/brand/wordmark";
 import { ActivityRenderer } from "@/components/lesson/activity-renderer";
 import { ActivityTaskGuide } from "@/components/lesson/activity-task-guide";
 import { ActivityTeachingGate } from "@/components/lesson/activity-teaching-gate";
@@ -377,11 +378,16 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
       />
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center justify-between gap-4 text-sm font-bold">
-          <span>{session.plan.mode === "comeback" ? "A gentle restart" : session.plan.missionTitle}</span>
+          <Link aria-label="Save your progress and return to Today" href="/today">
+            <Wordmark />
+          </Link>
           <Link className="min-h-11 content-center text-ink/75 underline underline-offset-4 hover:text-coral" href="/today">
-            Save &amp; exit
+            Save and exit
           </Link>
         </div>
+        <p className="mt-3 text-sm font-bold text-ink/70">
+          {session.plan.mode === "comeback" ? "A gentle restart" : session.plan.missionTitle}
+        </p>
 
         <section ref={stepRef} data-testid="lesson-step" tabIndex={-1} className="card focus-target mt-7">
           <LessonStageProgress current={step} total={session.plan.activities.length} stage={lessonStage} />
