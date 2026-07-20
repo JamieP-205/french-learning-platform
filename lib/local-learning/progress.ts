@@ -177,6 +177,24 @@ export function localLearningDaysSince(
   return calendarDaysSince(iso, now, timeZone);
 }
 
+export function localLearningStreak(
+  progress: LocalLearningProgress,
+  now = new Date(),
+  timeZone = detectRuntimeTimeZone(),
+) {
+  const activeDates = new Set(progress.activeDates ?? []);
+  const cursor = new Date(now);
+  if (!activeDates.has(calendarDayKey(cursor, timeZone))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  let streak = 0;
+  while (activeDates.has(calendarDayKey(cursor, timeZone)) && streak <= 365) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
 function unique(values: string[]) {
   return Array.from(new Set(values));
 }

@@ -6,6 +6,8 @@ export type PronunciationFeedback = {
   verdict: "match" | "close" | "retry";
   missingWords: string[];
   heard: string;
+  matchedWords: number;
+  targetWords: number;
 };
 
 function words(value: string): string[] {
@@ -49,7 +51,14 @@ function alignedTargetWordIndexes(target: string[], heard: string[]) {
 // not treated as a successful spoken sentence.
 export function scorePronunciation(transcript: string, acceptedPhrases: string[]): PronunciationFeedback {
   const heardWords = words(transcript);
-  let best: PronunciationFeedback = { score: 0, verdict: "retry", missingWords: [], heard: transcript };
+  let best: PronunciationFeedback = {
+    score: 0,
+    verdict: "retry",
+    missingWords: [],
+    heard: transcript,
+    matchedWords: 0,
+    targetWords: 0,
+  };
 
   for (const phrase of acceptedPhrases) {
     const targetWords = words(phrase);
@@ -60,9 +69,11 @@ export function scorePronunciation(transcript: string, acceptedPhrases: string[]
     if (score >= best.score) {
       best = {
         score,
-        verdict: score >= 0.8 ? "match" : score >= 0.4 ? "close" : "retry",
+        verdict: score >= 0.9 ? "match" : score >= 0.4 ? "close" : "retry",
         missingWords,
         heard: transcript,
+        matchedWords: matchedIndexes.size,
+        targetWords: targetWords.length,
       };
     }
   }

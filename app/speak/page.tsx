@@ -84,7 +84,7 @@ export default function SpeakPage() {
             <SpeechPlaybackButton
               key={`${pair.left.french}-${pair.right.french}`}
               text={`${pair.left.french} ... ${pair.right.french}`}
-              rate={0.7}
+              rate={0.82}
               label="Hear them together"
               showUnavailableMessage={false}
             />
@@ -107,7 +107,7 @@ export default function SpeakPage() {
                 key={phrase.id}
                 text={phrase.french}
                 audioSource={phrase.audioSource}
-                rate={0.65}
+                rate={0.8}
                 label={phrase.french}
                 replayLabel={phrase.french}
                 labelLanguage="fr"

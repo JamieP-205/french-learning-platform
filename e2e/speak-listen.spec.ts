@@ -83,7 +83,7 @@ test("listening uses bundled audio first and reports when both playback paths fa
   await expect(page.getByRole("button", { name: "Playing…" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => (window as typeof window & { __mediaCalls: unknown[] }).__mediaCalls)).toEqual([
-    { source: "/audio/french/bonjour-je-mappelle-jamie.mp3", rate: 0.95 },
+    { source: "/audio/french/bonjour-je-mappelle-jamie.mp3", rate: 1 },
   ]);
   await expect.poll(() => page.evaluate(() => (window as typeof window & { __speechCalls: unknown[] }).__speechCalls)).toEqual([]);
 
@@ -182,11 +182,13 @@ test("listen dictation checks typed answers", async ({ page }) => {
   await expect(page.getByText(/excellent ear/i)).toBeVisible();
 
   await page.getByRole("button", { name: "Next phrase" }).click();
+  await page.getByRole("button", { name: "Start listening check" }).click();
   await page.getByLabel("Your answer").fill("je voudrais un cafe s'il vous plait");
   await page.getByRole("button", { name: "Check", exact: true }).click();
   await expect(page.getByText(/only accents differ/i)).toBeVisible();
 
   await page.getByRole("button", { name: "Next phrase" }).click();
+  await page.getByRole("button", { name: "Start listening check" }).click();
   await page.getByLabel("Your answer").fill("je suis perdu");
   await page.getByRole("button", { name: "Check", exact: true }).click();
   await expect(page.getByText(/j'ai vingt ans/i)).toHaveCount(0);
@@ -194,6 +196,7 @@ test("listen dictation checks typed answers", async ({ page }) => {
   await page.getByRole("button", { name: "Show me the answer" }).click();
   await expect(page.getByText(/j'ai vingt ans/i)).toBeVisible();
   await page.getByRole("button", { name: "Next phrase" }).click();
+  await page.getByRole("button", { name: "Start listening check" }).click();
   await page.getByRole("button", { name: "Reveal text without credit" }).click();
   await expect(page.getByLabel("Your answer")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Check", exact: true })).toHaveCount(0);

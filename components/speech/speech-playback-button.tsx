@@ -13,7 +13,7 @@ type PlaybackState = "checking" | "idle" | "playing" | "completed" | "error";
 export function SpeechPlaybackButton({
   text,
   language = "fr-FR",
-  rate = 0.9,
+  rate = 1,
   label,
   replayLabel = "Play again",
   audioSource,

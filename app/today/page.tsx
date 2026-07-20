@@ -9,6 +9,7 @@ import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from
 import { PublicLocalTodayPanel } from "@/components/demo/public-local-learning-panels";
 import { LearningModeUnavailable } from "@/components/learning-mode-unavailable";
 import { FirstRunTour } from "@/components/onboarding/first-run-tour";
+import { LearningScheduleCard } from "@/components/schedule/learning-schedule-card";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
 
 type ErrorAction = "sign-in" | "onboarding" | "retry";
@@ -39,6 +40,7 @@ export default function TodayPage() {
     mode?: "normal" | "short";
     requestId: string;
   } | null>(null);
+  const [displayName, setDisplayName] = useState<string>();
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +69,7 @@ export default function TodayPage() {
         }
 
         const headers = await getBrowserAuthHeaders();
-        const [nextPlan, snapshot] = await Promise.all([
+        const [nextPlan, snapshot, profile] = await Promise.all([
           fetch("/api/today", { headers }).then(async (response) => {
             const payload = await response.json();
             if (!response.ok) {
@@ -83,11 +85,17 @@ export default function TodayPage() {
             if (!response.ok) return undefined;
             return payload.progress as ProgressSnapshot;
           }),
+          fetch("/api/profile", { headers }).then(async (response) => {
+            const payload = await response.json();
+            if (!response.ok) return undefined;
+            return payload.profile as { displayName?: string };
+          }),
         ]);
 
         if (cancelled) return;
         setPlan(nextPlan);
         setProgress(snapshot);
+        setDisplayName(profile?.displayName);
       } catch (caught) {
         if (cancelled) return;
 
@@ -185,12 +193,16 @@ export default function TodayPage() {
   const hasCompletedToday = completedFromProgress && !activeSessionId;
   const earnedAchievements = progress?.achievements.filter((achievement) => achievement.earned) ?? [];
   const nextAchievement = progress?.achievements.find((achievement) => !achievement.earned);
+  const firstName = displayName?.trim().split(/\s+/)[0];
+  const currentHour = new Date().getHours();
+  const greeting = currentHour < 12 ? "Good morning" : currentHour < 18 ? "Good afternoon" : "Good evening";
 
   return (
     <AppShell>
       <main className="py-10">
         <p className="eyebrow">Today</p>
-        <h1 className="mt-2 text-4xl font-black">Your French for today.</h1>
+        <h1 className="mt-2 text-4xl font-black">{firstName ? `${greeting}, ${firstName}.` : "Your French for today."}</h1>
+        {firstName && <p className="mt-3 text-lg text-ink/70">Here is the smallest useful step for your French today.</p>}
         <FirstRunTour />
 
         {learningMode === "loading" && (
@@ -320,7 +332,7 @@ export default function TodayPage() {
           </div>
         )}
 
-        <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div className="card">
             <p className="eyebrow">Sessions</p>
             <p className="mt-2 text-3xl font-black">{progress?.sessionsCompleted ?? 0}</p>
@@ -335,6 +347,11 @@ export default function TodayPage() {
             <p className="eyebrow">Lesson progress</p>
             <p className="mt-2 text-3xl font-black">{progress?.mission.completionPercent ?? 0}%</p>
             <p className="mt-1 text-sm text-ink/70">Checked steps completed in this lesson.</p>
+          </div>
+          <div className="card">
+            <p className="eyebrow">Streak</p>
+            <p className="mt-2 text-3xl font-black">{progress?.currentStreak ?? 0} <span className="text-lg text-coral">days</span></p>
+            <p className="mt-1 text-sm text-ink/70">A thread you can protect, never a reason for guilt.</p>
           </div>
           <div className="card">
             <p className="eyebrow">Achievements</p>
@@ -363,6 +380,11 @@ export default function TodayPage() {
           </section>
         )}
         </>}
+        {learningMode !== "loading" && learningMode !== "unavailable" && (
+          <div className="mt-7">
+            <LearningScheduleCard />
+          </div>
+        )}
       </main>
     </AppShell>
   );
