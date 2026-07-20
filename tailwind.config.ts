@@ -2,6 +2,8 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  // The bootstrap script in the root layout stamps data-theme before paint.
+  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       // Values live as CSS variables in globals.css so themes can swap them.

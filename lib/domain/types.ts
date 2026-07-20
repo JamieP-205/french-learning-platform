@@ -242,6 +242,8 @@ export type LearnerProfile = {
   // How fast French audio plays for this learner. Older profiles without the
   // field use the normal learner-friendly pace.
   speechSpeed?: "normal" | "slow";
+  // Light, dark, or follow the device. Older profiles follow the device.
+  themePreference?: "light" | "dark" | "system";
   // Signup uses a 13+ self-declaration instead of per-country birth-date policies.
   ageConfirmed?: boolean;
   country?: string;

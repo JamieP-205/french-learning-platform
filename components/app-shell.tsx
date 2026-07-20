@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/auth/browser";
 import { RemyCompanion } from "@/components/companion/remy-companion";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 const primaryLinks = [
   ["Today", "/today"],
@@ -158,7 +159,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Settings
           </Link>
         </nav>
-        <AuthAction authState={auth.authState} supabaseConfigured={auth.supabaseConfigured} retry={auth.retry} />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <AuthAction authState={auth.authState} supabaseConfigured={auth.supabaseConfigured} retry={auth.retry} />
+        </div>
       </header>
       <div id="main-content" className="focus-target" tabIndex={-1}>
         {children}

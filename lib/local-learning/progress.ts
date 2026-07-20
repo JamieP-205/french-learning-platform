@@ -36,6 +36,7 @@ export type LocalLearnerPreferences = {
   dailyMinutes: number;
   sessionEnergy: "low" | "normal" | "challenge";
   speechSpeed: "normal" | "slow";
+  themePreference: "light" | "dark" | "system";
   updatedAt?: string;
 };
 
@@ -110,6 +111,7 @@ export const defaultLocalLearnerPreferences: LocalLearnerPreferences = {
   dailyMinutes: 8,
   sessionEnergy: "normal",
   speechSpeed: "normal",
+  themePreference: "system",
 };
 
 export const emptyLocalLearningProgress: LocalLearningProgress = {

@@ -13,6 +13,17 @@
   --color-amber: 168 114 28;
 }
 
+/* The garden by lantern light: deep blue night air, parchment text, accents
+   one step brighter. Stamped before first paint by the layout script. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: 236 229 211;
+  --color-cream: 21 29 43;
+  --color-coral: 229 146 116;
+  --color-moss: 163 196 145;
+  --color-amber: 220 176 92;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -44,7 +55,7 @@ summary:focus-visible {
   transform: translateY(calc(-100% - 1rem));
   border-radius: 0.75rem;
   background: rgb(var(--color-ink));
-  color: #fff;
+  color: rgb(var(--color-cream));
   padding: 0.75rem 1rem;
   font-weight: 800;
 }
@@ -60,7 +71,9 @@ summary:focus-visible {
   }
   .card { @apply rounded-3xl border border-ink/15 bg-white p-5 sm:p-7; }
   .eyebrow { @apply text-sm font-semibold text-coral; }
-  .button-primary { @apply inline-flex min-h-12 items-center justify-center rounded-2xl bg-ink px-5 py-3 font-bold text-white transition hover:bg-ink/90 disabled:cursor-not-allowed disabled:bg-slate-400; }
+  /* text-cream matches white in daylight and flips with the theme, so ink
+     buttons stay readable by lantern light too. */
+  .button-primary { @apply inline-flex min-h-12 items-center justify-center rounded-2xl bg-ink px-5 py-3 font-bold text-cream transition hover:bg-ink/90 disabled:cursor-not-allowed disabled:bg-slate-400; }
   .button-secondary { @apply inline-flex min-h-12 items-center justify-center rounded-2xl border border-ink/30 bg-white px-5 py-3 font-bold text-ink transition hover:bg-cream disabled:cursor-not-allowed disabled:opacity-60; }
   .field { @apply mt-2 w-full rounded-xl border border-ink/35 bg-white px-3 py-3 text-ink placeholder:text-slate-600; }
   .status-error { @apply rounded-2xl border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-ink; }

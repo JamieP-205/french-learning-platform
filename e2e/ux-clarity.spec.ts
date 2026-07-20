@@ -26,6 +26,25 @@ test("the first lesson makes learn, answer and feedback stages explicit", async 
   await expect(page.getByText("Correct", { exact: true })).toBeVisible();
 });
 
+test("the theme toggle switches to lantern light and the choice survives a reload", async ({ page }) => {
+  await page.goto("/today");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+  await page.getByRole("button", { name: "Switch to dark theme" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
+
+  const bodyColors = await page.evaluate(() => {
+    const styles = getComputedStyle(document.body);
+    return { background: styles.backgroundColor, text: styles.color };
+  });
+  expect(bodyColors.background).toBe("rgb(21, 29, 43)");
+  expect(bodyColors.text).toBe("rgb(236, 229, 211)");
+});
+
 test("the simplified landing page has no horizontal overflow on a phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");

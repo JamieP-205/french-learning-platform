@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { LearnerProfile } from "@/lib/domain/types";
 import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from "@/lib/auth/browser";
 import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
+import { syncStoredThemePreference } from "@/lib/theme/theme-preference";
 import { detectRuntimeTimeZone } from "@/lib/time/calendar-day";
 
 const focusOptions = [
@@ -47,6 +48,7 @@ export function AccountProfileSettings() {
         setProfile(payload.profile);
         setInterestText((payload.profile.interests ?? []).join(", "));
         syncStoredSpeechSpeed(payload.profile.speechSpeed);
+        syncStoredThemePreference(payload.profile.themePreference);
         setState("ready");
       } catch {
         if (!cancelled) {
@@ -88,6 +90,7 @@ export function AccountProfileSettings() {
           focusPreferences: profile.focusPreferences ?? [],
           speakingConfidence: profile.speakingConfidence ?? "medium",
           speechSpeed: profile.speechSpeed ?? "normal",
+          themePreference: profile.themePreference ?? "system",
         }),
       });
       const payload = await response.json();
@@ -98,6 +101,7 @@ export function AccountProfileSettings() {
       setProfile(payload.profile);
       setInterestText((payload.profile.interests ?? []).join(", "));
       syncStoredSpeechSpeed(payload.profile.speechSpeed);
+      syncStoredThemePreference(payload.profile.themePreference);
       setMessage("Saved. Your next session uses these straight away.");
     } catch {
       setError("Your settings could not be saved. Check your connection and try again.");
@@ -211,6 +215,21 @@ export function AccountProfileSettings() {
           >
             <option value="normal">Normal, tuned for learners</option>
             <option value="slow">Slower, more time to hear each sound</option>
+          </select>
+        </label>
+
+        <label className="block font-bold">
+          Theme
+          <select
+            className="field"
+            value={profile.themePreference ?? "system"}
+            onChange={(event) =>
+              setProfile({ ...profile, themePreference: event.target.value as "light" | "dark" | "system" })
+            }
+          >
+            <option value="system">Match my device</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
           </select>
         </label>
       </div>
