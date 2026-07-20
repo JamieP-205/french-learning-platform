@@ -14,6 +14,7 @@ import {
   localLevelRoadmap,
   localLearningNextAction,
   localLearningPath,
+  localLearningStreak,
   localLearnerPreferenceSummary,
   localSkillReadiness,
   localTopicPreviewSummary,
@@ -23,6 +24,7 @@ import {
   type LocalLearningProgress,
 } from "@/lib/local-learning/progress";
 import { normalizeFrenchAnswer } from "@/lib/learning/answer-validation";
+import { LearningGarden } from "@/components/progress/learning-garden";
 
 function subscribeToLocalProgress(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
@@ -178,6 +180,7 @@ export function PublicLocalProgressPanel() {
   const { progress, reset } = useLocalProgress();
   const accuracy = localLearningAccuracy(progress);
   const daysAway = localLearningDaysSince(progress.lastCompletedAt);
+  const currentStreak = localLearningStreak(progress);
   const achievements = localLearningAchievements(progress);
   const earnedAchievements = achievements.filter((achievement) => achievement.earned);
   const path = localLearningPath(progress);
@@ -203,7 +206,31 @@ export function PublicLocalProgressPanel() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="card">
+        <p className="eyebrow">Your learning garden</p>
+        <h2 className="mt-2 text-2xl font-black">Every finished session leaves something behind.</h2>
+        <div className="mt-5">
+          <LearningGarden
+            progress={{
+              sessionsCompleted: progress.sessionsCompleted,
+              currentStreak,
+              phrasesLearned: progress.correctCount,
+              mistakesFixed: progress.repairsCompleted,
+              habit: {
+                tone: daysAway === undefined
+                  ? "new"
+                  : daysAway === 0
+                    ? "fresh"
+                    : daysAway >= 3
+                      ? "comeback"
+                      : "steady",
+              },
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="card">
           <p className="eyebrow">Sessions</p>
           <p className="mt-2 text-4xl font-black">{progress.sessionsCompleted}</p>
@@ -215,6 +242,10 @@ export function PublicLocalProgressPanel() {
         <div className="card">
           <p className="eyebrow">Attempts</p>
           <p className="mt-2 text-4xl font-black">{progress.attemptsCount}</p>
+        </div>
+        <div className="card">
+          <p className="eyebrow">Streak</p>
+          <p className="mt-2 text-4xl font-black">{currentStreak}</p>
         </div>
         <div className="card">
           <p className="eyebrow">Last session</p>

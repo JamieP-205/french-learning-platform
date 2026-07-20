@@ -6,6 +6,7 @@ import {
   localLearningDaysSince,
   localLearningNextAction,
   localLearningPath,
+  localLearningStreak,
   localLevelRoadmap,
   localLearnerPreferenceSummary,
   localSkillReadiness,
@@ -19,6 +20,21 @@ import {
 } from "../lib/local-learning/progress";
 
 describe("public local learning progress", () => {
+  it("counts consecutive local practice days without requiring activity today", () => {
+    const progress = {
+      ...emptyLocalLearningProgress,
+      activeDates: ["2026-07-18", "2026-07-17", "2026-07-16"],
+    };
+
+    expect(
+      localLearningStreak(
+        progress,
+        new Date("2026-07-19T12:00:00.000Z"),
+        "UTC",
+      ),
+    ).toBe(3);
+  });
+
   it("starts with a clear no-account first action", () => {
     const nextAction = localLearningNextAction(emptyLocalLearningProgress);
     const path = localLearningPath(emptyLocalLearningProgress);

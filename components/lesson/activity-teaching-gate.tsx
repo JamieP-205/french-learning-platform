@@ -1,6 +1,8 @@
 "use client";
 
 import type { ConceptDefinition } from "@/lib/domain/types";
+import { SpeechPlaybackButton } from "@/components/speech/speech-playback-button";
+import { audioSourceForFrench } from "@/lib/content/french-audio";
 
 type ActivityTeachingGateProps = {
   concepts: ConceptDefinition[];
@@ -80,6 +82,15 @@ export function ActivityTeachingGate({
             <article key={concept.id} className="rounded-2xl border border-ink/10 bg-cream p-5 sm:p-6">
               <ConceptHeading lang="fr" className="text-2xl font-black leading-tight">{step.inputSegment.text}</ConceptHeading>
               {step.meaning && <p className="mt-2 text-lg font-bold text-ink">{step.meaning}</p>}
+              <div className="mt-4">
+                <SpeechPlaybackButton
+                  audioSource={audioSourceForFrench(step.inputSegment.text)}
+                  label="Hear the phrase clearly"
+                  rate={1}
+                  showUnavailableMessage={false}
+                  text={step.inputSegment.text}
+                />
+              </div>
               <p className="mt-4 max-w-2xl leading-6 text-ink/75">
                 <span className="font-black text-ink">Use it when: </span>
                 {step.function}

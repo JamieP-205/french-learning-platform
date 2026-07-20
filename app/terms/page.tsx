@@ -57,14 +57,15 @@ export default function TermsPage() {
             <p className="eyebrow">Audio attribution</p>
             <h2 className="mt-2 text-2xl font-black">Bundled French audio uses an attributed open dataset.</h2>
             <p className="mt-3 text-ink/75">
-              The fixed French clips were generated with the MIT-licensed Piper <code>fr_FR-mls-medium</code> voice, trained
-              from scratch on Multilingual LibriSpeech by Pratap et al. (2020), licensed under{" "}
+              The fixed French clips were generated with the MIT-licensed, single-speaker Piper{" "}
+              <code>fr_FR-siwis-medium</code> voice. Its model card identifies the SIWIS French Speech
+              Synthesis Database, licensed under{" "}
               <a className="font-bold underline" href="https://creativecommons.org/licenses/by/4.0/">
                 CC BY 4.0
               </a>
               , then converted to mono MP3 files for this app. See the{" "}
-              <a className="font-bold underline" href="https://openslr.org/94/">
-                MLS source and citation
+              <a className="font-bold underline" href="https://datashare.ed.ac.uk/handle/10283/2353">
+                SIWIS dataset record
               </a>
               .
             </p>

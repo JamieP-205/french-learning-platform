@@ -155,7 +155,7 @@ export function stopSpeaking() {
 }
 
 export type ListenOutcome =
-  | { status: "result"; transcript: string }
+  | { status: "result"; transcript: string; alternatives: { transcript: string; confidence: number }[] }
   | { status: "no-speech" }
   | { status: "denied" }
   | { status: "error" };
@@ -181,8 +181,14 @@ export function listenOnceInFrench(): Promise<ListenOutcome> {
 
     recognition.onresult = (event) => {
       const alternatives = event.results[0];
-      const best = alternatives?.[0]?.transcript?.trim();
-      settle(best ? { status: "result", transcript: best } : { status: "no-speech" });
+      const candidates: { transcript: string; confidence: number }[] = [];
+      for (let index = 0; index < (alternatives?.length ?? 0); index += 1) {
+        const candidate = alternatives[index];
+        const transcript = candidate?.transcript?.trim();
+        if (transcript) candidates.push({ transcript, confidence: candidate.confidence ?? 0 });
+      }
+      const best = candidates[0];
+      settle(best ? { status: "result", transcript: best.transcript, alternatives: candidates } : { status: "no-speech" });
     };
     recognition.onerror = (event) => {
       settle(

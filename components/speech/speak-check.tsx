@@ -46,7 +46,14 @@ export function SpeakCheck({
     const outcome = await listenOnceInFrench();
     setListening(false);
     if (outcome.status === "result") {
-      setFeedback(scorePronunciation(outcome.transcript, acceptedPhrases?.length ? acceptedPhrases : [targetText]));
+      const targets = acceptedPhrases?.length ? acceptedPhrases : [targetText];
+      const candidates = outcome.alternatives.length > 0
+        ? outcome.alternatives
+        : [{ transcript: outcome.transcript, confidence: 0 }];
+      const best = candidates
+        .map((candidate) => scorePronunciation(candidate.transcript, targets))
+        .sort((left, right) => right.score - left.score)[0];
+      setFeedback(best);
     } else if (outcome.status === "denied") {
       setNotice("Microphone access was blocked. You can still say it out loud and continue.");
     } else if (outcome.status === "no-speech") {
@@ -58,7 +65,10 @@ export function SpeakCheck({
 
   return (
     <div>
-      <p className="text-xl font-black" lang="fr">{targetText}</p>
+      <div className="rounded-2xl border border-ink/10 bg-white p-4">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-ink/55">1 · Listen</p>
+        <p className="mt-2 text-xl font-black" lang="fr">{targetText}</p>
+      </div>
       <div className="mt-5 flex flex-wrap items-start gap-3">
         <SpeechPlaybackButton
           text={targetText}
@@ -103,6 +113,12 @@ export function SpeakCheck({
                 : "Try again a little more slowly."}
           </p>
           <p className="mt-1 text-ink/70">Heard: “{feedback.heard}”</p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink/10">
+            <div className="h-full rounded-full bg-moss transition-all" style={{ width: `${Math.round(feedback.score * 100)}%` }} />
+          </div>
+          <p className="mt-2 font-bold text-ink/75">
+            {feedback.matchedWords} of {feedback.targetWords} words recognised in order
+          </p>
           {feedback.verdict !== "match" && feedback.missingWords.length > 0 && (
             <p className="mt-1 text-ink/70">Give extra care to: {feedback.missingWords.join(", ")}</p>
           )}

@@ -92,7 +92,7 @@ export function canPlayTextAudio(audioSource?: string) {
 export async function playTextAudio({
   text,
   language,
-  rate = 0.9,
+  rate = 1,
   audioSource,
   owner,
 }: {

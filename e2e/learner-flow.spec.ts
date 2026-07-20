@@ -127,6 +127,8 @@ test("development learner completes the mission with guarded tutor feedback", as
   await page.getByRole("button", { name: /moi, c'est jamie/i }).click();
   await expect(page.getByRole("button", { name: "See your progress" })).toBeVisible();
   await page.getByRole("button", { name: "See your progress" }).click();
+  await expect(page.getByRole("dialog", { name: /real step|real piece of progress/i })).toBeVisible();
+  await page.getByRole("button", { name: "See what grew" }).click();
   await expect(page).toHaveURL(/\/progress\?complete=1$/);
   await expect(page.getByRole("heading", { name: "Your progress.", exact: true })).toBeVisible();
 

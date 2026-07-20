@@ -15,6 +15,7 @@ import { ActivityRenderer } from "@/components/lesson/activity-renderer";
 import { ActivityTaskGuide } from "@/components/lesson/activity-task-guide";
 import { ActivityTeachingGate } from "@/components/lesson/activity-teaching-gate";
 import { LessonStageProgress } from "@/components/lesson/lesson-stage-progress";
+import { MilestoneCelebration } from "@/components/celebration/milestone-celebration";
 import { PromptLanguageText } from "@/components/lesson/prompt-language-text";
 import { getBrowserAuthHeaders } from "@/lib/auth/browser";
 import { getConceptDefinitionsForActivity } from "@/lib/content/curriculum";
@@ -51,6 +52,7 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
   const [completedProgress, setCompletedProgress] = useState<ProgressSnapshot>();
   const [restartRequest, setRestartRequest] = useState<RestartRequest>();
   const [restarting, setRestarting] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const startedAt = useRef<number | null>(null);
   const pendingSubmission = useRef<PendingSubmission | null>(null);
   const restartRequestId = useRef<string | undefined>(undefined);
@@ -231,6 +233,10 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
   }
 
   function continueSession() {
+    if (session?.completedAt && !showCelebration) {
+      setShowCelebration(true);
+      return;
+    }
     setResult(undefined);
     setFirstMiss(undefined);
     setFirstMissAnswer("");
@@ -364,6 +370,11 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
   const lessonStage = needsTeaching && !result ? "learn" : result ? "feedback" : "answer";
   return (
     <main className="page-shell py-8">
+      <MilestoneCelebration
+        onContinue={() => router.push("/progress?complete=1")}
+        open={showCelebration}
+        progress={completedProgress}
+      />
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center justify-between gap-4 text-sm font-bold">
           <span>{session.plan.mode === "comeback" ? "A gentle restart" : session.plan.missionTitle}</span>

@@ -162,14 +162,14 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
             <SpeechPlaybackButton
               text=""
               audioSource={dictationAudioSource}
-              rate={0.95}
+              rate={1}
               label="Play the phrase"
               disabled={controlsDisabled}
             />
             <SpeechPlaybackButton
               text=""
               audioSource={dictationAudioSource}
-              rate={0.65}
+              rate={0.8}
               label="Play slowly"
               replayLabel="Play slowly again"
               className="text-sm font-black text-coral underline decoration-2 underline-offset-4 disabled:opacity-60"

@@ -26,6 +26,7 @@ export default function ListenPage() {
   const walkingAudioOwner = useRef(Symbol("walking-mode-audio"));
 
   const phrase = DICTATION_PHRASES[index];
+  const listeningConcept = LISTENING_CONCEPTS[index] ?? LISTENING_CONCEPTS[0]!;
 
   useEffect(() => {
     const playbackOwner = walkingAudioOwner.current;
@@ -53,6 +54,7 @@ export default function ListenPage() {
 
   function next() {
     setIndex((index + 1) % DICTATION_PHRASES.length);
+    setTeachingComplete(false);
     setAnswer("");
     setResult(undefined);
     setMissCount(0);
@@ -132,7 +134,7 @@ export default function ListenPage() {
         <section className="card mt-7">
           {!teachingComplete ? (
             <ActivityTeachingGate
-              concepts={LISTENING_CONCEPTS}
+              concepts={[listeningConcept]}
               actionLabel="Start listening check"
               headingLevel={2}
               onComplete={() => setTeachingComplete(true)}
@@ -146,14 +148,14 @@ export default function ListenPage() {
                 key={`${phrase.id}-normal`}
                 text={phrase.french}
                 audioSource={phrase.audioSource}
-                rate={0.95}
+                rate={1}
                 label="Play"
               />
               <SpeechPlaybackButton
                 key={`${phrase.id}-slow`}
                 text={phrase.french}
                 audioSource={phrase.audioSource}
-                rate={0.65}
+                rate={0.8}
                 label="Play slowly"
                 replayLabel="Play slowly again"
                 showUnavailableMessage={false}

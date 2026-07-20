@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getBrowserSupabase } from "@/lib/auth/browser";
+import { RemyCompanion } from "@/components/companion/remy-companion";
 
 const primaryLinks = [
   ["Today", "/today"],
@@ -145,6 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Link href="/status" className="hover:text-coral">Service status</Link>
         <Link href="/demo" className="hover:text-coral">Try a lesson</Link>
       </footer>
+      <RemyCompanion />
 
       <nav
         aria-label="Primary"
