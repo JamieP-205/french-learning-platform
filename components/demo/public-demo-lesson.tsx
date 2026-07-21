@@ -355,7 +355,7 @@ export function PublicDemoLesson({ mission, mode = "full" }: { mission: Mission;
               : "You reached the end, but too many answers were shown for this to count as a completed practice session. Try it again when you are ready."}
           </p>
           {sessionMistakes.length > 0 && (
-            <div className="mt-5 rounded-2xl bg-white p-4">
+            <div className="mt-5 rounded-2xl bg-surface p-4">
               <p className="font-black">Practise these next time</p>
               <ul className="mt-3 space-y-2 text-sm text-ink/75">
                 {sessionMistakes.map((attempt) => (

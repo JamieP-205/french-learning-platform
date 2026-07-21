@@ -2,7 +2,7 @@
 // - One session per day advances the streak; extra sessions never inflate it.
 // - Every 7 consecutive days earns a freeze (held, max 2).
 // - A single missed day is absorbed by a freeze automatically.
-// - Longer gaps restart at 1 — the comeback session handles the emotional part.
+// - Longer gaps restart at 1; the comeback session handles the emotional part.
 
 import { calendarDaysBetween } from "@/lib/time/calendar-day";
 

@@ -178,7 +178,7 @@ export function TopicPreviewPractice({
 
         {firstMiss && (
           <div className="status-error mt-5" aria-live="polite" data-testid="preview-practice-feedback">
-            <p className="font-black">Almost — try once more.</p>
+            <p className="font-black">Almost. Try once more.</p>
             <p className="mt-2">
               Which taught form lets you {teachingConcepts.at(-1)?.teachingStep.function.toLowerCase() ?? "express this meaning"}?
             </p>
@@ -197,7 +197,7 @@ export function TopicPreviewPractice({
         )}
 
         {revealed ? (
-          <div className="mt-5 rounded-2xl bg-white p-4" aria-live="polite">
+          <div className="mt-5 rounded-2xl bg-surface p-4" aria-live="polite">
             <p className="text-lg font-black" data-testid="preview-practice-answer" lang="fr">
               {activeCheck.answer}
             </p>

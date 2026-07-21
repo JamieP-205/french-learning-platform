@@ -37,7 +37,7 @@ function SocialReportForm({
 }) {
   return (
     <form
-      className="mt-4 rounded-2xl border border-coral/20 bg-white/70 p-4"
+      className="mt-4 rounded-2xl border border-coral/20 bg-surface/70 p-4"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();
@@ -231,7 +231,7 @@ export default function FriendsPage() {
                 <p className="eyebrow">{social.activeChallenge.status === "completed" ? "Challenge complete" : "Co-op challenge"}</p>
                 <h2 className="mt-2 text-2xl font-black">{social.activeChallenge.title}</h2>
                 <p className="mt-2 text-ink/75">{social.activeChallenge.description}</p>
-                <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/70" aria-hidden="true">
+                <div className="mt-5 h-3 overflow-hidden rounded-full bg-surface/70" aria-hidden="true">
                   <div
                     className="h-full rounded-full bg-moss transition-[width]"
                     style={{ width: `${Math.min(100, Math.round((social.activeChallenge.combinedProgress / social.activeChallenge.targetSessions) * 100))}%` }}
@@ -241,15 +241,15 @@ export default function FriendsPage() {
                   Together: {Math.min(social.activeChallenge.combinedProgress, social.activeChallenge.targetSessions)} of {social.activeChallenge.targetSessions} sessions
                 </p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-white/70 p-4">
+                  <div className="rounded-2xl bg-surface/70 p-4">
                     <p className="eyebrow">You</p>
                     <p className="mt-1 text-2xl font-black">{social.activeChallenge.yourProgress} sessions</p>
                   </div>
-                  <div className="rounded-2xl bg-white/70 p-4">
+                  <div className="rounded-2xl bg-surface/70 p-4">
                     <p className="eyebrow">{social.activeChallenge.friend.displayName}</p>
                     <p className="mt-1 text-2xl font-black">{social.activeChallenge.friendProgress} sessions</p>
                   </div>
-                  <div className="rounded-2xl bg-white/70 p-4">
+                  <div className="rounded-2xl bg-surface/70 p-4">
                     <p className="eyebrow">Status</p>
                     <p className="mt-1 text-2xl font-black">{social.activeChallenge.status === "completed" ? "Completed" : "Active"}</p>
                   </div>

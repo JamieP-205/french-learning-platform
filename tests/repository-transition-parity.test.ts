@@ -257,7 +257,7 @@ describe("repository response transition parity", () => {
     });
   });
 
-  it("persists the audio-speed preference identically in mock and Supabase", async () => {
+  it("persists audio-speed and theme preferences identically in mock and Supabase", async () => {
     const userId = `speed-${crypto.randomUUID()}`;
     const mock = new MockLearningRepository();
     const client = new FakeSupabaseClient();
@@ -280,10 +280,16 @@ describe("repository response transition parity", () => {
     for (const repository of [mock, supabase]) {
       const before = await repository.getProfile(userId);
       expect(before?.speechSpeed ?? "normal").toBe("normal");
-      const updated = await repository.updateProfilePreferences(userId, { speechSpeed: "slow" });
+      expect(before?.themePreference ?? "system").toBe("system");
+      const updated = await repository.updateProfilePreferences(userId, {
+        speechSpeed: "slow",
+        themePreference: "dark",
+      });
       expect(updated?.speechSpeed).toBe("slow");
+      expect(updated?.themePreference).toBe("dark");
       const reloaded = await repository.getProfile(userId);
       expect(reloaded?.speechSpeed).toBe("slow");
+      expect(reloaded?.themePreference).toBe("dark");
     }
   });
 

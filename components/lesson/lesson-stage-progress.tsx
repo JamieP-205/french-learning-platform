@@ -39,7 +39,7 @@ export function LessonStageProgress({ current, total, stage }: LessonStageProgre
             <li
               aria-current={active ? "step" : undefined}
               className={`rounded-xl border px-2 py-2 ${
-                active ? "border-ink bg-ink text-white" : "border-ink/10 bg-cream text-ink/65"
+                active ? "border-ink bg-ink text-cream" : "border-ink/10 bg-cream text-ink/65"
               }`}
               key={item.id}
             >

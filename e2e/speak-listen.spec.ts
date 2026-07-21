@@ -185,7 +185,7 @@ test("listen dictation checks typed answers", async ({ page }) => {
   await page.getByRole("button", { name: "Start listening check" }).click();
   await page.getByLabel("Your answer").fill("je voudrais un cafe s'il vous plait");
   await page.getByRole("button", { name: "Check", exact: true }).click();
-  await expect(page.getByText(/only accents differ/i)).toBeVisible();
+  await expect(page.getByText(/only the accents differ/i)).toBeVisible();
 
   await page.getByRole("button", { name: "Next phrase" }).click();
   await page.getByRole("button", { name: "Start listening check" }).click();

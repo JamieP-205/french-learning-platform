@@ -140,11 +140,11 @@ export function PublicLocalTodayPanel() {
       <p className="mt-3 max-w-2xl text-ink/75">
         {nextAction.reason} New lessons are added only after review.
       </p>
-      <p className="mt-4 rounded-2xl bg-white/70 p-4 text-sm font-bold text-ink/75">
+      <p className="mt-4 rounded-2xl bg-surface/70 p-4 text-sm font-bold text-ink/75">
         Local setup: {preferenceSummary.headline}. {preferenceSummary.detail}
       </p>
       {isRepair && (
-        <p className="mt-4 rounded-2xl bg-white/70 p-4 text-sm font-bold text-ink/75">
+        <p className="mt-4 rounded-2xl bg-surface/70 p-4 text-sm font-bold text-ink/75">
           Repair target: {progress.mistakePrompts[0] ?? "your most recent missed activity"}
         </p>
       )}
@@ -161,7 +161,7 @@ export function PublicLocalTodayPanel() {
         <p className="eyebrow">Today&apos;s plan</p>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           {dailyPlan.map((step, index) => (
-            <Link key={step.id} href={step.href} className="rounded-2xl bg-white/70 p-4 transition hover:bg-white">
+            <Link key={step.id} href={step.href} className="rounded-2xl bg-surface/70 p-4 transition hover:bg-surface">
               <p className="text-xs font-black uppercase tracking-wide text-coral">
                 {String(index + 1).padStart(2, "0")} · {step.kicker} · {step.estimatedMinutes} min
               </p>
@@ -201,8 +201,8 @@ export function PublicLocalProgressPanel() {
         <p className="mt-3 max-w-2xl text-ink/75">
           Missed answers can return at the right time without creating an account or sending this progress to our server.
         </p>
-        <p className="mt-4 rounded-2xl bg-white/70 p-4 text-sm font-bold text-ink/75">
-          {preferenceSummary.headline} — {preferenceSummary.detail}
+        <p className="mt-4 rounded-2xl bg-surface/70 p-4 text-sm font-bold text-ink/75">
+          {preferenceSummary.headline}. {preferenceSummary.detail}
         </p>
       </div>
 
@@ -302,7 +302,7 @@ export function PublicLocalProgressPanel() {
               <article key={skill.key} className="rounded-2xl bg-cream p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="font-black">{skill.label}</h3>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase text-ink/70">
+                  <span className="rounded-full bg-surface px-3 py-1 text-xs font-black uppercase text-ink/70">
                     {skill.status}
                   </span>
                 </div>
@@ -424,7 +424,7 @@ export function PublicLocalReviewPanel() {
         [key]: {
           correct: false,
           stage: "prompt",
-          text: "Almost — try once more. Which taught form fits this meaning and situation?",
+          text: "Almost. Try once more: which taught form fits this meaning and situation?",
         },
       }));
       return;

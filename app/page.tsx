@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { E2E_LEARNER_COOKIE } from "@/lib/auth/development-user";
 import { isServerAccountSyncReady } from "@/lib/auth/readiness";
 import { getCurrentUserId, isDevelopmentDemoMode } from "@/lib/auth/server";
+import { Wordmark } from "@/components/brand/wordmark";
 import { getSeedMission } from "@/lib/content/seed";
 
 // Development demo mode resolves every request to a learner id, which would
@@ -39,8 +40,8 @@ export default async function LandingPage() {
   return (
     <main id="main-content" className="page-shell flex min-h-screen flex-col">
       <header className="flex min-h-20 items-center justify-between gap-4 border-b border-ink/10 py-4">
-        <Link href="/" className="text-lg font-black tracking-tight text-ink" aria-label="French for Life home">
-          French for Life
+        <Link href="/" className="text-lg" aria-label="French for Life home">
+          <Wordmark />
         </Link>
         {signedIn ? (
           <Link
@@ -95,16 +96,16 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section className="mb-12 overflow-hidden rounded-3xl border border-ink/15 bg-white" aria-labelledby="first-lesson-title">
+      <section className="mb-12 overflow-hidden rounded-3xl border border-ink/15 bg-surface" aria-labelledby="first-lesson-title">
         <div className="grid gap-0 md:grid-cols-[0.9fr_1.1fr]">
-          <div className="bg-ink p-6 text-white sm:p-8">
+          <div className="bg-ink p-6 text-cream sm:p-8">
             <p className="text-sm font-bold text-amber">YOUR FIRST LESSON</p>
             <h2 id="first-lesson-title" className="mt-2 text-3xl font-black tracking-tight">
               Introduce yourself
             </h2>
-            <div className="mt-7 rounded-2xl bg-white/10 p-5">
+            <div className="mt-7 rounded-2xl bg-surface/10 p-5">
               <p lang="fr" className="font-serif text-2xl font-bold">Je m’appelle Jamie.</p>
-              <p className="mt-2 text-white/75">My name is Jamie.</p>
+              <p className="mt-2 text-cream/75">My name is Jamie.</p>
             </div>
           </div>
 

@@ -91,7 +91,7 @@ export function SpeechPlaybackButton({
 
   if (supported === false) {
     return showUnavailableMessage ? (
-      <p className="rounded-xl bg-white px-4 py-3 text-sm text-ink/75" role="status">
+      <p className="rounded-xl bg-surface px-4 py-3 text-sm text-ink/75" role="status">
         Audio playback is not available in this browser or device.
       </p>
     ) : null;

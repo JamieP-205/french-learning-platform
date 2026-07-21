@@ -144,22 +144,28 @@ test("landing remains usable at a phone viewport", async ({ page }) => {
   await expect(page.getByRole("link", { name: /pick up where you left off/i })).toBeFocused();
 });
 
-test("mobile navigation keeps three core destinations and a More menu", async ({ page }) => {
+test("mobile navigation keeps five labelled tabs with review in the bar", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/today");
 
   const navigation = page.getByRole("navigation", { name: "Primary" });
   await expect(navigation).toBeVisible();
-  await expect(navigation.locator(":scope > a")).toHaveCount(3);
+  await expect(navigation.locator(":scope > a")).toHaveCount(4);
   await expect(navigation.getByRole("link", { name: "Today", exact: true })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "Learn", exact: true })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Progress", exact: true })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "Review", exact: true })).toHaveCount(0);
-
-  await navigation.locator("summary").click();
   await expect(navigation.getByRole("link", { name: "Review", exact: true })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Progress", exact: true })).toBeVisible();
+
+  const moreButton = navigation.getByRole("button", { name: "More" });
+  await expect(moreButton).toHaveAttribute("aria-expanded", "false");
+  await moreButton.click();
+  await expect(moreButton).toHaveAttribute("aria-expanded", "true");
   await expect(navigation.getByRole("link", { name: "Friends", exact: true })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "Tutor", exact: true })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
+
+  await page.getByRole("heading", { name: /your french for today/i }).click();
+  await expect(moreButton).toHaveAttribute("aria-expanded", "false");
+  await expect(navigation.getByRole("link", { name: "Settings", exact: true })).toHaveCount(0);
 });
 

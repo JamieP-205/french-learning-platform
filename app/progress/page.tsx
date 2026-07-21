@@ -188,7 +188,7 @@ export default function ProgressPage() {
             <section className="card mt-6">
               <h2 className="text-2xl font-black">Skills practised</h2>
               <p className="mt-2 text-ink/70">
-                These scores combine your accuracy and number of checked attempts in this course. They are not CEFR levels or overall proficiency grades.
+                These numbers reflect what you actually answered, and how often you got it right. They are honest practice scores, not French levels.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {progress.skills.map((skill) => (
@@ -212,28 +212,28 @@ export default function ProgressPage() {
               </div>
             </section>
 
-            <section className="card mt-6 bg-ink text-white">
+            <section className="card mt-6 bg-ink text-cream">
               <p className="text-sm font-bold uppercase tracking-wide text-amber">Next up</p>
               <h2 className="mt-2 text-2xl font-black">{progress.nextAction.label}</h2>
-              <p className="mt-2 text-white/75">{progress.nextAction.reason}</p>
-              <p className="mt-3 text-sm text-white/60">
+              <p className="mt-2 text-cream/75">{progress.nextAction.reason}</p>
+              <p className="mt-3 text-sm text-cream/60">
                 Next scheduled review: {progress.reviewsDue > 0 ? `${progress.reviewsDue} due now` : formatReviewDate(progress.nextReviewAt)}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link href={progress.nextAction.href} className="button-primary bg-coral hover:bg-coral/90">
                   Continue
                 </Link>
-                <Link href="/learn" className="button-secondary border-white/20 bg-white/10 text-white hover:bg-white/20">
+                <Link href="/learn" className="button-secondary border-surface/20 bg-surface/10 text-cream hover:bg-surface/20">
                   Browse topics
                 </Link>
               </div>
             </section>
 
             <section className="card mt-6">
-              <p className="eyebrow">Recommendations</p>
-              <h2 className="mt-2 text-2xl font-black">Practice chosen from your recent work.</h2>
+              <p className="eyebrow">Worth a look next</p>
+              <h2 className="mt-2 text-2xl font-black">Picked from your recent work.</h2>
               <p className="mt-2 text-ink/70">
-                Recommendations use your level, completed sessions, mistakes, and reviews to keep the next step useful.
+                These come from what you have practised and where you slipped, so the next step actually helps.
               </p>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {progress.recommendations.map((recommendation) => (

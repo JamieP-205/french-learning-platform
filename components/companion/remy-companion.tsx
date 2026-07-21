@@ -7,9 +7,14 @@ import type { ProgressSnapshot } from "@/lib/domain/types";
 import { getBrowserAuthHeaders } from "@/lib/auth/browser";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
 import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
+import { syncStoredThemePreference } from "@/lib/theme/theme-preference";
 
 type CompanionChoice = "next" | "encourage" | "phrase" | "streak";
-type ProfileSummary = { displayName?: string; speechSpeed?: "normal" | "slow" };
+type ProfileSummary = {
+  displayName?: string;
+  speechSpeed?: "normal" | "slow";
+  themePreference?: "light" | "dark" | "system";
+};
 
 function routePhrase(pathname: string) {
   if (pathname.startsWith("/listen")) {
@@ -53,8 +58,9 @@ export function RemyCompanion() {
         setProgress(nextProgress as ProgressSnapshot | undefined);
         setProfile(nextProfile as ProfileSummary | undefined);
         // The profile travels with the account, so any device Remy loads on
-        // picks up the learner's saved audio speed.
+        // picks up the learner's saved audio speed and theme.
         syncStoredSpeechSpeed((nextProfile as ProfileSummary | undefined)?.speechSpeed);
+        syncStoredThemePreference((nextProfile as ProfileSummary | undefined)?.themePreference);
       } catch {
         // Remy remains useful with route-aware local encouragement.
       }
@@ -71,7 +77,7 @@ export function RemyCompanion() {
       setReply(progress?.nextAction
         ? `${progress.nextAction.label}. ${progress.nextAction.reason}`
         : pathname.startsWith("/lesson")
-          ? "Stay with this one step. Read, answer, notice the feedback—then the next step will feel lighter."
+          ? "Stay with this one step. Read, answer, notice the feedback, and the next step will feel lighter."
           : "Try one short lesson. You do not need to feel ready before you begin.");
       return;
     }
@@ -88,13 +94,13 @@ export function RemyCompanion() {
     if (choice === "streak") {
       setReply(progress
         ? progress.currentStreak > 0
-          ? `Your thread is ${progress.currentStreak} day${progress.currentStreak === 1 ? "" : "s"} long. It is proof you returned—not a reason to panic.`
+          ? `Your thread is ${progress.currentStreak} day${progress.currentStreak === 1 ? "" : "s"} long. It is proof you returned, not a reason to panic.`
           : "Your streak starts after one completed lesson. We are building a thread, not a trap."
         : "Sign in and finish a lesson to grow a saved streak. No-account practice still counts for you, just on this device.");
       return;
     }
     const phrase = routePhrase(pathname);
-    setReply(`${phrase.french} — ${phrase.english} Keep it in your pocket for today.`);
+    setReply(`${phrase.french} It means: ${phrase.english} Keep it in your pocket for today.`);
   }
 
   const greetingName = profile?.displayName?.trim().split(/\s+/)[0];

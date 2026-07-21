@@ -55,7 +55,7 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
               type="button"
               lang={choice.language}
               disabled={controlsDisabled}
-              className="min-h-14 rounded-2xl border border-ink/20 bg-white px-5 py-4 text-left font-bold transition hover:border-ink hover:bg-cream disabled:opacity-60"
+              className="min-h-14 rounded-2xl border border-ink/20 bg-surface px-5 py-4 text-left font-bold transition hover:border-ink hover:bg-cream disabled:opacity-60"
               onClick={() => onSubmit(choice.id)}
             >
               {choice.label}
@@ -85,7 +85,7 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
                   key={`${orderedTokenIndexes[position]}-${token}`}
                   lang="fr"
                   type="button"
-                  className="rounded-xl bg-white px-3 py-2 font-bold shadow-sm"
+                  className="rounded-xl bg-surface px-3 py-2 font-bold shadow-sm"
                   disabled={controlsDisabled}
                   aria-label={`Remove ${token}`}
                   onClick={() => setOrderedTokenIndexes((current) => current.filter((_, index) => index !== position))}
@@ -105,7 +105,7 @@ function ActivityRendererFields({ activity, disabled, onSubmit }: ActivityRender
               lang="fr"
               type="button"
               disabled={controlsDisabled}
-              className="min-h-12 rounded-xl border border-ink/20 bg-white px-4 py-3 font-bold hover:bg-cream disabled:opacity-60"
+              className="min-h-12 rounded-xl border border-ink/20 bg-surface px-4 py-3 font-bold hover:bg-cream disabled:opacity-60"
               onClick={() => setOrderedTokenIndexes((current) => [...current, index])}
             >
               {token}

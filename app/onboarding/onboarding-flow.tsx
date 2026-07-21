@@ -23,12 +23,12 @@ const focusOptions = [
   { value: "review", label: "Remembering what I learn" },
 ] as const;
 const cefrLevels = [
-  { value: "A1", label: "A1 — new or rusty beginner" },
-  { value: "A2", label: "A2 — basic everyday French" },
-  { value: "B1", label: "B1 — can handle familiar situations" },
-  { value: "B2", label: "B2 — independent user" },
-  { value: "C1", label: "C1 — advanced" },
-  { value: "C2", label: "C2 — near-native" },
+  { value: "A1", label: "A1: new or rusty beginner" },
+  { value: "A2", label: "A2: basic everyday French" },
+  { value: "B1", label: "B1: can handle familiar situations" },
+  { value: "B2", label: "B2: independent user" },
+  { value: "C1", label: "C1: advanced" },
+  { value: "C2", label: "C2: near-native" },
 ] as const;
 
 const placementActivityIds = ["act-name-meaning-v1", "act-age-fill-v1", "act-age-typing-v1"];
@@ -281,7 +281,7 @@ export function OnboardingFlow() {
                   required
                 />
               </label>
-              <p className="text-sm text-ink/75">Just a name for your sessions — you can change it any time.</p>
+              <p className="text-sm text-ink/75">Just a name for your sessions. You can change it any time.</p>
             </>
           )}
 
@@ -297,8 +297,8 @@ export function OnboardingFlow() {
                     key={goal}
                     className={
                       selectedGoals.includes(goal)
-                        ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
-                        : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                        ? "rounded-xl bg-ink px-4 py-2 font-bold text-cream"
+                        : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold"
                     }
                     type="button"
                     aria-pressed={selectedGoals.includes(goal)}
@@ -391,8 +391,8 @@ export function OnboardingFlow() {
                     key={interest}
                     className={
                       selectedInterests.includes(interest)
-                        ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
-                        : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                        ? "rounded-xl bg-ink px-4 py-2 font-bold text-cream"
+                        : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold"
                     }
                     type="button"
                     aria-pressed={selectedInterests.includes(interest)}
@@ -475,8 +475,8 @@ export function OnboardingFlow() {
                       key={option.value}
                       className={
                         focusPreferences.includes(option.value)
-                          ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
-                          : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                          ? "rounded-xl bg-ink px-4 py-2 font-bold text-cream"
+                          : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold"
                       }
                       type="button"
                       aria-pressed={focusPreferences.includes(option.value)}
@@ -495,9 +495,9 @@ export function OnboardingFlow() {
                   value={speakingConfidence}
                   onChange={(event) => setSpeakingConfidence(event.target.value as "low" | "medium" | "high")}
                 >
-                  <option value="low">Nervous — ease me in</option>
-                  <option value="medium">Okay — normal pace</option>
-                  <option value="high">Confident — push me</option>
+                  <option value="low">Nervous, ease me in</option>
+                  <option value="medium">Okay, normal pace</option>
+                  <option value="high">Confident, push me</option>
                 </select>
               </label>
             </>

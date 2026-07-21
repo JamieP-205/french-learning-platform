@@ -46,6 +46,7 @@ export type ProfilePreferenceChanges = Partial<Pick<
   | "focusPreferences"
   | "speakingConfidence"
   | "speechSpeed"
+  | "themePreference"
 >>;
 
 export type SessionCreationOptions = {

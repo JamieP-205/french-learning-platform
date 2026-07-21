@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "verify:curriculum": "tsx content-tools/verify-curriculum.ts",
     "verify:coverage": "tsx content-tools/verify-coverage.ts",
-    "release:check": "npm run verify:curriculum && npm run verify:coverage && npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e && npm audit"
+    "check:copy": "tsx content-tools/check-copy.ts",
+    "release:check": "npm run verify:curriculum && npm run verify:coverage && npm run check:copy && npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e && npm audit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

@@ -22,7 +22,7 @@ function celebrationCopy(progress?: ProgressSnapshot) {
   if ((progress?.sessionsCompleted ?? 0) === 5) {
     return {
       eyebrow: "Garden milestone",
-      title: "Five sessions—and the garden has somewhere to gather.",
+      title: "Five sessions, and the garden has somewhere to gather.",
       detail: "You have returned often enough for your learning space to feel lived in.",
     };
   }
@@ -64,7 +64,7 @@ export function MilestoneCelebration({
         <div className="celebration-burst" aria-hidden="true">
           {Array.from({ length: 18 }, (_, index) => <i key={index} style={{ "--piece": index } as React.CSSProperties} />)}
         </div>
-        <Image alt="" className="mx-auto h-28 w-28 rounded-full border-4 border-white object-cover shadow-lg" height={224} src="/images/remy-companion.webp" width={224} />
+        <Image alt="" className="mx-auto h-28 w-28 rounded-full border-4 border-surface object-cover shadow-lg" height={224} src="/images/remy-companion.webp" width={224} />
         <p className="eyebrow mt-5">{copy.eyebrow}</p>
         <h2 className="mt-2 text-3xl font-black leading-tight" id="celebration-title">{copy.title}</h2>
         <p className="mx-auto mt-3 max-w-lg leading-7 text-ink/70">{copy.detail}</p>

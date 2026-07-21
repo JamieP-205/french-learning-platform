@@ -75,7 +75,7 @@ export function buildSessionPlan({
       freshFormat ?? repairCandidates[0],
       "repair",
       freshFormat && failedTypes.length > 0 && freshFormat !== repairCandidates[0]
-        ? "Same weak point, new format — a different activity type beats repeating the one that failed."
+        ? "Same weak point, new format. A different activity type beats repeating the one that failed."
         : "This revisits a pattern that has appeared more than once.",
     );
   }
@@ -165,7 +165,7 @@ export function buildSessionPlan({
     activities,
     completionReward:
       mode === "comeback"
-        ? "Welcome back—one useful sentence is a real restart."
+        ? "Welcome back. One useful sentence is a real restart."
         : profile.currentLevel === "A1"
           ? "A practical French win, earned through recall."
           : "Starting check saved. The app can now recommend a more useful next step.",

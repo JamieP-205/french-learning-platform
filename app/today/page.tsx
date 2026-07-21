@@ -202,7 +202,7 @@ export default function TodayPage() {
       <main className="py-10">
         <p className="eyebrow">Today</p>
         <h1 className="mt-2 text-4xl font-black">{firstName ? `${greeting}, ${firstName}.` : "Your French for today."}</h1>
-        {firstName && <p className="mt-3 text-lg text-ink/70">Here is the smallest useful step for your French today.</p>}
+        {firstName && <p className="mt-3 text-lg text-ink/70">One small step today keeps the thread going.</p>}
         <FirstRunTour />
 
         {learningMode === "loading" && (
@@ -264,7 +264,7 @@ export default function TodayPage() {
                 </div>
               </div>
 
-              <aside className="rounded-2xl bg-white/60 p-5">
+              <aside className="rounded-2xl bg-surface/60 p-5">
                 <p className="eyebrow">Why this next step?</p>
                 <h3 className="mt-2 font-black">{progress.nextAction.reason}</h3>
                 <p className="mt-3 text-sm text-ink/70">
@@ -298,10 +298,10 @@ export default function TodayPage() {
 
         {!loading && !error && !hasCompletedToday && plan && (
           <div className="mt-7 grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
-            <section className="card bg-ink text-white">
+            <section className="card bg-ink text-cream">
               <p className="text-sm font-bold text-amber">{plan.mode === "comeback" ? "WELCOME BACK" : "YOUR SESSION"}</p>
               <h2 className="mt-3 text-3xl font-black">{plan.missionTitle ?? "Your next French lesson."}</h2>
-              <p className="mt-3 max-w-xl text-white/75">{plan.weakFocus}</p>
+              <p className="mt-3 max-w-xl text-cream/75">{plan.weakFocus}</p>
               <div className="mt-7 flex flex-wrap items-center gap-4">
                 <button className="button-primary bg-coral hover:bg-coral/90" disabled={starting} onClick={() => start()}>
                   {starting
@@ -310,7 +310,7 @@ export default function TodayPage() {
                       ? "Resume where you left off"
                       : `Start ${plan.estimatedMinutes}-minute session`}
                 </button>
-                <span className="text-sm text-white/70">{plan.activities.length} activities</span>
+                <span className="text-sm text-cream/70">{plan.activities.length} activities</span>
               </div>
             </section>
 

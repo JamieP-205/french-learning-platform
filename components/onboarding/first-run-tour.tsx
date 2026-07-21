@@ -19,11 +19,11 @@ const tourSteps = [
   },
   {
     title: "Start small",
-    body: "Two minutes still counts — there is always a short session option. Ready? Start your first session below.",
+    body: "Two minutes still counts. There is always a short session option. Ready? Start your first session below.",
   },
 ];
 
-// Lightweight coach-marks shown when explicitly requested with ?tour=1 —
+// Lightweight coach-marks shown when explicitly requested with ?tour=1;
 // onboarding links here after a new learner finishes setup. Completion is
 // remembered locally so a stale ?tour=1 URL does not repeat it.
 export function FirstRunTour() {
@@ -61,15 +61,15 @@ export function FirstRunTour() {
       role="dialog"
       aria-modal="false"
       aria-label="Quick app tour"
-      className="fixed inset-x-3 bottom-20 z-50 mx-auto max-w-xl rounded-3xl border border-ink/15 bg-ink p-6 text-white shadow-2xl md:bottom-6"
+      className="fixed inset-x-3 bottom-20 z-50 mx-auto max-w-xl rounded-3xl border border-ink/15 bg-ink p-6 text-cream shadow-2xl md:bottom-6"
     >
       <p className="text-xs font-black uppercase tracking-wide text-amber">
         Quick tour · {stepIndex + 1} of {tourSteps.length}
       </p>
       <h2 className="mt-2 text-xl font-black">{step.title}</h2>
-      <p className="mt-2 text-sm leading-6 text-white/80">{step.body}</p>
+      <p className="mt-2 text-sm leading-6 text-cream/80">{step.body}</p>
       <div className="mt-5 flex items-center justify-between">
-        <button className="text-sm font-bold text-white/70 underline hover:text-white" onClick={finish}>
+        <button className="text-sm font-bold text-cream/70 underline hover:text-cream" onClick={finish}>
           Skip tour
         </button>
         {stepIndex < tourSteps.length - 1 ? (

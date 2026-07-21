@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { LearnerProfile } from "@/lib/domain/types";
 import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from "@/lib/auth/browser";
 import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
+import { syncStoredThemePreference } from "@/lib/theme/theme-preference";
 import { detectRuntimeTimeZone } from "@/lib/time/calendar-day";
 
 const focusOptions = [
@@ -47,6 +48,7 @@ export function AccountProfileSettings() {
         setProfile(payload.profile);
         setInterestText((payload.profile.interests ?? []).join(", "));
         syncStoredSpeechSpeed(payload.profile.speechSpeed);
+        syncStoredThemePreference(payload.profile.themePreference);
         setState("ready");
       } catch {
         if (!cancelled) {
@@ -88,6 +90,7 @@ export function AccountProfileSettings() {
           focusPreferences: profile.focusPreferences ?? [],
           speakingConfidence: profile.speakingConfidence ?? "medium",
           speechSpeed: profile.speechSpeed ?? "normal",
+          themePreference: profile.themePreference ?? "system",
         }),
       });
       const payload = await response.json();
@@ -98,6 +101,7 @@ export function AccountProfileSettings() {
       setProfile(payload.profile);
       setInterestText((payload.profile.interests ?? []).join(", "));
       syncStoredSpeechSpeed(payload.profile.speechSpeed);
+      syncStoredThemePreference(payload.profile.themePreference);
       setMessage("Saved. Your next session uses these straight away.");
     } catch {
       setError("Your settings could not be saved. Check your connection and try again.");
@@ -194,9 +198,9 @@ export function AccountProfileSettings() {
               setProfile({ ...profile, speakingConfidence: event.target.value as "low" | "medium" | "high" })
             }
           >
-            <option value="low">Nervous — ease me in</option>
-            <option value="medium">Okay — normal pace</option>
-            <option value="high">Confident — push me</option>
+            <option value="low">Nervous, ease me in</option>
+            <option value="medium">Okay, normal pace</option>
+            <option value="high">Confident, push me</option>
           </select>
         </label>
 
@@ -213,6 +217,21 @@ export function AccountProfileSettings() {
             <option value="slow">Slower, more time to hear each sound</option>
           </select>
         </label>
+
+        <label className="block font-bold">
+          Theme
+          <select
+            className="field"
+            value={profile.themePreference ?? "system"}
+            onChange={(event) =>
+              setProfile({ ...profile, themePreference: event.target.value as "light" | "dark" | "system" })
+            }
+          >
+            <option value="system">Match my device</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
       </div>
 
       <fieldset className="mt-5">
@@ -226,7 +245,7 @@ export function AccountProfileSettings() {
                 key={goal}
                 type="button"
                 aria-pressed={selected}
-                className={selected ? "rounded-xl bg-ink px-4 py-2 font-bold capitalize text-white" : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold capitalize"}
+                className={selected ? "rounded-xl bg-ink px-4 py-2 font-bold capitalize text-cream" : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold capitalize"}
                 onClick={() => setProfile({
                   ...profile,
                   learningGoals: selected
@@ -268,8 +287,8 @@ export function AccountProfileSettings() {
                 aria-pressed={selected}
                 className={
                   selected
-                    ? "rounded-xl bg-ink px-4 py-2 font-bold text-white"
-                    : "rounded-xl border border-ink/20 bg-white px-4 py-2 font-bold"
+                    ? "rounded-xl bg-ink px-4 py-2 font-bold text-cream"
+                    : "rounded-xl border border-ink/20 bg-surface px-4 py-2 font-bold"
                 }
                 onClick={() =>
                   setProfile({

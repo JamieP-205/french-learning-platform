@@ -40,7 +40,7 @@ export default function RoleplayPage() {
     if (result.choice.outcome === "repair" && missCount === 0) {
       setMissCount(1);
       setFeedback({
-        text: "Almost — try once more. Which option fits the situation and register better?",
+        text: "Almost. Try once more: which option fits the situation and register better?",
         outcome: "prompt",
       });
       return;
@@ -90,11 +90,11 @@ export default function RoleplayPage() {
               {roleplayScenarios.map((candidate) => (
                 <button
                   key={candidate.id}
-                  className={`w-full rounded-2xl p-4 text-left font-bold transition ${candidate.id === scenario.id ? "bg-ink text-white" : "bg-cream hover:bg-ink/10"}`}
+                  className={`w-full rounded-2xl p-4 text-left font-bold transition ${candidate.id === scenario.id ? "bg-ink text-cream" : "bg-cream hover:bg-ink/10"}`}
                   onClick={() => reset(candidate.id)}
                 >
                   <span className="block">{candidate.title}</span>
-                  <span className={`mt-1 block text-sm ${candidate.id === scenario.id ? "text-white/70" : "text-ink/65"}`}>
+                  <span className={`mt-1 block text-sm ${candidate.id === scenario.id ? "text-cream/70" : "text-ink/65"}`}>
                     {candidate.level} - {candidate.goal}
                   </span>
                 </button>
@@ -124,7 +124,7 @@ export default function RoleplayPage() {
                 <p className="text-xs font-black uppercase tracking-wide text-coral">
                   Turn {turnIndex + 1} of {scenario.turns.length}
                 </p>
-                <p className="mt-3 rounded-2xl bg-white p-4 font-bold">
+                <p className="mt-3 rounded-2xl bg-surface p-4 font-bold">
                   Other person: <span lang="fr">{turn.npcLine}</span>
                 </p>
                 <h3 className="mt-5 text-xl font-black">{turn.task}</h3>
@@ -132,7 +132,7 @@ export default function RoleplayPage() {
                   {turn.choices.map((choice) => (
                     <button
                       key={choice.id}
-                      className="rounded-2xl bg-white p-4 text-left font-bold transition hover:bg-moss/10 disabled:opacity-60"
+                      className="rounded-2xl bg-surface p-4 text-left font-bold transition hover:bg-moss/10 disabled:opacity-60"
                       disabled={Boolean(feedback)}
                       onClick={() => choose(choice.id)}
                     >
@@ -152,7 +152,7 @@ export default function RoleplayPage() {
 
             {feedback && (
               <div className={`${outcomeTone(feedback.outcome)} mt-5`} aria-live="polite">
-                <p className="font-black">{feedback.outcome === "strong" ? "Best choice" : feedback.outcome === "safe" ? "Safe choice" : feedback.outcome === "prompt" ? "Almost — try once more" : "Repair this"}</p>
+                <p className="font-black">{feedback.outcome === "strong" ? "Best choice" : feedback.outcome === "safe" ? "Safe choice" : feedback.outcome === "prompt" ? "Almost, try once more" : "Repair this"}</p>
                 <p className="mt-2">{feedback.text}</p>
                 {feedback.nextTurnIndex !== undefined && (
                   <button className="button-primary mt-4" type="button" onClick={continueRoleplay}>Continue roleplay</button>

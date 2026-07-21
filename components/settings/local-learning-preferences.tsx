@@ -13,6 +13,7 @@ import {
   type LocalLearningProgress,
 } from "@/lib/local-learning/progress";
 import { setStoredSpeechSpeed } from "@/lib/speech/speed-preference";
+import { setStoredThemePreference, type ThemePreference } from "@/lib/theme/theme-preference";
 
 const levels: LocalLearnerPreferences["currentLevel"][] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const goals: LocalLearnerPreferences["primaryGoal"][] = ["travel", "work", "relationships", "hobby", "food"];
@@ -70,6 +71,9 @@ export function LocalLearningPreferences() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const speechSpeed = formData.get("speechSpeed") === "slow" ? "slow" : "normal";
+    const themeRaw = String(formData.get("themePreference") ?? "system");
+    const themePreference: ThemePreference =
+      themeRaw === "light" || themeRaw === "dark" ? themeRaw : "system";
     const nextProgress = updateLocalLearnerPreferences(progress, {
       displayName:
         String(formData.get("displayName") ?? "").trim() || defaultLocalLearnerPreferences.displayName,
@@ -78,10 +82,12 @@ export function LocalLearningPreferences() {
       dailyMinutes: Number(formData.get("dailyMinutes") ?? defaultLocalLearnerPreferences.dailyMinutes),
       sessionEnergy: String(formData.get("sessionEnergy") ?? "normal") as LocalLearnerPreferences["sessionEnergy"],
       speechSpeed,
+      themePreference,
     });
 
     saveLocalLearningProgress(nextProgress);
     setStoredSpeechSpeed(speechSpeed);
+    setStoredThemePreference(themePreference);
     setSaved(true);
   }
 
@@ -151,13 +157,24 @@ export function LocalLearningPreferences() {
           </label>
         </div>
 
-        <label className="block font-bold">
-          Audio speed
-          <select className="field" name="speechSpeed" defaultValue={progress.preferences.speechSpeed}>
-            <option value="normal">Normal, tuned for learners</option>
-            <option value="slow">Slower, more time to hear each sound</option>
-          </select>
-        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block font-bold">
+            Audio speed
+            <select className="field" name="speechSpeed" defaultValue={progress.preferences.speechSpeed}>
+              <option value="normal">Normal, tuned for learners</option>
+              <option value="slow">Slower, more time to hear each sound</option>
+            </select>
+          </label>
+
+          <label className="block font-bold">
+            Theme
+            <select className="field" name="themePreference" defaultValue={progress.preferences.themePreference}>
+              <option value="system">Match my device</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+        </div>
 
         <div className="rounded-2xl bg-cream p-4 text-sm text-ink/75" aria-live="polite">
           <p className="font-black">{summary.headline}</p>

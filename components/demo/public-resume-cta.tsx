@@ -59,9 +59,9 @@ export function PublicResumeCta() {
       <h2 className="mt-2 text-2xl font-black">{nextAction.title}</h2>
       <p className="mt-2 text-sm text-ink/75">{nextAction.reason}</p>
       <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-        <p className="rounded-2xl bg-white p-3 font-bold">{progress.sessionsCompleted} session{progress.sessionsCompleted === 1 ? "" : "s"}</p>
-        <p className="rounded-2xl bg-white p-3 font-bold">{accuracy}% accuracy</p>
-        <p className="rounded-2xl bg-white p-3 font-bold">{preferenceSummary.headline}</p>
+        <p className="rounded-2xl bg-surface p-3 font-bold">{progress.sessionsCompleted} session{progress.sessionsCompleted === 1 ? "" : "s"}</p>
+        <p className="rounded-2xl bg-surface p-3 font-bold">{accuracy}% accuracy</p>
+        <p className="rounded-2xl bg-surface p-3 font-bold">{preferenceSummary.headline}</p>
       </div>
       <div className="mt-5 flex flex-wrap gap-3">
         <Link className="button-primary" href={nextAction.href}>

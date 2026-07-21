@@ -95,21 +95,21 @@ export function ActivityTeachingGate({
                 {step.function}
               </p>
 
-              <div className="mt-5 rounded-xl border border-ink/10 bg-white p-4">
+              <div className="mt-5 rounded-xl border border-ink/10 bg-surface p-4">
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-ink/70">Word by word</p>
                 {words.length > 0 && (
                   <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
                     {words.map((item, index) => (
                       <div key={`${item.form}-${item.meaning}-${index}`} className="flex gap-2">
                         <dt lang="fr" className="font-black">{item.form}</dt>
-                        <dd className="text-ink/70">— {item.meaning}</dd>
+                        <dd className="text-ink/70">{item.meaning}</dd>
                       </div>
                     ))}
                   </dl>
                 )}
               </div>
 
-              <details className="mt-4 rounded-xl border border-ink/10 bg-white p-4">
+              <details className="mt-4 rounded-xl border border-ink/10 bg-surface p-4">
                 <summary className="cursor-pointer font-black">Grammar and more examples</summary>
                 <div className="mt-3 space-y-4 text-sm leading-6">
                   <p>

@@ -99,8 +99,8 @@ export default function SpeakPage() {
           <p className="eyebrow">Shadowing</p>
           <h2 className="mt-2 text-2xl font-black">Speak along, not after.</h2>
           <p className="mt-3 max-w-2xl text-ink/75">
-            Play a phrase slowly and say it at the same time as the voice. Shadowing trains rhythm and confidence —
-            do each phrase two or three times, no scoring.
+            Play a phrase slowly and say it at the same time as the voice. Shadowing trains rhythm and
+            confidence. Do each phrase two or three times, no scoring.
           </p>
           <div className="mt-5 flex flex-wrap items-start gap-3">
             {SHADOWING_PHRASES.map((phrase, phraseIndex) => (

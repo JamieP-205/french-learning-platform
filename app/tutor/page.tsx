@@ -28,13 +28,13 @@ export default function TutorPage() {
         </section>
 
         <section className="mt-7 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="card bg-ink text-white">
+          <div className="card bg-ink text-cream">
             <p className="text-sm font-bold uppercase tracking-wide text-amber">Lesson help</p>
             <h2 className="mt-2 text-3xl font-black">Explanations based on reviewed course material.</h2>
-            <p className="mt-3 text-white/75">
+            <p className="mt-3 text-cream/75">
               Choose a common question below. The answer comes from reviewed lesson notes and does not change your score.
             </p>
-            <div className="mt-6 rounded-2xl bg-white/10 p-4 text-sm text-white/75">
+            <div className="mt-6 rounded-2xl bg-surface/10 p-4 text-sm text-cream/75">
               If a question goes beyond the available lessons, you will be directed to the closest relevant topic.
             </div>
           </div>

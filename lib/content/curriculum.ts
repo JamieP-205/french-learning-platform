@@ -35,7 +35,7 @@ const INTRODUCTION_CONCEPTS: ConceptDefinition[] = [
       metalinguisticRule:
         "The reflexive verb s'appeler is used for names. With je, the pronoun and verb elide: me appelle becomes m'appelle.",
       positiveExamples: ["Je m'appelle Jamie.", "Je m'appelle Samira."],
-      contrastExamples: ["Je suis Jamie. — understandable, but not the taught neutral introduction pattern."],
+      contrastExamples: ["Je suis Jamie. (understandable, but not the taught neutral introduction pattern.)"],
       function: "Use it to introduce yourself in an everyday neutral conversation.",
       registerNote: "Neutral and safe with strangers, colleagues, and friends.",
       inputSegment: {
@@ -85,7 +85,7 @@ const INTRODUCTION_CONCEPTS: ConceptDefinition[] = [
       meaning: "I come from Belfast.",
       metalinguisticRule: "Venir de identifies where someone comes from. Je takes the present-tense form viens.",
       positiveExamples: ["Je viens de Belfast.", "Je viens de Lyon."],
-      contrastExamples: ["Je suis de Belfast. — possible for origin, but not the venir de pattern practised here."],
+      contrastExamples: ["Je suis de Belfast. (possible for origin, but not the venir de pattern practised here.)"],
       function: "Use it to say where you come from.",
       inputSegment: {
         text: "Je viens de Belfast.",
@@ -142,7 +142,7 @@ const INTRODUCTION_CONCEPTS: ConceptDefinition[] = [
       metalinguisticRule:
         "Moi is a stressed pronoun. C'est introduces the name as a relaxed spoken alternative to je m'appelle.",
       positiveExamples: ["Moi, c'est Jamie.", "Moi, c'est Samira."],
-      contrastExamples: ["Je m'appelle Jamie. — neutral", "Moi, c'est Jamie. — casual"],
+      contrastExamples: ["Je m'appelle Jamie. (neutral)", "Moi, c'est Jamie. (casual)"],
       function: "Use it for a relaxed spoken introduction.",
       registerNote: "Casual. Prefer je m'appelle as the neutral default with strangers or in formal settings.",
       inputSegment: {
@@ -225,7 +225,7 @@ const CAFE_CONCEPTS: ConceptDefinition[] = [
       metalinguisticRule:
         "Je voudrais is a conventional polite request. Je veux expresses a direct want and can sound blunt as a default order.",
       positiveExamples: ["Je voudrais un café, s'il vous plaît.", "Bonjour, je voudrais un café."],
-      contrastExamples: ["Je veux un café. — direct", "Je voudrais un café. — safer polite default"],
+      contrastExamples: ["Je veux un café. (direct)", "Je voudrais un café. (safer polite default)"],
       function: "Use it to order an item politely.",
       registerNote: "Neutral and polite for cafés, restaurants, and shops.",
       inputSegment: {
@@ -289,7 +289,7 @@ const CAFE_CONCEPTS: ConceptDefinition[] = [
       form: "C'est combien ?",
       metalinguisticRule: "C'est combines ce and est. Combien asks about an amount or price.",
       positiveExamples: ["C'est combien ?", "Un café, c'est combien ?"],
-      contrastExamples: ["Où est le café ? — asks where", "C'est combien ? — asks the price"],
+      contrastExamples: ["Où est le café ? (asks where)", "C'est combien ? (asks the price)"],
       function: "Use it to ask how much something costs.",
       inputSegment: {
         text: "C'est combien ?",
@@ -403,7 +403,7 @@ const TRAVEL_CONCEPTS: ConceptDefinition[] = [
       form: "Où est + place ?",
       metalinguisticRule: "Où asks where. Est is the il/elle form of être, followed here by a place noun.",
       positiveExamples: ["Où est la gare ?", "Où est le café ?"],
-      contrastExamples: ["Quand part le train ? — asks when", "Où est la gare ? — asks where"],
+      contrastExamples: ["Quand part le train ? (asks when)", "Où est la gare ? (asks where)"],
       function: "Use it to ask where a place is.",
       inputSegment: {
         text: "Où est la gare ?",
@@ -424,7 +424,7 @@ const TRAVEL_CONCEPTS: ConceptDefinition[] = [
       form: "Je voudrais un billet pour + destination.",
       metalinguisticRule: "Je voudrais makes the request polite. Pour introduces the destination on the ticket.",
       positiveExamples: ["Je voudrais un billet pour Paris.", "Je voudrais un billet pour Lyon."],
-      contrastExamples: ["Je veux un billet. — direct", "Je voudrais un billet. — safer polite default"],
+      contrastExamples: ["Je veux un billet. (direct)", "Je voudrais un billet. (safer polite default)"],
       function: "Use it to buy a ticket for a destination.",
       registerNote: "Neutral and polite for ticket counters.",
       inputSegment: {
@@ -454,7 +454,7 @@ const TRAVEL_CONCEPTS: ConceptDefinition[] = [
       form: "À quelle heure part + transport ?",
       metalinguisticRule: "À quelle heure asks at what time. Part is the present-tense il/elle form of partir.",
       positiveExamples: ["À quelle heure part le train ?", "À quelle heure part le bus ?"],
-      contrastExamples: ["Où est le train ? — asks where", "À quelle heure part le train ? — asks when it leaves"],
+      contrastExamples: ["Où est le train ? (asks where)", "À quelle heure part le train ? (asks when it leaves)"],
       function: "Use it to ask when transport leaves.",
       inputSegment: {
         text: "À quelle heure part le train ?",
@@ -485,7 +485,7 @@ const TRAVEL_CONCEPTS: ConceptDefinition[] = [
       metalinguisticRule:
         "Pouvez-vous uses inversion with vous to make a polite question. Répéter is the infinitive after pouvez.",
       positiveExamples: ["Pouvez-vous répéter, s'il vous plaît ?", "Pouvez-vous parler lentement ?"],
-      contrastExamples: ["Répète ! — informal command", "Pouvez-vous répéter ? — polite request"],
+      contrastExamples: ["Répète ! (informal command)", "Pouvez-vous répéter ? (polite request)"],
       function: "Use it to ask someone to repeat what they said.",
       registerNote: "Formal/polite vous; safe with strangers.",
       inputSegment: {
@@ -517,7 +517,7 @@ const TRAVEL_CONCEPTS: ConceptDefinition[] = [
       form: "Je suis perdu / perdue.",
       metalinguisticRule: "Perdu agrees with the speaker: perdu for masculine, perdue for feminine.",
       positiveExamples: ["Je suis perdu.", "Je suis perdue."],
-      contrastExamples: ["Je suis perdu. — masculine speaker", "Je suis perdue. — feminine speaker"],
+      contrastExamples: ["Je suis perdu. (masculine speaker)", "Je suis perdue. (feminine speaker)"],
       function: "Use it to say that you are lost.",
       registerNote: "Neutral. Either agreement is accepted according to the speaker.",
       inputSegment: {
@@ -606,7 +606,7 @@ export const ROLEPLAY_CONCEPTS: ConceptDefinition[] = [
       metalinguisticRule:
         "Je voudrais is the safer polite request. Je prends is neutral; je veux is more direct and is not the beginner default with a server.",
       positiveExamples: ["Bonjour, je voudrais un café, s'il vous plaît.", "Je prends un café, s'il vous plaît."],
-      contrastExamples: ["Je veux un café. — too direct as the opening default"],
+      contrastExamples: ["Je veux un café. (too direct as the opening default)"],
       function: "Use the polite request to open a café exchange.",
       registerNote: "Use vous with a server unless invited to use tu.",
       inputSegment: {
@@ -648,7 +648,7 @@ export const ROLEPLAY_CONCEPTS: ConceptDefinition[] = [
       form: "C'est combien ?",
       metalinguisticRule: "C'est combien ? is the everyday price question. Quel est le prix ? is correct but more formal.",
       positiveExamples: ["C'est combien ?", "Quel est le prix ?"],
-      contrastExamples: ["Combien café ? ✗ — it lacks the required structure"],
+      contrastExamples: ["Combien café ? ✗ (it lacks the required structure)"],
       function: "Use it to ask the price at the counter.",
       inputSegment: {
         text: "Bien sûr. Autre chose ? — C'est combien ?",
@@ -684,7 +684,7 @@ export const ROLEPLAY_CONCEPTS: ConceptDefinition[] = [
       form: "Merci, bonne journée.",
       metalinguisticRule: "Bonne agrees with the feminine noun journée. Merci makes the service-exchange close explicit.",
       positiveExamples: ["Merci, bonne journée.", "Merci beaucoup."],
-      contrastExamples: ["OK. — understandable but misses the polite close"],
+      contrastExamples: ["OK. (understandable but misses the polite close)"],
       function: "Use it to close a service exchange politely.",
       inputSegment: {
         text: "Deux euros cinquante. — Merci, bonne journée.",
@@ -715,7 +715,7 @@ export const ROLEPLAY_CONCEPTS: ConceptDefinition[] = [
       metalinguisticRule:
         "Excusez-moi and s'il vous plaît frame the location question politely when addressing a stranger.",
       positiveExamples: ["Excusez-moi, où est la gare, s'il vous plaît ?", "Où est la gare ?"],
-      contrastExamples: ["La gare ? — may work with pointing, but is not a reliable polite sentence"],
+      contrastExamples: ["La gare ? (may work with pointing, but is not a reliable polite sentence)"],
       function: "Use it to ask a stranger where the station is.",
       registerNote: "Polite vous form for a stranger.",
       inputSegment: {
@@ -757,7 +757,7 @@ export const ROLEPLAY_CONCEPTS: ConceptDefinition[] = [
       metalinguisticRule:
         "Pouvez-vous uses polite inversion. The infinitive répéter follows the conjugated modal pouvez.",
       positiveExamples: ["Pouvez-vous répéter, s'il vous plaît ?", "Pouvez-vous parler plus lentement ?"],
-      contrastExamples: ["Quoi ? — too abrupt for a stranger"],
+      contrastExamples: ["Quoi ? (too abrupt for a stranger)"],
       function: "Use it to recover when you did not understand a stranger.",
       registerNote: "Formal/polite vous.",
       inputSegment: {
@@ -990,7 +990,7 @@ export const TOPIC_PREVIEW_CONCEPTS: ConceptDefinition[] = [
       form: "Je travaille dans le marketing.",
       metalinguisticRule: "Use travailler dans before a field or sector to say the area you work in.",
       positiveExamples: ["Je travaille dans le marketing.", "Je travaille dans la finance."],
-      contrastExamples: ["Je suis le marketing. — this does not express your field of work"],
+      contrastExamples: ["Je suis le marketing. (this does not express your field of work)"],
       function: "Use it to tell someone your field of work.",
       registerNote: "Neutral and suitable at work.",
       inputSegment: {
@@ -1019,7 +1019,7 @@ export const TOPIC_PREVIEW_CONCEPTS: ConceptDefinition[] = [
       form: "Je pense que + statement.",
       metalinguisticRule: "Je pense que introduces an opinion; the statement follows que.",
       positiveExamples: ["Je pense que c'est une bonne idée.", "Je pense que c'est pratique."],
-      contrastExamples: ["Je pense c'est une bonne idée. — spoken, but the taught neutral form keeps que"],
+      contrastExamples: ["Je pense c'est une bonne idée. (spoken, but the taught neutral form keeps que)"],
       function: "Use it to give a simple opinion.",
       registerNote: "Neutral everyday French.",
       inputSegment: {
@@ -1054,7 +1054,7 @@ export const TOPIC_PREVIEW_CONCEPTS: ConceptDefinition[] = [
       form: "Comment dit-on ça en français ?",
       metalinguisticRule: "Dit-on is an inversion question: the verb comes before the subject on.",
       positiveExamples: ["Comment dit-on ça en français ?", "Comment dit-on train en français ?"],
-      contrastExamples: ["Comment ça dit ? — not the taught standard question"],
+      contrastExamples: ["Comment ça dit ? (not the taught standard question)"],
       function: "Use it to ask for a French word you do not know.",
       registerNote: "Neutral and reusable with teachers, friends, or strangers.",
       inputSegment: {
