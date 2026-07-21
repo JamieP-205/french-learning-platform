@@ -7,6 +7,7 @@ import { RemyArt, type RemyPose } from "@/components/companion/remy-art";
 import { getBrowserAuthHeaders } from "@/lib/auth/browser";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
 import { syncStoredCompanionQuiet } from "@/lib/companion/quiet-preference";
+import { syncStoredGamification } from "@/lib/progress/gamification-preference";
 import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
 import { syncStoredThemePreference } from "@/lib/theme/theme-preference";
 
@@ -16,6 +17,7 @@ type ProfileSummary = {
   speechSpeed?: "normal" | "slow";
   themePreference?: "light" | "dark" | "system";
   companionQuiet?: boolean;
+  gamification?: "full" | "quiet" | "off";
 };
 
 function routePhrase(pathname: string) {
@@ -64,6 +66,7 @@ export function RemyCompanion() {
         syncStoredSpeechSpeed((nextProfile as ProfileSummary | undefined)?.speechSpeed);
         syncStoredThemePreference((nextProfile as ProfileSummary | undefined)?.themePreference);
         syncStoredCompanionQuiet((nextProfile as ProfileSummary | undefined)?.companionQuiet);
+        syncStoredGamification((nextProfile as ProfileSummary | undefined)?.gamification);
       } catch {
         // Remy remains useful with route-aware local encouragement.
       }
@@ -97,7 +100,7 @@ export function RemyCompanion() {
     if (choice === "streak") {
       setReply(progress
         ? progress.currentStreak > 0
-          ? `Your thread is ${progress.currentStreak} day${progress.currentStreak === 1 ? "" : "s"} long. It is proof you returned, not a reason to panic.`
+          ? `Your thread is ${progress.currentStreak} ${progress.streakUnit === "week" ? "week" : "day"}${progress.currentStreak === 1 ? "" : "s"} long. It is proof you returned, not a reason to panic.`
           : "Your streak starts after one completed lesson. We are building a thread, not a trap."
         : "Sign in and finish a lesson to grow a saved streak. No-account practice still counts for you, just on this device.");
       return;

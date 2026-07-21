@@ -27,6 +27,7 @@ import {
   type LessonRemyEvent,
 } from "@/lib/companion/lesson-remy-triggers";
 import { getConceptDefinitionsForActivity } from "@/lib/content/curriculum";
+import { useGamification } from "@/lib/progress/gamification-preference";
 import type { SessionStats } from "@/lib/learning/session-stats";
 
 type RestartRequest = {
@@ -113,6 +114,7 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
   const [remyState, setRemyState] = useState(initialLessonRemyState);
   const remyDispatch = (event: LessonRemyEvent) =>
     setRemyState((current) => reduceLessonRemy(current, event));
+  const gamification = useGamification();
 
   const planned = session?.plan.activities[session.currentIndex];
   const displayActivity = answeredActivity ?? planned?.activity;
@@ -258,7 +260,8 @@ export function LessonPlayer({ sessionId }: { sessionId: string }) {
   }
 
   function continueSession() {
-    if (session?.completedAt && !showCelebration) {
+    // With celebrations off, a finished session goes straight to Progress.
+    if (session?.completedAt && !showCelebration && gamification !== "off") {
       setShowCelebration(true);
       return;
     }

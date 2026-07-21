@@ -1,6 +1,60 @@
 import { describe, expect, it } from "vitest";
 import { advanceStreak } from "../lib/learning/streak";
 
+describe("weekly streak cadence", () => {
+  it("counts one unit per calendar week, however often the learner practises", () => {
+    // Monday, then Wednesday of the same week: still one week.
+    expect(
+      advanceStreak(
+        { currentStreak: 2, streakFreezes: 0, lastCompletedAt: "2026-07-13T09:00:00.000Z" },
+        new Date("2026-07-15T09:00:00.000Z"),
+        "weekly",
+      ),
+    ).toMatchObject({ currentStreak: 2, usedFreeze: false });
+  });
+
+  it("advances when a session lands in the next calendar week", () => {
+    // Friday, then Monday of the following week.
+    expect(
+      advanceStreak(
+        { currentStreak: 2, streakFreezes: 0, lastCompletedAt: "2026-07-17T09:00:00.000Z" },
+        new Date("2026-07-20T09:00:00.000Z"),
+        "weekly",
+      ),
+    ).toMatchObject({ currentStreak: 3, usedFreeze: false });
+  });
+
+  it("absorbs one fully missed week with a freeze", () => {
+    // Week of 6 July, nothing in the week of 13 July, back on 20 July.
+    expect(
+      advanceStreak(
+        { currentStreak: 4, streakFreezes: 1, lastCompletedAt: "2026-07-08T09:00:00.000Z" },
+        new Date("2026-07-20T09:00:00.000Z"),
+        "weekly",
+      ),
+    ).toMatchObject({ currentStreak: 5, streakFreezes: 0, usedFreeze: true });
+  });
+
+  it("restarts after a longer gap, with no guilt mechanics", () => {
+    expect(
+      advanceStreak(
+        { currentStreak: 9, streakFreezes: 0, lastCompletedAt: "2026-06-01T09:00:00.000Z" },
+        new Date("2026-07-20T09:00:00.000Z"),
+        "weekly",
+      ),
+    ).toMatchObject({ currentStreak: 1, usedFreeze: false });
+  });
+
+  it("leaves daily behaviour untouched when no mode is given", () => {
+    expect(
+      advanceStreak(
+        { currentStreak: 3, streakFreezes: 0, lastCompletedAt: "2026-07-19T09:00:00.000Z" },
+        new Date("2026-07-20T09:00:00.000Z"),
+      ),
+    ).toMatchObject({ currentStreak: 4 });
+  });
+});
+
 describe("streak advancement", () => {
   it("starts a streak on the first completed session", () => {
     expect(advanceStreak({ currentStreak: 0, streakFreezes: 0 }, new Date("2026-07-01T18:00:00Z"))).toMatchObject({

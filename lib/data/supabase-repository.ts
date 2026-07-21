@@ -140,6 +140,8 @@ export class SupabaseLearningRepository implements LearningRepository {
       speechSpeed: ((row.speech_speed as "normal" | "slow") ?? "normal"),
       themePreference: ((row.theme_preference as "light" | "dark" | "system") ?? "system"),
       companionQuiet: Boolean(row.companion_quiet),
+      gamification: ((row.gamification as "full" | "quiet" | "off") ?? "full"),
+      streakMode: ((row.streak_mode as "daily" | "weekly") ?? "daily"),
       ageConfirmed: Boolean(row.age_confirmed),
       country: (row.country as string) ?? "",
       birthDate: (row.birth_date as string) ?? undefined,
@@ -168,6 +170,8 @@ export class SupabaseLearningRepository implements LearningRepository {
       speech_speed: profile.speechSpeed ?? "normal",
       theme_preference: profile.themePreference ?? "system",
       companion_quiet: profile.companionQuiet ?? false,
+      gamification: profile.gamification ?? "full",
+      streak_mode: profile.streakMode ?? "daily",
       age_confirmed: profile.ageConfirmed ?? false,
       country: profile.country ?? null,
       birth_date: profile.birthDate ?? null,
@@ -195,6 +199,8 @@ export class SupabaseLearningRepository implements LearningRepository {
     if (changes.speechSpeed !== undefined) update.speech_speed = changes.speechSpeed;
     if (changes.themePreference !== undefined) update.theme_preference = changes.themePreference;
     if (changes.companionQuiet !== undefined) update.companion_quiet = changes.companionQuiet;
+    if (changes.gamification !== undefined) update.gamification = changes.gamification;
+    if (changes.streakMode !== undefined) update.streak_mode = changes.streakMode;
     if (Object.keys(update).length === 0) return this.getProfile(userId);
 
     const { error } = await this.client.from("profiles").update(update).eq("id", userId);
@@ -566,12 +572,21 @@ export class SupabaseLearningRepository implements LearningRepository {
   async getProgress(userId: string): Promise<ProgressSnapshot> {
     const profile = await this.getProfile(userId);
     const mission = getSeedMission();
-    const [attempts, reviews, mistakes] = await Promise.all([
+    const [attempts, reviews, mistakes, completedSessions] = await Promise.all([
       this.client.rpc("get_progress_attempt_signals", { p_user_id: userId }),
       this.getDueReviews(userId),
       this.client.rpc("get_progress_mistake_signals", { p_user_id: userId }),
+      this.client
+        .from("sessions")
+        .select("completed_at")
+        .eq("user_id", userId)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(60),
     ]);
-    if (attempts.error || mistakes.error) throw attempts.error ?? mistakes.error;
+    if (attempts.error || mistakes.error || completedSessions.error) {
+      throw attempts.error ?? mistakes.error ?? completedSessions.error;
+    }
 
     return buildProgressSnapshot({
       profile,
@@ -596,6 +611,9 @@ export class SupabaseLearningRepository implements LearningRepository {
       })),
       missionTitle: mission.title,
       missionActivityCount: mission.activities.length,
+      sessionCompletionTimes: ((completedSessions.data ?? []) as Row[])
+        .map((row) => row.completed_at as string)
+        .filter(Boolean),
     });
   }
 

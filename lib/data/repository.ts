@@ -48,6 +48,8 @@ export type ProfilePreferenceChanges = Partial<Pick<
   | "speechSpeed"
   | "themePreference"
   | "companionQuiet"
+  | "gamification"
+  | "streakMode"
 >>;
 
 export type SessionCreationOptions = {

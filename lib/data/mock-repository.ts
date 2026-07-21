@@ -355,12 +355,16 @@ export class MockLearningRepository implements LearningRepository {
       });
       if (isComplete && hasCompletionCredit) {
         const profile = (await this.getProfile(input.userId)) ?? defaultProfile(input.userId);
-        const streak = advanceStreak({
-          currentStreak: profile.currentStreak,
-          streakFreezes: profile.streakFreezes ?? 0,
-          lastCompletedAt: profile.lastCompletedAt,
-          timeZone: profile.timeZone,
-        });
+        const streak = advanceStreak(
+          {
+            currentStreak: profile.currentStreak,
+            streakFreezes: profile.streakFreezes ?? 0,
+            lastCompletedAt: profile.lastCompletedAt,
+            timeZone: profile.timeZone,
+          },
+          new Date(),
+          profile.streakMode ?? "daily",
+        );
         await this.saveProfile({
           ...profile,
           lastCompletedAt: streak.lastCompletedAt,
@@ -399,6 +403,9 @@ export class MockLearningRepository implements LearningRepository {
       mistakes,
       missionTitle: mission.title,
       missionActivityCount: mission.activities.length,
+      sessionCompletionTimes: [...store.sessions.values()]
+        .filter((session) => session.userId === userId && session.completedAt)
+        .map((session) => session.completedAt as string),
     });
   }
 

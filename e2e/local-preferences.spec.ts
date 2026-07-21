@@ -33,6 +33,21 @@ test("no-account learner preferences personalize the public path", async ({ page
   await expect(page.getByText("Data saved only on this device has been reset.")).toBeVisible();
 });
 
+test("turning celebrations off hides streak and achievement counters", async ({ page }) => {
+  await page.goto("/today");
+  await expect(page.getByText("Streak", { exact: true })).toBeVisible();
+
+  await page.goto("/settings?mode=local");
+  await page.getByLabel("Celebrations").selectOption("off");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByText(/today and progress now use these settings/i)).toBeVisible();
+
+  await page.goto("/progress");
+  await expect(page.getByText("Sessions", { exact: true })).toBeVisible();
+  await expect(page.getByText("Streak", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Achievements", { exact: true })).toHaveCount(0);
+});
+
 test("the audio-speed choice survives a reload and slows default playback", async ({ page }) => {
   await page.addInitScript(() => {
     const testWindow = window as typeof window & { __mediaCalls: Array<{ source: string; rate: number }> };

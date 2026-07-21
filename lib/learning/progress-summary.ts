@@ -10,7 +10,8 @@ import {
   isProductiveActivityType,
   isQualifyingProductiveSuccess,
 } from "@/lib/learning/response-transition";
-import { calendarDaysSince } from "@/lib/time/calendar-day";
+import { computeTopicBadges } from "@/lib/progress/topic-badges";
+import { calendarDayKey, calendarDaysSince } from "@/lib/time/calendar-day";
 
 type AttemptSignal = {
   activityId: string;
@@ -183,6 +184,7 @@ export function buildProgressSnapshot({
   mistakes,
   missionTitle,
   missionActivityCount,
+  sessionCompletionTimes = [],
   now = new Date(),
 }: {
   profile: LearnerProfile | null;
@@ -191,6 +193,7 @@ export function buildProgressSnapshot({
   mistakes: MistakeSignal[];
   missionTitle: string;
   missionActivityCount: number;
+  sessionCompletionTimes?: string[];
   now?: Date;
 }): ProgressSnapshot {
   const dueReviews = reviews.filter((review) => new Date(review.dueAt) <= now);
@@ -416,6 +419,7 @@ export function buildProgressSnapshot({
   return {
     sessionsCompleted: profile?.completedSessions ?? 0,
     currentStreak: profile?.currentStreak ?? 0,
+    streakUnit: profile?.streakMode === "weekly" ? "week" : "day",
     streakFreezes: profile?.streakFreezes ?? 0,
     phrasesLearned: recalledContentItems.size,
     mistakesFixed,
@@ -434,6 +438,22 @@ export function buildProgressSnapshot({
     },
     recentWins,
     achievements,
+    recentSessionDays: [
+      ...new Set(sessionCompletionTimes.map((time) => calendarDayKey(time, profile?.timeZone))),
+    ]
+      .sort()
+      .reverse()
+      .slice(0, 14),
+    topicBadges: computeTopicBadges(
+      attempts.map((attempt) => ({
+        activityId: attempt.activityId,
+        isCorrect: attempt.isCorrect,
+        evidenceKind:
+          attempt.evidenceKind ?? (attempt.activity ? inferEvidenceKind(attempt.activity.type) : undefined),
+        completed: attempt.completed,
+        productive: attempt.activity ? isProductiveActivityType(attempt.activity.type) : false,
+      })),
+    ),
     skills: [
       {
         label: "Recall",

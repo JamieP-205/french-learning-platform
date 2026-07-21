@@ -285,14 +285,20 @@ describe("repository response transition parity", () => {
         speechSpeed: "slow",
         themePreference: "dark",
         companionQuiet: true,
+        gamification: "quiet",
+        streakMode: "weekly",
       });
       expect(updated?.speechSpeed).toBe("slow");
       expect(updated?.themePreference).toBe("dark");
       expect(updated?.companionQuiet).toBe(true);
+      expect(updated?.gamification).toBe("quiet");
+      expect(updated?.streakMode).toBe("weekly");
       const reloaded = await repository.getProfile(userId);
       expect(reloaded?.speechSpeed).toBe("slow");
       expect(reloaded?.themePreference).toBe("dark");
       expect(reloaded?.companionQuiet).toBe(true);
+      expect(reloaded?.gamification).toBe("quiet");
+      expect(reloaded?.streakMode).toBe("weekly");
     }
   });
 

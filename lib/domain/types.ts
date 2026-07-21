@@ -247,6 +247,11 @@ export type LearnerProfile = {
   // Keep Remy from offering help during lessons. He always asks first; this
   // silences even the asking.
   companionQuiet?: boolean;
+  // How loudly progress celebrates. Learning and streak accrual never change;
+  // this only governs what is shown.
+  gamification?: "full" | "quiet" | "off";
+  // The streak's clock: daily, or weekly for learners with a weekly rhythm.
+  streakMode?: "daily" | "weekly";
   // Signup uses a 13+ self-declaration instead of per-country birth-date policies.
   ageConfirmed?: boolean;
   country?: string;
@@ -361,6 +366,8 @@ export type ActivityAttempt = {
 export type ProgressSnapshot = {
   sessionsCompleted: number;
   currentStreak: number;
+  // The streak's unit, following the learner's cadence choice.
+  streakUnit: "day" | "week";
   streakFreezes: number;
   phrasesLearned: number;
   mistakesFixed: number;
@@ -399,6 +406,17 @@ export type ProgressSnapshot = {
     description: string;
     earned: boolean;
     detail: string;
+  }[];
+  // Local calendar days with a completed session, most recent first, up to
+  // fourteen. Feeds the schedule view's two-week picture.
+  recentSessionDays: string[];
+  // Earned by productive evidence only; recognition and reveals never count.
+  topicBadges: {
+    id: string;
+    topicSlug: string;
+    title: string;
+    detail: string;
+    earned: boolean;
   }[];
   skills: {
     label: string;

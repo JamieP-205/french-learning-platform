@@ -9,6 +9,7 @@ import { PublicLocalProgressPanel } from "@/components/demo/public-local-learnin
 import { LearningModeUnavailable } from "@/components/learning-mode-unavailable";
 import { LearningGarden } from "@/components/progress/learning-garden";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
+import { useGamification } from "@/lib/progress/gamification-preference";
 
 function evidenceLabel(score: number | null, practiceAttempts: number) {
   if (score === null) {
@@ -44,6 +45,7 @@ function getServerCompletionLocationSnapshot() {
 
 export default function ProgressPage() {
   const learningMode = useLearningMode();
+  const gamification = useGamification();
   const [progress, setProgress] = useState<ProgressSnapshot>();
   const [error, setError] = useState<string>();
   const showCompletion = useSyncExternalStore(
@@ -182,6 +184,29 @@ export default function ProgressPage() {
                     </article>
                   ))}
                 </div>
+                {gamification !== "off" && progress.topicBadges.length > 0 && (
+                  <div className="mt-6 border-t border-ink/10 pt-5">
+                    <p className="eyebrow">Topic badges</p>
+                    <p className="mt-1 text-sm text-ink/70">
+                      Earned only by producing the French yourself. Multiple-choice taps and revealed
+                      answers never count.
+                    </p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {progress.topicBadges.map((badge) => (
+                        <article
+                          key={badge.id}
+                          className={badge.earned ? "rounded-2xl bg-moss/10 p-4" : "rounded-2xl bg-cream p-4 opacity-75"}
+                        >
+                          <p className="text-xs font-black uppercase tracking-wide text-coral">
+                            {badge.earned ? "Earned" : "In progress"}
+                          </p>
+                          <h3 className="mt-2 font-black">{badge.title}</h3>
+                          <p className="mt-1 text-sm text-ink/70">{badge.detail}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 

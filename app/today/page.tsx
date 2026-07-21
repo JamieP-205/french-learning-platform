@@ -11,6 +11,7 @@ import { LearningModeUnavailable } from "@/components/learning-mode-unavailable"
 import { FirstRunTour } from "@/components/onboarding/first-run-tour";
 import { LearningScheduleCard } from "@/components/schedule/learning-schedule-card";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
+import { useGamification } from "@/lib/progress/gamification-preference";
 
 type ErrorAction = "sign-in" | "onboarding" | "retry";
 
@@ -28,6 +29,7 @@ function formatReviewDate(iso?: string) {
 export default function TodayPage() {
   const router = useRouter();
   const learningMode = useLearningMode();
+  const gamification = useGamification();
   const [plan, setPlan] = useState<LearnerSessionPlanV1>();
   const [activeSessionId, setActiveSessionId] = useState<string>();
   const [progress, setProgress] = useState<ProgressSnapshot>();
@@ -348,16 +350,23 @@ export default function TodayPage() {
             <p className="mt-2 text-3xl font-black">{progress?.mission.completionPercent ?? 0}%</p>
             <p className="mt-1 text-sm text-ink/70">Checked steps completed in this lesson.</p>
           </div>
-          <div className="card">
-            <p className="eyebrow">Streak</p>
-            <p className="mt-2 text-3xl font-black">{progress?.currentStreak ?? 0} <span className="text-lg text-coral">days</span></p>
-            <p className="mt-1 text-sm text-ink/70">A thread you can protect, never a reason for guilt.</p>
-          </div>
-          <div className="card">
-            <p className="eyebrow">Achievements</p>
-            <p className="mt-2 text-3xl font-black">{earnedAchievements.length}</p>
-            <p className="mt-1 text-sm text-ink/70">{nextAchievement ? `Next: ${nextAchievement.title}` : "You have earned every available badge."}</p>
-          </div>
+          {gamification !== "off" && (
+            <div className="card">
+              <p className="eyebrow">Streak</p>
+              <p className="mt-2 text-3xl font-black">
+                {progress?.currentStreak ?? 0}{" "}
+                <span className="text-lg text-coral">{progress?.streakUnit === "week" ? "weeks" : "days"}</span>
+              </p>
+              <p className="mt-1 text-sm text-ink/70">A thread you can protect, never a reason for guilt.</p>
+            </div>
+          )}
+          {gamification !== "off" && (
+            <div className="card">
+              <p className="eyebrow">Achievements</p>
+              <p className="mt-2 text-3xl font-black">{earnedAchievements.length}</p>
+              <p className="mt-1 text-sm text-ink/70">{nextAchievement ? `Next: ${nextAchievement.title}` : "You have earned every available badge."}</p>
+            </div>
+          )}
         </section>
 
         {progress && (
@@ -383,6 +392,11 @@ export default function TodayPage() {
         {learningMode !== "loading" && learningMode !== "unavailable" && (
           <div className="mt-7">
             <LearningScheduleCard />
+            <p className="mt-3 text-sm font-bold">
+              <Link className="text-coral underline underline-offset-4 hover:text-ink" href="/schedule">
+                Open your schedule and the last two weeks
+              </Link>
+            </p>
           </div>
         )}
       </main>
