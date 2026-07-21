@@ -383,6 +383,11 @@ export default function TodayPage() {
         {learningMode !== "loading" && learningMode !== "unavailable" && (
           <div className="mt-7">
             <LearningScheduleCard />
+            <p className="mt-3 text-sm font-bold">
+              <Link className="text-coral underline underline-offset-4 hover:text-ink" href="/schedule">
+                Open your schedule and the last two weeks
+              </Link>
+            </p>
           </div>
         )}
       </main>

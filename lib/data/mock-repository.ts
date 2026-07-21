@@ -399,6 +399,9 @@ export class MockLearningRepository implements LearningRepository {
       mistakes,
       missionTitle: mission.title,
       missionActivityCount: mission.activities.length,
+      sessionCompletionTimes: [...store.sessions.values()]
+        .filter((session) => session.userId === userId && session.completedAt)
+        .map((session) => session.completedAt as string),
     });
   }
 

@@ -51,6 +51,20 @@ test("the reminder button works without the routine toggle and confirms a grante
   await expect(notice).toContainText(/keep this routine/i);
 });
 
+test("the schedule page shows the two-week picture and the routine controls", async ({ page }) => {
+  await page.goto("/today");
+  await page.getByRole("link", { name: /open your schedule/i }).click();
+  await expect(page).toHaveURL(/\/schedule$/);
+
+  await expect(page.getByRole("heading", { name: "Days you practised." })).toBeVisible();
+  const fortnight = page.getByRole("region", { name: "The last two weeks" });
+  await expect(fortnight.getByText("·").first()).toBeVisible();
+  await expect(page.getByText(/a quiet day is fine/i)).toBeVisible();
+
+  await expect(page.getByLabel("Keep this routine")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enable browser reminder" })).toBeVisible();
+});
+
 test("a refused permission gets honest guidance instead of silence", async ({ page }) => {
   // Headless Chromium auto-refuses permission prompts, which is exactly the
   // hardened-browser behaviour the button used to swallow.

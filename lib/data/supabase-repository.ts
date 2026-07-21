@@ -566,12 +566,21 @@ export class SupabaseLearningRepository implements LearningRepository {
   async getProgress(userId: string): Promise<ProgressSnapshot> {
     const profile = await this.getProfile(userId);
     const mission = getSeedMission();
-    const [attempts, reviews, mistakes] = await Promise.all([
+    const [attempts, reviews, mistakes, completedSessions] = await Promise.all([
       this.client.rpc("get_progress_attempt_signals", { p_user_id: userId }),
       this.getDueReviews(userId),
       this.client.rpc("get_progress_mistake_signals", { p_user_id: userId }),
+      this.client
+        .from("sessions")
+        .select("completed_at")
+        .eq("user_id", userId)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(60),
     ]);
-    if (attempts.error || mistakes.error) throw attempts.error ?? mistakes.error;
+    if (attempts.error || mistakes.error || completedSessions.error) {
+      throw attempts.error ?? mistakes.error ?? completedSessions.error;
+    }
 
     return buildProgressSnapshot({
       profile,
@@ -596,6 +605,9 @@ export class SupabaseLearningRepository implements LearningRepository {
       })),
       missionTitle: mission.title,
       missionActivityCount: mission.activities.length,
+      sessionCompletionTimes: ((completedSessions.data ?? []) as Row[])
+        .map((row) => row.completed_at as string)
+        .filter(Boolean),
     });
   }
 

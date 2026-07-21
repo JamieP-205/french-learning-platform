@@ -11,7 +11,7 @@ import {
   isQualifyingProductiveSuccess,
 } from "@/lib/learning/response-transition";
 import { computeTopicBadges } from "@/lib/progress/topic-badges";
-import { calendarDaysSince } from "@/lib/time/calendar-day";
+import { calendarDayKey, calendarDaysSince } from "@/lib/time/calendar-day";
 
 type AttemptSignal = {
   activityId: string;
@@ -184,6 +184,7 @@ export function buildProgressSnapshot({
   mistakes,
   missionTitle,
   missionActivityCount,
+  sessionCompletionTimes = [],
   now = new Date(),
 }: {
   profile: LearnerProfile | null;
@@ -192,6 +193,7 @@ export function buildProgressSnapshot({
   mistakes: MistakeSignal[];
   missionTitle: string;
   missionActivityCount: number;
+  sessionCompletionTimes?: string[];
   now?: Date;
 }): ProgressSnapshot {
   const dueReviews = reviews.filter((review) => new Date(review.dueAt) <= now);
@@ -435,6 +437,12 @@ export function buildProgressSnapshot({
     },
     recentWins,
     achievements,
+    recentSessionDays: [
+      ...new Set(sessionCompletionTimes.map((time) => calendarDayKey(time, profile?.timeZone))),
+    ]
+      .sort()
+      .reverse()
+      .slice(0, 14),
     topicBadges: computeTopicBadges(
       attempts.map((attempt) => ({
         activityId: attempt.activityId,

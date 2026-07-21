@@ -400,6 +400,9 @@ export type ProgressSnapshot = {
     earned: boolean;
     detail: string;
   }[];
+  // Local calendar days with a completed session, most recent first, up to
+  // fourteen. Feeds the schedule view's two-week picture.
+  recentSessionDays: string[];
   // Earned by productive evidence only; recognition and reveals never count.
   topicBadges: {
     id: string;
