@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { LearnerProfile } from "@/lib/domain/types";
 import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from "@/lib/auth/browser";
+import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
 import { detectRuntimeTimeZone } from "@/lib/time/calendar-day";
 
 const focusOptions = [
@@ -45,6 +46,7 @@ export function AccountProfileSettings() {
         }
         setProfile(payload.profile);
         setInterestText((payload.profile.interests ?? []).join(", "));
+        syncStoredSpeechSpeed(payload.profile.speechSpeed);
         setState("ready");
       } catch {
         if (!cancelled) {
@@ -85,6 +87,7 @@ export function AccountProfileSettings() {
           timeZone: detectRuntimeTimeZone(),
           focusPreferences: profile.focusPreferences ?? [],
           speakingConfidence: profile.speakingConfidence ?? "medium",
+          speechSpeed: profile.speechSpeed ?? "normal",
         }),
       });
       const payload = await response.json();
@@ -94,6 +97,7 @@ export function AccountProfileSettings() {
       }
       setProfile(payload.profile);
       setInterestText((payload.profile.interests ?? []).join(", "));
+      syncStoredSpeechSpeed(payload.profile.speechSpeed);
       setMessage("Saved. Your next session uses these straight away.");
     } catch {
       setError("Your settings could not be saved. Check your connection and try again.");
@@ -193,6 +197,20 @@ export function AccountProfileSettings() {
             <option value="low">Nervous — ease me in</option>
             <option value="medium">Okay — normal pace</option>
             <option value="high">Confident — push me</option>
+          </select>
+        </label>
+
+        <label className="block font-bold">
+          Audio speed
+          <select
+            className="field"
+            value={profile.speechSpeed ?? "normal"}
+            onChange={(event) =>
+              setProfile({ ...profile, speechSpeed: event.target.value as "normal" | "slow" })
+            }
+          >
+            <option value="normal">Normal, tuned for learners</option>
+            <option value="slow">Slower, more time to hear each sound</option>
           </select>
         </label>
       </div>

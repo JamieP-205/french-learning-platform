@@ -83,7 +83,7 @@ test("listening uses bundled audio first and reports when both playback paths fa
   await expect(page.getByRole("button", { name: "Playing…" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => (window as typeof window & { __mediaCalls: unknown[] }).__mediaCalls)).toEqual([
-    { source: "/audio/french/bonjour-je-mappelle-jamie.mp3", rate: 1 },
+    { source: "/audio/french/bonjour-je-mappelle-jamie.mp3", rate: 0.85 },
   ]);
   await expect.poll(() => page.evaluate(() => (window as typeof window & { __speechCalls: unknown[] }).__speechCalls)).toEqual([]);
 

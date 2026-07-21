@@ -1,4 +1,12 @@
-const DEFAULT_AUTH_DESTINATION = "/onboarding";
+const DEFAULT_AUTH_DESTINATION = "/today";
+
+/**
+ * Brand-new accounts still need the questionnaire, so signup confirmation
+ * links carry this explicit destination. Returning sign-ins use the default
+ * above and land on the dashboard; the onboarding page itself sends anyone
+ * with a saved profile back to Today.
+ */
+export const NEW_ACCOUNT_DESTINATION = "/onboarding";
 const APP_ORIGIN = "https://french-for-life.invalid";
 
 function isHttpOrigin(value: string | undefined) {

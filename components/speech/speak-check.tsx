@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { SpeechPlaybackButton } from "@/components/speech/speech-playback-button";
 import { listenOnceInFrench, speechSupport } from "@/lib/speech/browser-speech";
+import { FRENCH_RATE_SLOW } from "@/lib/speech/speech-rates";
 import { scorePronunciation, type PronunciationFeedback } from "@/lib/speech/scoring";
 
 export type SpeechAttemptOutcome = {
@@ -75,6 +76,15 @@ export function SpeakCheck({
           audioSource={audioSource}
           label="Hear it in French"
           disabled={disabled}
+        />
+        <SpeechPlaybackButton
+          text={targetText}
+          audioSource={audioSource}
+          rate={FRENCH_RATE_SLOW}
+          label="Hear it slowly"
+          replayLabel="Hear it slowly again"
+          disabled={disabled}
+          showUnavailableMessage={false}
         />
         {support.canListen && (
           <button type="button" className="button-secondary" disabled={disabled || listening} onClick={record}>

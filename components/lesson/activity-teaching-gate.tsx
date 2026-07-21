@@ -86,7 +86,6 @@ export function ActivityTeachingGate({
                 <SpeechPlaybackButton
                   audioSource={audioSourceForFrench(step.inputSegment.text)}
                   label="Hear the phrase clearly"
-                  rate={1}
                   showUnavailableMessage={false}
                   text={step.inputSegment.text}
                 />

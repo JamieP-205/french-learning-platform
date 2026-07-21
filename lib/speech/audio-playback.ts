@@ -6,6 +6,7 @@ import {
   stopSpeaking,
   type SpeechPlaybackOutcome,
 } from "@/lib/speech/browser-speech";
+import { FRENCH_RATE_NORMAL } from "@/lib/speech/speech-rates";
 
 type PlaybackOwner = symbol;
 
@@ -92,7 +93,7 @@ export function canPlayTextAudio(audioSource?: string) {
 export async function playTextAudio({
   text,
   language,
-  rate = 1,
+  rate = FRENCH_RATE_NORMAL,
   audioSource,
   owner,
 }: {

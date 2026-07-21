@@ -140,8 +140,8 @@ test("landing remains usable at a phone viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /speak useful french/i })).toBeVisible();
-  await page.getByRole("link", { name: /start a free 10-minute lesson/i }).focus();
-  await expect(page.getByRole("link", { name: /start a free 10-minute lesson/i })).toBeFocused();
+  await page.getByRole("link", { name: /pick up where you left off/i }).focus();
+  await expect(page.getByRole("link", { name: /pick up where you left off/i })).toBeFocused();
 });
 
 test("mobile navigation keeps three core destinations and a More menu", async ({ page }) => {

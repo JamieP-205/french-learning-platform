@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SignInForm } from "../app/auth/sign-in/sign-in-form";
 import { friendlyAuthError, requiresEmailConfirmation } from "../lib/auth/messages";
-import { buildConfirmationRedirectUrl, getSafeAuthDestination } from "../lib/auth/redirects";
+import { buildConfirmationRedirectUrl, getSafeAuthDestination, NEW_ACCOUNT_DESTINATION } from "../lib/auth/redirects";
 import { requestSignupConfirmation } from "../lib/auth/resend-confirmation";
 
 vi.mock("next/navigation", () => ({
@@ -130,10 +130,16 @@ describe("confirmation-email recovery", () => {
 describe("auth redirects", () => {
   it("keeps normal in-app destinations and rejects external or auth-loop destinations", () => {
     expect(getSafeAuthDestination("/today?from=signin#lesson")).toBe("/today?from=signin#lesson");
-    expect(getSafeAuthDestination("https://attacker.example/steal")).toBe("/onboarding");
-    expect(getSafeAuthDestination("//attacker.example/steal")).toBe("/onboarding");
-    expect(getSafeAuthDestination("/\\attacker.example/steal")).toBe("/onboarding");
-    expect(getSafeAuthDestination("/auth/callback?next=/today")).toBe("/onboarding");
+    expect(getSafeAuthDestination("https://attacker.example/steal")).toBe("/today");
+    expect(getSafeAuthDestination("//attacker.example/steal")).toBe("/today");
+    expect(getSafeAuthDestination("/\\attacker.example/steal")).toBe("/today");
+    expect(getSafeAuthDestination("/auth/callback?next=/today")).toBe("/today");
+  });
+
+  it("sends returning sign-ins to the dashboard and keeps onboarding reachable for new accounts", () => {
+    expect(getSafeAuthDestination(null)).toBe("/today");
+    expect(getSafeAuthDestination(NEW_ACCOUNT_DESTINATION)).toBe("/onboarding");
+    expect(NEW_ACCOUNT_DESTINATION).toBe("/onboarding");
   });
 
   it("uses a valid configured app origin for confirmation links", () => {
@@ -153,13 +159,13 @@ describe("auth redirects", () => {
         browserOrigin: "https://learn.example.com",
         next: "//attacker.example",
       }),
-    ).toBe("https://learn.example.com/auth/callback?next=%2Fonboarding");
+    ).toBe("https://learn.example.com/auth/callback?next=%2Ftoday");
 
     expect(
       buildConfirmationRedirectUrl({
         configuredAppUrl: "http://insecure.example.com",
         browserOrigin: "http://127.0.0.1:3000",
       }),
-    ).toBe("http://127.0.0.1:3000/auth/callback?next=%2Fonboarding");
+    ).toBe("http://127.0.0.1:3000/auth/callback?next=%2Ftoday");
   });
 });

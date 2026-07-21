@@ -4,6 +4,8 @@
 // Web APIs; a paid provider can implement the same outcomes later without
 // teaching screens having to pretend that silent playback succeeded.
 
+import { ENGLISH_RATE, FRENCH_RATE_NORMAL } from "@/lib/speech/speech-rates";
+
 export type SpeechSupport = {
   canSpeak: boolean;
   canListen: boolean;
@@ -85,7 +87,7 @@ let settleActivePlayback: ((outcome: SpeechPlaybackOutcome) => void) | undefined
 
 export function speakText(
   text: string,
-  { language, rate = 0.9 }: { language: string; rate?: number },
+  { language, rate = FRENCH_RATE_NORMAL }: { language: string; rate?: number },
 ): Promise<SpeechPlaybackOutcome> {
   const environment = synthesisEnvironment();
   if (!environment || !text.trim()) return Promise.resolve({ status: "unavailable" });
@@ -138,11 +140,11 @@ export function speakText(
   });
 }
 
-export function speakFrench(text: string, { rate = 0.9 }: { rate?: number } = {}) {
+export function speakFrench(text: string, { rate = FRENCH_RATE_NORMAL }: { rate?: number } = {}) {
   return speakText(text, { language: "fr-FR", rate });
 }
 
-export function speakEnglish(text: string, { rate = 0.95 }: { rate?: number } = {}) {
+export function speakEnglish(text: string, { rate = ENGLISH_RATE }: { rate?: number } = {}) {
   return speakText(text, { language: "en-GB", rate });
 }
 

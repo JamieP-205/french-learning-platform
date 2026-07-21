@@ -35,6 +35,7 @@ export type LocalLearnerPreferences = {
   primaryGoal: "travel" | "work" | "relationships" | "hobby" | "food";
   dailyMinutes: number;
   sessionEnergy: "low" | "normal" | "challenge";
+  speechSpeed: "normal" | "slow";
   updatedAt?: string;
 };
 
@@ -108,6 +109,7 @@ export const defaultLocalLearnerPreferences: LocalLearnerPreferences = {
   primaryGoal: "travel",
   dailyMinutes: 8,
   sessionEnergy: "normal",
+  speechSpeed: "normal",
 };
 
 export const emptyLocalLearningProgress: LocalLearningProgress = {

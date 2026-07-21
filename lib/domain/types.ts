@@ -239,6 +239,9 @@ export type LearnerProfile = {
   // weak skills; this only tilts the mix.
   focusPreferences?: string[];
   speakingConfidence?: "low" | "medium" | "high";
+  // How fast French audio plays for this learner. Older profiles without the
+  // field use the normal learner-friendly pace.
+  speechSpeed?: "normal" | "slow";
   // Signup uses a 13+ self-declaration instead of per-country birth-date policies.
   ageConfirmed?: boolean;
   country?: string;

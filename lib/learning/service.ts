@@ -69,6 +69,7 @@ export const profileUpdateSchema = z.object({
   timeZone: timeZoneSchema.optional(),
   focusPreferences: z.array(z.enum(["speaking", "listening", "writing", "review"])).max(4).optional(),
   speakingConfidence: z.enum(["low", "medium", "high"]).optional(),
+  speechSpeed: z.enum(["normal", "slow"]).optional(),
   interests: z.array(z.string().trim().min(1).max(30)).max(12).optional(),
 }).strict();
 

@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getBrowserSupabase } from "@/lib/auth/browser";
 import { friendlyAuthError, requiresEmailConfirmation } from "@/lib/auth/messages";
-import { buildConfirmationRedirectUrl, getSafeAuthDestination } from "@/lib/auth/redirects";
+import { buildConfirmationRedirectUrl, getSafeAuthDestination, NEW_ACCOUNT_DESTINATION } from "@/lib/auth/redirects";
 import { requestSignupConfirmation } from "@/lib/auth/resend-confirmation";
 
 type MessageKind = "success" | "error";
 
 function getSafeRedirectPath() {
-  if (typeof window === "undefined") return "/onboarding";
+  if (typeof window === "undefined") return "/today";
   return getSafeAuthDestination(new URLSearchParams(window.location.search).get("redirectTo"));
 }
 
@@ -19,6 +19,7 @@ function getConfirmationRedirectUrl() {
   return buildConfirmationRedirectUrl({
     configuredAppUrl: process.env.NEXT_PUBLIC_APP_URL?.trim(),
     browserOrigin: window.location.origin,
+    next: NEW_ACCOUNT_DESTINATION,
   });
 }
 

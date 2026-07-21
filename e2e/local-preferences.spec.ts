@@ -32,3 +32,43 @@ test("no-account learner preferences personalize the public path", async ({ page
   await page.getByRole("button", { name: "Confirm reset device data" }).click();
   await expect(page.getByText("Data saved only on this device has been reset.")).toBeVisible();
 });
+
+test("the audio-speed choice survives a reload and slows default playback", async ({ page }) => {
+  await page.addInitScript(() => {
+    const testWindow = window as typeof window & { __mediaCalls: Array<{ source: string; rate: number }> };
+    testWindow.__mediaCalls = [];
+    class TestAudio {
+      playbackRate = 1;
+      defaultPlaybackRate = 1;
+      preservesPitch = true;
+      preload = "";
+      currentTime = 0;
+      onended?: () => void;
+      onerror?: () => void;
+      onabort?: () => void;
+      constructor(readonly src: string) {}
+      play() {
+        testWindow.__mediaCalls.push({ source: this.src, rate: this.playbackRate });
+        window.setTimeout(() => this.onended?.(), 30);
+        return Promise.resolve();
+      }
+      pause() {}
+    }
+    Object.defineProperty(window, "Audio", { configurable: true, value: TestAudio });
+  });
+
+  await page.goto("/settings?mode=local");
+  await page.getByLabel("Audio speed").selectOption("slow");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByText(/today and progress now use these settings/i)).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByLabel("Audio speed")).toHaveValue("slow");
+
+  await page.goto("/listen");
+  await page.getByRole("button", { name: "Start listening check" }).click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as typeof window & { __mediaCalls: unknown[] }).__mediaCalls))
+    .toEqual([{ source: "/audio/french/bonjour-je-mappelle-jamie.mp3", rate: 0.7 }]);
+});

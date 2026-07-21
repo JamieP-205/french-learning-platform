@@ -7,6 +7,7 @@ import { SpeakCheck } from "@/components/speech/speak-check";
 import { SpeechPlaybackButton } from "@/components/speech/speech-playback-button";
 import { getConceptDefinitionsForActivity } from "@/lib/content/curriculum";
 import { MINIMAL_PAIRS, SHADOWING_PHRASES } from "@/lib/content/pronunciation";
+import { FRENCH_RATE_SLOW } from "@/lib/speech/speech-rates";
 
 export default function SpeakPage() {
   const [teachingComplete, setTeachingComplete] = useState(false);
@@ -72,7 +73,7 @@ export default function SpeakPage() {
                 <div className="mt-4 flex justify-center">
                   <SpeechPlaybackButton
                     text={side.french}
-                    rate={0.8}
+                    rate={FRENCH_RATE_SLOW}
                     label="Hear it"
                     showUnavailableMessage={sideIndex === 0}
                   />
@@ -84,7 +85,7 @@ export default function SpeakPage() {
             <SpeechPlaybackButton
               key={`${pair.left.french}-${pair.right.french}`}
               text={`${pair.left.french} ... ${pair.right.french}`}
-              rate={0.82}
+              rate={FRENCH_RATE_SLOW}
               label="Hear them together"
               showUnavailableMessage={false}
             />
@@ -107,7 +108,7 @@ export default function SpeakPage() {
                 key={phrase.id}
                 text={phrase.french}
                 audioSource={phrase.audioSource}
-                rate={0.8}
+                rate={FRENCH_RATE_SLOW}
                 label={phrase.french}
                 replayLabel={phrase.french}
                 labelLanguage="fr"

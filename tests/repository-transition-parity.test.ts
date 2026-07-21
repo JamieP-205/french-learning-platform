@@ -257,6 +257,36 @@ describe("repository response transition parity", () => {
     });
   });
 
+  it("persists the audio-speed preference identically in mock and Supabase", async () => {
+    const userId = `speed-${crypto.randomUUID()}`;
+    const mock = new MockLearningRepository();
+    const client = new FakeSupabaseClient();
+    const supabase = supabaseRepositoryWith(client);
+
+    client.tables.set("profiles", [{ id: userId, display_name: "Learner", policy_version: "test" }]);
+    await mock.saveProfile({
+      userId,
+      displayName: "Learner",
+      currentLevel: "A1",
+      learningGoals: ["travel"],
+      interests: [],
+      dailyMinutes: 8,
+      preferredMode: "normal",
+      policyVersion: "test",
+      completedSessions: 0,
+      currentStreak: 0,
+    });
+
+    for (const repository of [mock, supabase]) {
+      const before = await repository.getProfile(userId);
+      expect(before?.speechSpeed ?? "normal").toBe("normal");
+      const updated = await repository.updateProfilePreferences(userId, { speechSpeed: "slow" });
+      expect(updated?.speechSpeed).toBe("slow");
+      const reloaded = await repository.getProfile(userId);
+      expect(reloaded?.speechSpeed).toBe("slow");
+    }
+  });
+
   it("never rewrites canonical curriculum rows while creating an adaptive session", async () => {
     const client = new FakeSupabaseClient();
     const repository = supabaseRepositoryWith(client);
