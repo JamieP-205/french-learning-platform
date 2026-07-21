@@ -244,6 +244,9 @@ export type LearnerProfile = {
   speechSpeed?: "normal" | "slow";
   // Light, dark, or follow the device. Older profiles follow the device.
   themePreference?: "light" | "dark" | "system";
+  // Keep Remy from offering help during lessons. He always asks first; this
+  // silences even the asking.
+  companionQuiet?: boolean;
   // Signup uses a 13+ self-declaration instead of per-country birth-date policies.
   ageConfirmed?: boolean;
   country?: string;

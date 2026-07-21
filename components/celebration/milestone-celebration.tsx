@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef } from "react";
+import { RemyArt } from "@/components/companion/remy-art";
 import type { ProgressSnapshot } from "@/lib/domain/types";
 
 function celebrationCopy(progress?: ProgressSnapshot) {
@@ -64,7 +64,9 @@ export function MilestoneCelebration({
         <div className="celebration-burst" aria-hidden="true">
           {Array.from({ length: 18 }, (_, index) => <i key={index} style={{ "--piece": index } as React.CSSProperties} />)}
         </div>
-        <Image alt="" className="mx-auto h-28 w-28 rounded-full border-4 border-surface object-cover shadow-lg" height={224} src="/images/remy-companion.webp" width={224} />
+        <span className="mx-auto grid h-28 w-28 place-items-center rounded-full border-4 border-surface bg-cream shadow-lg">
+          <RemyArt pose="celebrating" size={96} />
+        </span>
         <p className="eyebrow mt-5">{copy.eyebrow}</p>
         <h2 className="mt-2 text-3xl font-black leading-tight" id="celebration-title">{copy.title}</h2>
         <p className="mx-auto mt-3 max-w-lg leading-7 text-ink/70">{copy.detail}</p>

@@ -12,6 +12,7 @@ import {
   type LocalLearnerPreferences,
   type LocalLearningProgress,
 } from "@/lib/local-learning/progress";
+import { setStoredCompanionQuiet } from "@/lib/companion/quiet-preference";
 import { setStoredSpeechSpeed } from "@/lib/speech/speed-preference";
 import { setStoredThemePreference, type ThemePreference } from "@/lib/theme/theme-preference";
 
@@ -74,6 +75,7 @@ export function LocalLearningPreferences() {
     const themeRaw = String(formData.get("themePreference") ?? "system");
     const themePreference: ThemePreference =
       themeRaw === "light" || themeRaw === "dark" ? themeRaw : "system";
+    const companionQuiet = formData.get("companionQuiet") === "on";
     const nextProgress = updateLocalLearnerPreferences(progress, {
       displayName:
         String(formData.get("displayName") ?? "").trim() || defaultLocalLearnerPreferences.displayName,
@@ -83,11 +85,13 @@ export function LocalLearningPreferences() {
       sessionEnergy: String(formData.get("sessionEnergy") ?? "normal") as LocalLearnerPreferences["sessionEnergy"],
       speechSpeed,
       themePreference,
+      companionQuiet,
     });
 
     saveLocalLearningProgress(nextProgress);
     setStoredSpeechSpeed(speechSpeed);
     setStoredThemePreference(themePreference);
+    setStoredCompanionQuiet(companionQuiet);
     setSaved(true);
   }
 
@@ -175,6 +179,16 @@ export function LocalLearningPreferences() {
             </select>
           </label>
         </div>
+
+        <label className="flex min-h-11 items-center gap-3 font-bold">
+          <input
+            className="h-5 w-5 accent-moss"
+            defaultChecked={progress.preferences.companionQuiet}
+            name="companionQuiet"
+            type="checkbox"
+          />
+          Keep Remy quiet during lessons
+        </label>
 
         <div className="rounded-2xl bg-cream p-4 text-sm text-ink/75" aria-live="polite">
           <p className="font-black">{summary.headline}</p>

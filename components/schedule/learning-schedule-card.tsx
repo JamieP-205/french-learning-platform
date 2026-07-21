@@ -120,7 +120,7 @@ export function LearningScheduleCard() {
     const reminder = window.setTimeout(() => {
       new Notification("A few minutes of French?", {
         body: "Your planned French for Life session is ready.",
-        icon: "/images/remy-companion.webp",
+        icon: "/apple-icon.png",
         tag: "french-for-life-session",
       });
     }, delay);
@@ -157,7 +157,7 @@ export function LearningScheduleCard() {
     try {
       new Notification("Reminders are on", {
         body: "This is what a French for Life nudge looks like.",
-        icon: "/images/remy-companion.webp",
+        icon: "/apple-icon.png",
         tag: "french-for-life-session",
       });
     } catch {
