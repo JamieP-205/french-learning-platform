@@ -7,9 +7,11 @@ import { LocalLearningDataControls } from "@/components/settings/local-learning-
 import { LocalLearningPreferences } from "@/components/settings/local-learning-preferences";
 import { LearningModeUnavailable } from "@/components/learning-mode-unavailable";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
+import { contentStatus } from "@/lib/content/content-status";
 
 export default function SettingsPage() {
   const learningMode = useLearningMode();
+  const status = contentStatus();
 
   return (
     <AppShell>
@@ -84,12 +86,22 @@ export default function SettingsPage() {
         </section>
 
         <section className="card mt-6">
-          <p className="eyebrow">Coming later</p>
-          <h2 className="mt-2 text-2xl font-black">Calendar, topic badges, and deeper roleplay.</h2>
+          <p className="eyebrow">What you have now</p>
+          <h2 className="mt-2 text-2xl font-black">The course, honestly counted.</h2>
           <p className="mt-3 text-ink/75">
-            More real-life scenarios, carefully written roleplay choices, and fully reviewed lessons are planned as the
-            course grows.
+            {status.publishedMissionCount} reviewed scored {status.publishedMissionCount === 1 ? "lesson" : "lessons"},{" "}
+            {status.roleplayScenarioCount} roleplay scenarios with {status.registerComparisonCount} register
+            comparisons, topic badges earned by real production, and a schedule view of your last two weeks.
+            {status.inReviewMissionCount > 0 && (
+              <> {status.inReviewMissionCount} more {status.inReviewMissionCount === 1 ? "lesson is" : "lessons are"} written
+              and waiting on content review: {status.inReviewMissionTitles.join(" and ")}.</>
+            )}
           </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link className="button-secondary" href="/schedule">Your schedule</Link>
+            <Link className="button-secondary" href="/progress">Topic badges</Link>
+            <Link className="button-secondary" href="/roleplay">Roleplay practice</Link>
+          </div>
         </section>
       </main>
     </AppShell>
