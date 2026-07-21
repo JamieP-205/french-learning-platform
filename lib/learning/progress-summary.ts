@@ -10,6 +10,7 @@ import {
   isProductiveActivityType,
   isQualifyingProductiveSuccess,
 } from "@/lib/learning/response-transition";
+import { computeTopicBadges } from "@/lib/progress/topic-badges";
 import { calendarDaysSince } from "@/lib/time/calendar-day";
 
 type AttemptSignal = {
@@ -434,6 +435,16 @@ export function buildProgressSnapshot({
     },
     recentWins,
     achievements,
+    topicBadges: computeTopicBadges(
+      attempts.map((attempt) => ({
+        activityId: attempt.activityId,
+        isCorrect: attempt.isCorrect,
+        evidenceKind:
+          attempt.evidenceKind ?? (attempt.activity ? inferEvidenceKind(attempt.activity.type) : undefined),
+        completed: attempt.completed,
+        productive: attempt.activity ? isProductiveActivityType(attempt.activity.type) : false,
+      })),
+    ),
     skills: [
       {
         label: "Recall",

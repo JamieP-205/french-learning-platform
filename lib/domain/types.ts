@@ -400,6 +400,14 @@ export type ProgressSnapshot = {
     earned: boolean;
     detail: string;
   }[];
+  // Earned by productive evidence only; recognition and reveals never count.
+  topicBadges: {
+    id: string;
+    topicSlug: string;
+    title: string;
+    detail: string;
+    earned: boolean;
+  }[];
   skills: {
     label: string;
     score: number | null;

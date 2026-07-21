@@ -182,6 +182,29 @@ export default function ProgressPage() {
                     </article>
                   ))}
                 </div>
+                {progress.topicBadges.length > 0 && (
+                  <div className="mt-6 border-t border-ink/10 pt-5">
+                    <p className="eyebrow">Topic badges</p>
+                    <p className="mt-1 text-sm text-ink/70">
+                      Earned only by producing the French yourself. Multiple-choice taps and revealed
+                      answers never count.
+                    </p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {progress.topicBadges.map((badge) => (
+                        <article
+                          key={badge.id}
+                          className={badge.earned ? "rounded-2xl bg-moss/10 p-4" : "rounded-2xl bg-cream p-4 opacity-75"}
+                        >
+                          <p className="text-xs font-black uppercase tracking-wide text-coral">
+                            {badge.earned ? "Earned" : "In progress"}
+                          </p>
+                          <h3 className="mt-2 font-black">{badge.title}</h3>
+                          <p className="mt-1 text-sm text-ink/70">{badge.detail}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 

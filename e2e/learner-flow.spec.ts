@@ -140,6 +140,10 @@ test("development learner completes the mission with guarded tutor feedback", as
   await expect(page.locator('[data-piece="sprout"]')).toBeVisible();
   await expect(page.getByText(/new in your garden/i)).toHaveCount(0);
 
+  // Producing the age, origin, and dictation phrases earned the topic badge.
+  const introBadge = page.getByRole("article").filter({ hasText: "Practised: introducing yourself" });
+  await expect(introBadge.getByText("Earned", { exact: true })).toBeVisible();
+
   await page.goto("/review");
   await expect(page.getByRole("heading", { name: "Nothing due right now" })).toBeVisible();
 });
