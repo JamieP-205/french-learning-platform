@@ -419,6 +419,7 @@ export function buildProgressSnapshot({
   return {
     sessionsCompleted: profile?.completedSessions ?? 0,
     currentStreak: profile?.currentStreak ?? 0,
+    streakUnit: profile?.streakMode === "weekly" ? "week" : "day",
     streakFreezes: profile?.streakFreezes ?? 0,
     phrasesLearned: recalledContentItems.size,
     mistakesFixed,

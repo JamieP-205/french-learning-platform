@@ -9,6 +9,7 @@ import { PublicLocalProgressPanel } from "@/components/demo/public-local-learnin
 import { LearningModeUnavailable } from "@/components/learning-mode-unavailable";
 import { LearningGarden } from "@/components/progress/learning-garden";
 import { useLearningMode } from "@/lib/auth/use-learning-mode";
+import { useGamification } from "@/lib/progress/gamification-preference";
 
 function evidenceLabel(score: number | null, practiceAttempts: number) {
   if (score === null) {
@@ -44,6 +45,7 @@ function getServerCompletionLocationSnapshot() {
 
 export default function ProgressPage() {
   const learningMode = useLearningMode();
+  const gamification = useGamification();
   const [progress, setProgress] = useState<ProgressSnapshot>();
   const [error, setError] = useState<string>();
   const showCompletion = useSyncExternalStore(
@@ -182,7 +184,7 @@ export default function ProgressPage() {
                     </article>
                   ))}
                 </div>
-                {progress.topicBadges.length > 0 && (
+                {gamification !== "off" && progress.topicBadges.length > 0 && (
                   <div className="mt-6 border-t border-ink/10 pt-5">
                     <p className="eyebrow">Topic badges</p>
                     <p className="mt-1 text-sm text-ink/70">

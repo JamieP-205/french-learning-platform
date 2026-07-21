@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { GardenScene } from "@/components/progress/garden-art";
+import { useGamification } from "@/lib/progress/gamification-preference";
 import { freshMilestones, readSeenMilestones, rememberSeenMilestones } from "@/lib/progress/milestone-memory";
 import { gardenMilestones, type GardenProgress } from "@/lib/progress/milestones";
 
@@ -25,8 +26,12 @@ export function LearningGarden({ progress }: { progress: GardenProgress }) {
   // Read once on mount so the same visit keeps animating what it revealed;
   // the effect below persists them as seen for next time.
   const [seenAtMount] = useState(() => readSeenMilestones());
+  const gamification = useGamification();
   const fresh = new Set(freshMilestones(earnedIds, seenAtMount));
-  const freshLabels = unlocks.filter((unlock) => fresh.has(unlock.id)).map((unlock) => unlock.label);
+  // Quiet keeps the text note without motion; off keeps only the garden.
+  const animatedFresh = gamification === "full" ? fresh : new Set<string>();
+  const freshLabels =
+    gamification === "off" ? [] : unlocks.filter((unlock) => fresh.has(unlock.id)).map((unlock) => unlock.label);
   const sceneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,7 +51,7 @@ export function LearningGarden({ progress }: { progress: GardenProgress }) {
         ref={sceneRef}
         role="img"
       >
-        <GardenScene away={away} earned={earned} fresh={fresh} />
+        <GardenScene away={away} earned={earned} fresh={animatedFresh} />
       </div>
       {freshLabels.length > 0 && (
         <p aria-live="polite" className="mt-3 text-sm font-black text-moss">
@@ -56,6 +61,7 @@ export function LearningGarden({ progress }: { progress: GardenProgress }) {
 
       <div className="mt-5 flex flex-wrap gap-2">
         {unlocks.map((unlock) => (
+          // Badges are part of the garden record and stay in every mode.
           <span
             className={`garden-badge ${unlock.earned ? "garden-badge-earned" : ""}`}
             key={unlock.id}

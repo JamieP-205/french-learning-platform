@@ -25,6 +25,7 @@ import {
 } from "@/lib/local-learning/progress";
 import { normalizeFrenchAnswer } from "@/lib/learning/answer-validation";
 import { LearningGarden } from "@/components/progress/learning-garden";
+import { useGamification } from "@/lib/progress/gamification-preference";
 
 function subscribeToLocalProgress(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
@@ -178,6 +179,7 @@ export function PublicLocalTodayPanel() {
 
 export function PublicLocalProgressPanel() {
   const { progress, reset } = useLocalProgress();
+  const gamification = useGamification();
   const accuracy = localLearningAccuracy(progress);
   const daysAway = localLearningDaysSince(progress.lastCompletedAt);
   const currentStreak = localLearningStreak(progress);
@@ -243,10 +245,12 @@ export function PublicLocalProgressPanel() {
           <p className="eyebrow">Attempts</p>
           <p className="mt-2 text-4xl font-black">{progress.attemptsCount}</p>
         </div>
-        <div className="card">
-          <p className="eyebrow">Streak</p>
-          <p className="mt-2 text-4xl font-black">{currentStreak}</p>
-        </div>
+        {gamification !== "off" && (
+          <div className="card">
+            <p className="eyebrow">Streak</p>
+            <p className="mt-2 text-4xl font-black">{currentStreak}</p>
+          </div>
+        )}
         <div className="card">
           <p className="eyebrow">Last session</p>
           <p className="mt-2 text-2xl font-black">{daysAway === undefined ? "Not yet" : daysAway === 0 ? "Today" : `${daysAway}d ago`}</p>
@@ -273,6 +277,7 @@ export function PublicLocalProgressPanel() {
           </ol>
         </div>
 
+        {gamification !== "off" && (
         <div className="card">
           <p className="eyebrow">Achievements</p>
           <h2 className="mt-2 text-2xl font-black">{earnedAchievements.length} earned through completed practice.</h2>
@@ -291,6 +296,7 @@ export function PublicLocalProgressPanel() {
             ))}
           </div>
         </div>
+        )}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">

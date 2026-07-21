@@ -72,6 +72,8 @@ export const profileUpdateSchema = z.object({
   speechSpeed: z.enum(["normal", "slow"]).optional(),
   themePreference: z.enum(["light", "dark", "system"]).optional(),
   companionQuiet: z.boolean().optional(),
+  gamification: z.enum(["full", "quiet", "off"]).optional(),
+  streakMode: z.enum(["daily", "weekly"]).optional(),
   interests: z.array(z.string().trim().min(1).max(30)).max(12).optional(),
 }).strict();
 

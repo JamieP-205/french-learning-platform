@@ -38,6 +38,8 @@ export type LocalLearnerPreferences = {
   speechSpeed: "normal" | "slow";
   themePreference: "light" | "dark" | "system";
   companionQuiet: boolean;
+  gamification: "full" | "quiet" | "off";
+  streakMode: "daily" | "weekly";
   updatedAt?: string;
 };
 
@@ -114,6 +116,8 @@ export const defaultLocalLearnerPreferences: LocalLearnerPreferences = {
   speechSpeed: "normal",
   themePreference: "system",
   companionQuiet: false,
+  gamification: "full",
+  streakMode: "daily",
 };
 
 export const emptyLocalLearningProgress: LocalLearningProgress = {
@@ -188,6 +192,9 @@ export function localLearningStreak(
   now = new Date(),
   timeZone = detectRuntimeTimeZone(),
 ) {
+  if ((progress.preferences?.streakMode ?? "daily") === "weekly") {
+    return localWeeklyStreak(progress, now, timeZone);
+  }
   const activeDates = new Set(progress.activeDates ?? []);
   const cursor = new Date(now);
   if (!activeDates.has(calendarDayKey(cursor, timeZone))) {
@@ -197,6 +204,24 @@ export function localLearningStreak(
   while (activeDates.has(calendarDayKey(cursor, timeZone)) && streak <= 365) {
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+// Monday-start week index of a local day key, mirroring lib/learning/streak.
+function localWeekIndex(dayKey: string) {
+  const epochDays = Math.floor(new Date(`${dayKey}T00:00:00Z`).getTime() / 86_400_000);
+  return Math.floor((epochDays + 3) / 7);
+}
+
+function localWeeklyStreak(progress: LocalLearningProgress, now: Date, timeZone: string) {
+  const activeWeeks = new Set((progress.activeDates ?? []).map((day) => localWeekIndex(day)));
+  let cursor = localWeekIndex(calendarDayKey(now, timeZone));
+  if (!activeWeeks.has(cursor)) cursor -= 1;
+  let streak = 0;
+  while (activeWeeks.has(cursor) && streak <= 104) {
+    streak += 1;
+    cursor -= 1;
   }
   return streak;
 }

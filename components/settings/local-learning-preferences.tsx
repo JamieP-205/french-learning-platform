@@ -13,6 +13,7 @@ import {
   type LocalLearningProgress,
 } from "@/lib/local-learning/progress";
 import { setStoredCompanionQuiet } from "@/lib/companion/quiet-preference";
+import { setStoredGamification, type GamificationLevel } from "@/lib/progress/gamification-preference";
 import { setStoredSpeechSpeed } from "@/lib/speech/speed-preference";
 import { setStoredThemePreference, type ThemePreference } from "@/lib/theme/theme-preference";
 
@@ -76,6 +77,10 @@ export function LocalLearningPreferences() {
     const themePreference: ThemePreference =
       themeRaw === "light" || themeRaw === "dark" ? themeRaw : "system";
     const companionQuiet = formData.get("companionQuiet") === "on";
+    const gamificationRaw = String(formData.get("gamification") ?? "full");
+    const gamification: GamificationLevel =
+      gamificationRaw === "quiet" || gamificationRaw === "off" ? gamificationRaw : "full";
+    const streakMode = formData.get("streakMode") === "weekly" ? ("weekly" as const) : ("daily" as const);
     const nextProgress = updateLocalLearnerPreferences(progress, {
       displayName:
         String(formData.get("displayName") ?? "").trim() || defaultLocalLearnerPreferences.displayName,
@@ -86,12 +91,15 @@ export function LocalLearningPreferences() {
       speechSpeed,
       themePreference,
       companionQuiet,
+      gamification,
+      streakMode,
     });
 
     saveLocalLearningProgress(nextProgress);
     setStoredSpeechSpeed(speechSpeed);
     setStoredThemePreference(themePreference);
     setStoredCompanionQuiet(companionQuiet);
+    setStoredGamification(gamification);
     setSaved(true);
   }
 
@@ -176,6 +184,25 @@ export function LocalLearningPreferences() {
               <option value="system">Match my device</option>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block font-bold">
+            Celebrations
+            <select className="field" name="gamification" defaultValue={progress.preferences.gamification}>
+              <option value="full">Full, confetti and all</option>
+              <option value="quiet">Quiet, text instead of motion</option>
+              <option value="off">Off, hide streaks and badges</option>
+            </select>
+          </label>
+
+          <label className="block font-bold">
+            Streak counts
+            <select className="field" name="streakMode" defaultValue={progress.preferences.streakMode}>
+              <option value="daily">Daily practice</option>
+              <option value="weekly">Weekly, one session a week keeps it</option>
             </select>
           </label>
         </div>

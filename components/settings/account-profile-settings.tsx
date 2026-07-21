@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { LearnerProfile } from "@/lib/domain/types";
 import { getBrowserAccessToken, getBrowserAuthHeaders, getBrowserSupabase } from "@/lib/auth/browser";
 import { syncStoredCompanionQuiet } from "@/lib/companion/quiet-preference";
+import { syncStoredGamification } from "@/lib/progress/gamification-preference";
 import { syncStoredSpeechSpeed } from "@/lib/speech/speed-preference";
 import { syncStoredThemePreference } from "@/lib/theme/theme-preference";
 import { detectRuntimeTimeZone } from "@/lib/time/calendar-day";
@@ -51,6 +52,7 @@ export function AccountProfileSettings() {
         syncStoredSpeechSpeed(payload.profile.speechSpeed);
         syncStoredThemePreference(payload.profile.themePreference);
         syncStoredCompanionQuiet(payload.profile.companionQuiet);
+        syncStoredGamification(payload.profile.gamification);
         setState("ready");
       } catch {
         if (!cancelled) {
@@ -94,6 +96,8 @@ export function AccountProfileSettings() {
           speechSpeed: profile.speechSpeed ?? "normal",
           themePreference: profile.themePreference ?? "system",
           companionQuiet: profile.companionQuiet ?? false,
+          gamification: profile.gamification ?? "full",
+          streakMode: profile.streakMode ?? "daily",
         }),
       });
       const payload = await response.json();
@@ -106,6 +110,7 @@ export function AccountProfileSettings() {
       syncStoredSpeechSpeed(payload.profile.speechSpeed);
       syncStoredThemePreference(payload.profile.themePreference);
       syncStoredCompanionQuiet(payload.profile.companionQuiet);
+      syncStoredGamification(payload.profile.gamification);
       setMessage("Saved. Your next session uses these straight away.");
     } catch {
       setError("Your settings could not be saved. Check your connection and try again.");
@@ -237,6 +242,41 @@ export function AccountProfileSettings() {
           </select>
         </label>
       </div>
+
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <label className="block font-bold">
+          Celebrations
+          <select
+            className="field"
+            value={profile.gamification ?? "full"}
+            onChange={(event) =>
+              setProfile({ ...profile, gamification: event.target.value as "full" | "quiet" | "off" })
+            }
+          >
+            <option value="full">Full, confetti and all</option>
+            <option value="quiet">Quiet, text instead of motion</option>
+            <option value="off">Off, hide streaks and badges</option>
+          </select>
+        </label>
+
+        <label className="block font-bold">
+          Streak counts
+          <select
+            className="field"
+            value={profile.streakMode ?? "daily"}
+            onChange={(event) =>
+              setProfile({ ...profile, streakMode: event.target.value as "daily" | "weekly" })
+            }
+          >
+            <option value="daily">Daily practice</option>
+            <option value="weekly">Weekly, one session a week keeps it</option>
+          </select>
+        </label>
+      </div>
+      <p className="mt-2 text-sm text-ink/60">
+        Your learning and your streak keep counting whatever you choose here. These only change what
+        is shown and how the streak clock ticks.
+      </p>
 
       <label className="mt-5 flex min-h-11 items-center gap-3 font-bold">
         <input
